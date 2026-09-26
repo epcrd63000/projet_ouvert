@@ -1,0 +1,264 @@
+// ==============================================================================
+// IMT Projet Ouvert 2026-2027 — Schéma Prisma PostgreSQL (Neon)
+// ==============================================================================
+
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["driverAdapters"]
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// 1. ÉNUMÉRATIONS (10 ENUMS)
+// ─────────────────────────────────────────────────────────────────────────────
+
+enum Role {
+  ADMIN
+  MEMBER
+}
+
+enum TaskStatus {
+  TODO
+  IN_PROGRESS
+  DONE
+  BLOCKED
+}
+
+enum TaskPriority {
+  LOW
+  NORMAL
+  HIGH
+  CRITICAL
+}
+
+enum MeetingStatus {
+  PLANNED
+  IN_PROGRESS
+  DONE
+}
+
+enum MilestoneStatus {
+  UPCOMING
+  IN_PROGRESS
+  ACHIEVED
+  MISSED
+}
+
+enum BudgetCategory {
+  SUPPLIES
+  SERVICES
+  SOFTWARE
+  OTHER
+}
+
+enum BudgetStatus {
+  PLANNED
+  VALIDATED
+  PAID
+}
+
+enum NotificationType {
+  TASK_ASSIGNED
+  TASK_DUE_SOON
+  TASK_COMPLETED
+  MEETING_SCHEDULED
+  MEETING_REMINDER
+  MILESTONE_APPROACHING
+}
+
+enum EventVisibility {
+  PERSONAL
+  TEAM
+}
+
+enum EventType {
+  MANUAL
+  MEETING
+  MILESTONE
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// 2. MODÈLES DE DONNÉES (11 MODÈLES)
+// ─────────────────────────────────────────────────────────────────────────────
+
+model User {
+  id               String            @id @default(uuid())
+  email            String            @unique
+  name             String
+  passwordHash     String
+  role             Role              @default(MEMBER)
+  avatarUrl        String?
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+  createdTasks     Task[]            @relation("TaskCreator")
+  taskAssignments  TaskAssignment[]
+  createdMeetings  Meeting[]         @relation("MeetingCreator")
+  meetingAttendees MeetingAttendee[]
+  meetingDecisions MeetingDecision[]
+  budgetEntries    BudgetEntry[]
+  notifications    Notification[]
+  createdEvents    Event[]           @relation("EventCreator")
+}
+
+model Project {
+  id          String           @id @default(uuid())
+  name        String
+  description String?
+  totalBudget Float            @default(0)
+  startDate   DateTime
+  endDate     DateTime
+  createdAt   DateTime         @default(now())
+  tasks       Task[]
+  meetings    Meeting[]
+  milestones  GanttMilestone[]
+  budgets     BudgetEntry[]
+  events      Event[]
+}
+
+model Task {
+  id          String           @id @default(uuid())
+  projectId   String
+  createdById String
+  parentId    String?
+  title       String
+  description String?
+  status      TaskStatus       @default(TODO)
+  priority    TaskPriority     @default(NORMAL)
+  position    Int
+  dueDate     DateTime?
+  completedAt DateTime?
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+  project     Project          @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  createdBy   User             @relation("TaskCreator", fields: [createdById], references: [id])
+  parent      Task?            @relation("SubTasks", fields: [parentId], references: [id])
+  subTasks    Task[]           @relation("SubTasks")
+  assignments TaskAssignment[]
+
+  @@index([projectId, status])
+}
+
+model TaskAssignment {
+  id         String   @id @default(uuid())
+  taskId     String
+  userId     String
+  assignedAt DateTime @default(now())
+  task       Task     @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([taskId, userId])
+  @@index([userId])
+}
+
+model Meeting {
+  id          String            @id @default(uuid())
+  projectId   String
+  createdById String
+  title       String
+  scheduledAt DateTime
+  notes       String?
+  status      MeetingStatus     @default(PLANNED)
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+  project     Project           @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  createdBy   User              @relation("MeetingCreator", fields: [createdById], references: [id])
+  attendees   MeetingAttendee[]
+  decisions   MeetingDecision[]
+  events      Event[]
+
+  @@index([scheduledAt])
+}
+
+model MeetingAttendee {
+  id        String  @id @default(uuid())
+  meetingId String
+  userId    String
+  meeting   Meeting @relation(fields: [meetingId], references: [id], onDelete: Cascade)
+  user      User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([meetingId, userId])
+}
+
+model MeetingDecision {
+  id          String   @id @default(uuid())
+  meetingId   String
+  createdById String
+  content     String
+  createdAt   DateTime @default(now())
+  meeting     Meeting  @relation(fields: [meetingId], references: [id], onDelete: Cascade)
+  createdBy   User     @relation(fields: [createdById], references: [id])
+}
+
+model GanttMilestone {
+  id          String          @id @default(uuid())
+  projectId   String
+  name        String
+  description String?
+  startDate   DateTime
+  endDate     DateTime
+  color       String          @default("#6366f1")
+  status      MilestoneStatus @default(UPCOMING)
+  isPreloaded Boolean         @default(false)
+  createdAt   DateTime        @default(now())
+  project     Project         @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  events      Event[]
+
+  @@index([endDate])
+}
+
+model BudgetEntry {
+  id          String         @id @default(uuid())
+  projectId   String
+  createdById String
+  label       String
+  amount      Float
+  date        DateTime
+  category    BudgetCategory
+  comment     String?
+  status      BudgetStatus   @default(PLANNED)
+  createdAt   DateTime       @default(now())
+  project     Project        @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  createdBy   User           @relation(fields: [createdById], references: [id])
+}
+
+model Notification {
+  id                String           @id @default(uuid())
+  userId            String
+  type              NotificationType
+  title             String
+  body              String
+  isRead            Boolean          @default(false)
+  relatedEntityId   String?
+  relatedEntityType String?
+  createdAt         DateTime         @default(now())
+  user              User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, isRead])
+}
+
+model Event {
+  id                 String          @id @default(uuid())
+  projectId          String
+  createdById        String
+  relatedMeetingId   String?
+  relatedMilestoneId String?
+  title              String
+  description        String?
+  startAt            DateTime
+  endAt              DateTime
+  allDay             Boolean         @default(false)
+  color              String          @default("#6366f1")
+  visibility         EventVisibility @default(TEAM)
+  type               EventType       @default(MANUAL)
+  createdAt          DateTime        @default(now())
+  updatedAt          DateTime        @updatedAt
+  project            Project         @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  createdBy          User            @relation("EventCreator", fields: [createdById], references: [id])
+  relatedMeeting     Meeting?        @relation(fields: [relatedMeetingId], references: [id], onDelete: SetNull)
+  relatedMilestone   GanttMilestone? @relation(fields: [relatedMilestoneId], references: [id], onDelete: SetNull)
+}
