@@ -2,6 +2,15 @@
 
 Toutes les modifications notables apportées au projet `app` sont consignées dans ce document.
 
+## [1.0.4] - 2026-09-26 (Budget et Permissions Agenda)
+
+### Corrigé / Ajouté
+- Budget : Lecture du rapport final PDF pour intégrer l'historique complet des dépenses. Ajout des colonnes Quantité, Prix Unitaire et Livraison.
+- Agenda (Permissions) : Les membres normaux ne voient que leurs propres tâches. Les administrateurs voient toutes les tâches de l'équipe.
+- Agenda (Design) : Les tâches appartenant à d'autres membres (vues par les admins) sont affichées avec des pointillés et le nom du membre assigné.
+
+
+
 ## [1.0.3] - 2026-09-26 (Améliorations UI/UX & Fix Déploiement)
 
 ### Corrigé / Ajouté
@@ -146,4 +155,5 @@ Toutes les modifications notables apportées au projet `app` sont consignées da
 - Navigation Agenda : Ajout du composant CustomCalendarToolbar pour réparer la navigation (boutons Aujourd'hui, Mois, Semaine) cassée par le reset Tailwind CSS.
 - Workflow Tâches : Modification de l'API (/api/tasks) et du modal (TaskModal) pour permettre aux membres de s'assigner eux-mêmes des tâches, tandis que les administrateurs gardent l'accès global.
 - Thèmes (Settings) : Création de CustomThemeProvider permettant aux administrateurs de personnaliser les couleurs globales via la page des paramètres.
+
 
