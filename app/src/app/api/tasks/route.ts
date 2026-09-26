@@ -91,10 +91,20 @@ export async function POST(request: NextRequest) {
         position: (maxPosition._max.position ?? -1) + 1,
         projectId: project.id,
         createdById: session.user.id,
-        assignments: {
-          create: assigneeIds.map((userId) => ({ userId })),
-        },
-      },
+      }
+    });
+
+    if (assigneeIds.length > 0) {
+      await prisma.taskAssignment.createMany({
+        data: assigneeIds.map((userId: string) => ({
+          taskId: task.id,
+          userId
+        }))
+      });
+    }
+
+    const taskWithRelations = await prisma.task.findUnique({
+      where: { id: task.id },
       include: {
         assignments: {
           include: { user: { select: { id: true, name: true, email: true } } },
@@ -116,7 +126,7 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    return NextResponse.json(task, { status: 201 });
+    return NextResponse.json(taskWithRelations, { status: 201 });
   } catch (error) {
     console.error("Erreur POST /api/tasks:", error);
     return NextResponse.json({ error: "Erreur serveur" }, { status: 500 });

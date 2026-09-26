@@ -21,3 +21,13 @@ Toutes les modifications notables apportées à ce projet sont consignées dans 
   - Suppression intégrale du patron de façade / repli statique `schema.prisma` dans `getDatabaseTables()`, garantissant une requête réelle sur `information_schema.tables` de PostgreSQL Neon.
   - Sécurisation du chargement des variables d'environnement (`DATABASE_URL`, `DIRECT_URL`) depuis `app/.env`.
   - Validation avec succès des 4 tests d'acceptation Tier 1 (`test-01-compilation.mjs`, `test-02-database-tables.mjs`, `test-03-seed-users.mjs`, `test-04-seed-milestones.mjs`) avec code de sortie 0 directement contre la base PostgreSQL Neon en direct.
+
+## [2026-09-27] - Refonte UI/UX et Fix API
+### Corrigé
+- **API Tasks (Neon HTTP)** : Résolution de l'erreur 500 "Transactions are not supported in HTTP mode" en remplaçant l'écriture imbriquée Prisma par un create suivi d'un createMany pour les assignations.
+### Modifié
+- **UI/UX Global** : 
+  - Refonte complète de la page Gantt avec une vraie grille (Flex/CSS) et timeline.
+  - Correction des tooltips Recharts en mode sombre sur le Dashboard.
+  - Alerte de dépassement de budget en rouge sur la jauge du Dashboard.
+  - Formatage français complet (date-fns) et ajout de Badges colorés sur la page Réunions.

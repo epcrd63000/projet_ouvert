@@ -88,28 +88,42 @@ export default function GanttPage() {
         </div>
       </div>
 
-      <div className="overflow-x-auto bg-card rounded-lg border shadow-sm p-4">
-        <div className="min-w-[800px] space-y-4">
-          
-          <div className="relative h-8 border-b flex items-end">
-            <div className="absolute left-0 text-xs text-muted-foreground">
+      <div className="bg-card rounded-lg border shadow-sm p-4 overflow-hidden flex flex-col">
+        <div className="flex border-b pb-2 mb-4">
+          <div className="w-[200px] shrink-0 font-semibold text-sm flex items-end">
+            Jalons
+          </div>
+          <div className="flex-1 relative h-8 overflow-hidden">
+            <div className="absolute left-0 bottom-0 text-xs text-muted-foreground font-medium">
               {format(minDate, "dd MMM yyyy", { locale: fr })}
             </div>
-            <div className="absolute right-0 text-xs text-muted-foreground">
+            <div className="absolute right-0 bottom-0 text-xs text-muted-foreground font-medium">
               {format(maxDate, "dd MMM yyyy", { locale: fr })}
             </div>
+            {/* Grid lines (e.g. 4 divisions) */}
+            {[25, 50, 75].map(pct => (
+              <div key={pct} className="absolute top-0 bottom-0 border-l border-border/50 border-dashed" style={{ left: `${pct}%` }} />
+            ))}
           </div>
+        </div>
 
-          <div className="space-y-2">
-            <h3 className="font-semibold text-sm">Jalons</h3>
-            {milestones.map((m) => {
-              const startOffset = Math.max(0, differenceInDays(new Date(m.startDate), minDate));
-              const duration = Math.max(1, differenceInDays(new Date(m.endDate), new Date(m.startDate)));
-              const leftPercent = (startOffset / totalDays) * 100;
-              const widthPercent = (duration / totalDays) * 100;
+        <div className="space-y-4">
+          {milestones.length === 0 && <p className="text-sm text-muted-foreground pl-[200px]">Aucun jalon.</p>}
+          {milestones.map((m) => {
+            const startOffset = Math.max(0, differenceInDays(new Date(m.startDate), minDate));
+            const duration = Math.max(1, differenceInDays(new Date(m.endDate), new Date(m.startDate)));
+            const leftPercent = (startOffset / totalDays) * 100;
+            const widthPercent = (duration / totalDays) * 100;
 
-              return (
-                <div key={m.id} className="relative h-8 group mb-2">
+            return (
+              <div key={m.id} className="flex group items-center">
+                <div className="w-[200px] shrink-0 text-sm pr-4 truncate" title={m.name}>
+                  {m.name}
+                </div>
+                <div className="flex-1 relative h-8 bg-muted/20 rounded">
+                  {[25, 50, 75].map(pct => (
+                    <div key={pct} className="absolute top-0 bottom-0 border-l border-border/30 border-dashed" style={{ left: `${pct}%` }} />
+                  ))}
                   <div
                     onClick={() => setSelectedItem({
                       type: "milestone",
@@ -124,48 +138,49 @@ export default function GanttPage() {
                       left: `${leftPercent}%`,
                       width: `${Math.max(widthPercent, 1)}%`,
                       backgroundColor: m.color || "#6366f1",
-                      minWidth: "24px"
+                      minWidth: "12px"
                     }}
                     title={`${m.name} (${format(new Date(m.startDate), "dd/MM")} - ${format(new Date(m.endDate), "dd/MM")})`}
                   >
-                    <span className="truncate w-full">{m.name}</span>
+                    {/* Only show text if width is somewhat large enough, otherwise rely on left label */}
+                    <span className="truncate w-full drop-shadow-sm opacity-0 md:opacity-100">{m.name}</span>
                   </div>
                 </div>
-              );
-            })}
-            {milestones.length === 0 && <p className="text-sm text-muted-foreground">Aucun jalon.</p>}
-          </div>
+              </div>
+            );
+          })}
 
-          <div className="space-y-2 mt-8 border-t pt-4">
-            <h3 className="font-semibold text-sm">Échéances des tâches</h3>
+          <div className="border-t pt-4 mt-6">
+            <h3 className="font-semibold text-sm mb-4">Échéances des tâches</h3>
+            {tasks.length === 0 && <p className="text-sm text-muted-foreground">Aucune tâche avec date d'échéance.</p>}
             {tasks.map((t) => {
               const startOffset = Math.max(0, differenceInDays(new Date(t.start), minDate));
               const leftPercent = (startOffset / totalDays) * 100;
 
               return (
-                <div key={t.id} className="relative h-6 group mb-2">
-                  <div
-                    onClick={() => setSelectedItem({
-                      type: "task",
-                      title: t.title,
-                      start: t.start,
-                    })}
-                    className="absolute h-4 w-4 -mt-1 rounded-full bg-indigo-500 shadow-sm cursor-pointer hover:scale-125 transition-transform"
-                    style={{ left: `calc(${leftPercent}% - 8px)` }}
-                    title={`${t.title} (${format(new Date(t.start), "dd/MM")})`}
-                  />
-                  <div
-                    className="absolute h-full flex items-center px-2 text-xs truncate"
-                    style={{ left: `${leftPercent}%`, marginLeft: "8px" }}
-                  >
+                <div key={t.id} className="flex group items-center mb-2">
+                  <div className="w-[200px] shrink-0 text-sm pr-4 truncate text-muted-foreground" title={t.title}>
                     {t.title}
+                  </div>
+                  <div className="flex-1 relative h-6 bg-muted/20 rounded">
+                    {[25, 50, 75].map(pct => (
+                      <div key={pct} className="absolute top-0 bottom-0 border-l border-border/30 border-dashed" style={{ left: `${pct}%` }} />
+                    ))}
+                    <div
+                      onClick={() => setSelectedItem({
+                        type: "task",
+                        title: t.title,
+                        start: t.start,
+                      })}
+                      className="absolute h-4 w-4 rounded-full bg-indigo-500 shadow-sm cursor-pointer hover:scale-125 transition-transform top-1"
+                      style={{ left: `calc(${leftPercent}% - 8px)` }}
+                      title={`${t.title} (${format(new Date(t.start), "dd/MM")})`}
+                    />
                   </div>
                 </div>
               );
             })}
-            {tasks.length === 0 && <p className="text-sm text-muted-foreground">Aucune tâche avec date d&apos;échéance.</p>}
           </div>
-
         </div>
       </div>
 
