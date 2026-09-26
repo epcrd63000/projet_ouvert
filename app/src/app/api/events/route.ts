@@ -8,18 +8,30 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: "Non autorisé" }, { status: 401 });
   }
 
+  const isAdmin = session.user.role === "ADMIN";
+  const userId = session.user.id;
+
   try {
     const meetings = await prisma.meeting.findMany({
       include: { attendees: { include: { user: { select: { id: true, name: true } } } } },
     });
 
     const tasks = await prisma.task.findMany({
-      where: { dueDate: { not: null } },
+      where: { 
+        dueDate: { not: null },
+        ...(isAdmin ? {} : { assignments: { some: { userId: userId } } })
+      },
       include: { assignments: { include: { user: { select: { id: true, name: true } } } } },
     });
 
     const manualEvents = await prisma.event.findMany({
-      where: { type: "MANUAL" }
+      where: { 
+        type: "MANUAL",
+        OR: [
+          { visibility: "TEAM" },
+          { createdById: userId }
+        ]
+      }
     });
 
     const events = [
@@ -32,16 +44,22 @@ export async function GET(request: NextRequest) {
         status: m.status,
         originalId: m.id,
       })),
-      ...tasks.map((t) => ({
-        id: `task-${t.id}`,
-        title: `Tâche: ${t.title}`,
-        start: t.dueDate,
-        end: t.dueDate,
-        type: "task",
-        status: t.status,
-        originalId: t.id,
-        allDay: true,
-      })),
+      ...tasks.map((t) => {
+        const isMine = t.assignments.some(a => a.userId === userId);
+        const assignees = t.assignments.map(a => a.user.name).join(", ");
+        const titleSuffix = (!isMine && assignees) ? ` (${assignees})` : "";
+        return {
+          id: `task-${t.id}`,
+          title: `Tâche: ${t.title}${titleSuffix}`,
+          start: t.dueDate,
+          end: t.dueDate,
+          type: "task",
+          status: t.status,
+          originalId: t.id,
+          allDay: true,
+          isMine: isMine, // custom property to style differently
+        };
+      }),
       ...manualEvents.map((e) => ({
         id: `event-${e.id}`,
         title: e.title,

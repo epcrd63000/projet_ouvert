@@ -11,6 +11,9 @@ import { Download } from "lucide-react";
 type BudgetEntry = {
   id: string;
   label: string;
+  quantity: number | null;
+  unitPrice: number | null;
+  deliveryCost: number | null;
   amount: number;
   date: Date;
   category: "SUPPLIES" | "SERVICES" | "SOFTWARE" | "OTHER";
@@ -66,8 +69,6 @@ export default function BudgetClient({
       }),
     });
     if (res.ok) {
-      const newEntry = await res.json();
-      // Refetch logic or append is needed, we append for now but need user details.
       window.location.reload();
     }
     setLoading(false);
@@ -107,7 +108,7 @@ export default function BudgetClient({
 
       <div className="flex justify-between items-center">
         {isAdmin ? (
-          <Button onClick={addTestEntry} disabled={loading}>+ Ajouter une dépense (Test)</Button>
+          <Button onClick={addTestEntry} disabled={loading}>+ Ajouter une dépense</Button>
         ) : (
           <div></div>
         )}
@@ -116,12 +117,15 @@ export default function BudgetClient({
         </Button>
       </div>
 
-      <div className="border rounded-md">
+      <div className="border rounded-md overflow-x-auto">
         <table className="w-full text-sm text-left">
-          <thead className="bg-muted text-muted-foreground">
+          <thead className="bg-muted text-muted-foreground whitespace-nowrap">
             <tr>
               <th className="p-3">Libellé</th>
-              <th className="p-3">Montant</th>
+              <th className="p-3">Quantité</th>
+              <th className="p-3">Prix unitaire</th>
+              <th className="p-3">Livraison</th>
+              <th className="p-3">Montant Total</th>
               <th className="p-3">Date</th>
               <th className="p-3">Catégorie</th>
               <th className="p-3">Statut</th>
@@ -131,7 +135,7 @@ export default function BudgetClient({
           <tbody>
             {entries.length === 0 ? (
               <tr>
-                <td colSpan={isAdmin ? 6 : 5} className="p-4 text-center text-muted-foreground">
+                <td colSpan={isAdmin ? 9 : 8} className="p-4 text-center text-muted-foreground">
                   Aucune dépense trouvée.
                 </td>
               </tr>
@@ -139,8 +143,11 @@ export default function BudgetClient({
               entries.map((entry) => (
                 <tr key={entry.id} className="border-t">
                   <td className="p-3 font-medium">{entry.label}</td>
-                  <td className="p-3">{entry.amount.toFixed(2)} €</td>
-                  <td className="p-3">{format(new Date(entry.date), "dd MMM yyyy", { locale: fr })}</td>
+                  <td className="p-3">{entry.quantity ?? "-"}</td>
+                  <td className="p-3">{entry.unitPrice != null ? entry.unitPrice.toFixed(2) + " €" : "-"}</td>
+                  <td className="p-3">{entry.deliveryCost != null ? entry.deliveryCost.toFixed(2) + " €" : "-"}</td>
+                  <td className="p-3 font-semibold">{entry.amount.toFixed(2)} €</td>
+                  <td className="p-3 whitespace-nowrap">{format(new Date(entry.date), "dd MMM yyyy", { locale: fr })}</td>
                   <td className="p-3">{entry.category}</td>
                   <td className="p-3">
                     {isAdmin ? (
@@ -161,7 +168,7 @@ export default function BudgetClient({
                   {isAdmin && (
                     <td className="p-3 text-right">
                       <Button variant="destructive" size="sm" onClick={() => deleteEntry(entry.id)} disabled={loading}>
-                        Supprimer
+                        Suppr.
                       </Button>
                     </td>
                   )}

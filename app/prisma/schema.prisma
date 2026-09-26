@@ -213,18 +213,21 @@ model GanttMilestone {
 }
 
 model BudgetEntry {
-  id          String         @id @default(uuid())
-  projectId   String
-  createdById String
-  label       String
-  amount      Float
-  date        DateTime
-  category    BudgetCategory
-  comment     String?
-  status      BudgetStatus   @default(PLANNED)
-  createdAt   DateTime       @default(now())
-  project     Project        @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  createdBy   User           @relation(fields: [createdById], references: [id])
+  id           String         @id @default(uuid())
+  projectId    String
+  createdById  String
+  label        String
+  quantity     Int?           @default(1)
+  unitPrice    Float?
+  deliveryCost Float?
+  amount       Float          // Will act as Montant Total
+  date         DateTime
+  category     BudgetCategory
+  comment      String?
+  status       BudgetStatus   @default(PLANNED)
+  createdAt    DateTime       @default(now())
+  project      Project        @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  createdBy    User           @relation(fields: [createdById], references: [id])
 }
 
 model Notification {

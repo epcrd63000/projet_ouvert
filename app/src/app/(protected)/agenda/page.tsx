@@ -33,6 +33,7 @@ interface AppEvent {
   status: string;
   originalId: string;
   allDay?: boolean;
+  isMine?: boolean;
 }
 
 export default function AgendaPage() {
@@ -72,7 +73,6 @@ export default function AgendaPage() {
     } else if (event.type === "task") {
       router.push("/kanban");
     }
-    // manual events just show details maybe, but we're not adding a details modal yet
   };
 
   const handleCreateEvent = async (data: EventFormData) => {
@@ -130,19 +130,33 @@ export default function AgendaPage() {
           }}
           onSelectEvent={handleSelectEvent}
           className="flex-1"
-          eventPropGetter={(event) => {
-            let backgroundColor = "hsl(var(--primary))"; // Couleur par défaut
+          eventPropGetter={(event: AppEvent) => {
+            let backgroundColor = "hsl(var(--primary))";
+            let opacity = 1;
+            let border = "none";
+            let color = "hsl(var(--primary-foreground))";
+            
             if (event.type === "meeting") {
               backgroundColor = "hsl(var(--accent))"; 
             } else if (event.type === "manual") {
-              backgroundColor = "#10b981"; // Vert pour manuel
+              backgroundColor = "#10b981";
+            } else if (event.type === "task") {
+              if (event.isMine === false) {
+                // Admin viewing someone else's task
+                backgroundColor = "transparent";
+                border = "2px dashed hsl(var(--primary))";
+                opacity = 0.7;
+                color = "hsl(var(--foreground))"; // Dark text since bg is transparent
+              }
             }
+            
             return { 
               style: { 
                 backgroundColor,
-                border: "none",
+                border,
+                opacity,
                 borderRadius: "4px",
-                color: "hsl(var(--primary-foreground))"
+                color
               } 
             };
           }}
