@@ -8,7 +8,9 @@ import "react-big-calendar/lib/css/react-big-calendar.css";
 import { useRouter } from "next/navigation";
 import CustomCalendarToolbar from "@/components/agenda/CustomCalendarToolbar";
 import { View, Views } from "react-big-calendar";
-import { CalendarDays } from "lucide-react";
+import { CalendarDays, Plus } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { EventModal, EventFormData } from "@/components/agenda/EventModal";
 
 const locales = {
   fr: fr,
@@ -27,7 +29,7 @@ interface AppEvent {
   title: string;
   start: Date;
   end: Date;
-  type: "meeting" | "task";
+  type: "meeting" | "task" | "manual";
   status: string;
   originalId: string;
   allDay?: boolean;
@@ -39,6 +41,7 @@ export default function AgendaPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [currentDate, setCurrentDate] = useState(new Date());
   const [currentView, setCurrentView] = useState<View>(Views.MONTH);
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   const fetchEvents = useCallback(async () => {
     try {
@@ -66,8 +69,29 @@ export default function AgendaPage() {
   const handleSelectEvent = (event: AppEvent) => {
     if (event.type === "meeting") {
       router.push(`/meetings/${event.originalId}`);
-    } else {
+    } else if (event.type === "task") {
       router.push("/kanban");
+    }
+    // manual events just show details maybe, but we're not adding a details modal yet
+  };
+
+  const handleCreateEvent = async (data: EventFormData) => {
+    try {
+      const res = await fetch("/api/events", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          ...data,
+          startAt: new Date(data.startAt).toISOString(),
+          endAt: new Date(data.endAt).toISOString(),
+        }),
+      });
+
+      if (res.ok) {
+        fetchEvents();
+      }
+    } catch (error) {
+      console.error("Erreur création événement:", error);
     }
   };
 
@@ -85,6 +109,9 @@ export default function AgendaPage() {
             <p className="text-muted-foreground">Calendrier des réunions et des échéances</p>
           </div>
         </div>
+        <Button onClick={() => setIsModalOpen(true)} className="gap-2">
+          <Plus className="h-4 w-4" /> Nouvel événement
+        </Button>
       </div>
 
       <div className="flex-1 bg-card p-4 rounded-lg border shadow-sm flex flex-col">
@@ -104,9 +131,11 @@ export default function AgendaPage() {
           onSelectEvent={handleSelectEvent}
           className="flex-1"
           eventPropGetter={(event) => {
-            let backgroundColor = "hsl(var(--primary))"; // Couleur par défaut (thème dynamique)
+            let backgroundColor = "hsl(var(--primary))"; // Couleur par défaut
             if (event.type === "meeting") {
               backgroundColor = "hsl(var(--accent))"; 
+            } else if (event.type === "manual") {
+              backgroundColor = "#10b981"; // Vert pour manuel
             }
             return { 
               style: { 
@@ -119,6 +148,12 @@ export default function AgendaPage() {
           }}
         />
       </div>
+
+      <EventModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        onSubmit={handleCreateEvent}
+      />
     </div>
   );
 }

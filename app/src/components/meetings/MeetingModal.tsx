@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 export interface MeetingFormData {
   title: string;
   scheduledAt: string;
+  location?: string;
   status: "PLANNED" | "IN_PROGRESS" | "DONE";
   attendeeIds: string[];
 }
@@ -20,6 +21,7 @@ interface MeetingModalProps {
 export function MeetingModal({ isOpen, onClose, onSubmit, users }: MeetingModalProps) {
   const [title, setTitle] = useState("");
   const [scheduledAt, setScheduledAt] = useState("");
+  const [location, setLocation] = useState("");
   const [status, setStatus] = useState<"PLANNED" | "IN_PROGRESS" | "DONE">("PLANNED");
   const [attendeeIds, setAttendeeIds] = useState<string[]>([]);
 
@@ -27,6 +29,7 @@ export function MeetingModal({ isOpen, onClose, onSubmit, users }: MeetingModalP
     if (isOpen) {
       setTitle("");
       setScheduledAt("");
+      setLocation("");
       setStatus("PLANNED");
       setAttendeeIds([]);
     }
@@ -36,7 +39,7 @@ export function MeetingModal({ isOpen, onClose, onSubmit, users }: MeetingModalP
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    onSubmit({ title, scheduledAt, status, attendeeIds });
+    onSubmit({ title, scheduledAt, location, status, attendeeIds });
     onClose();
   };
 
@@ -44,6 +47,14 @@ export function MeetingModal({ isOpen, onClose, onSubmit, users }: MeetingModalP
     setAttendeeIds((prev) =>
       prev.includes(userId) ? prev.filter((id) => id !== userId) : [...prev, userId]
     );
+  };
+
+  const toggleAllAttendees = () => {
+    if (attendeeIds.length === users.length) {
+      setAttendeeIds([]);
+    } else {
+      setAttendeeIds(users.map(u => u.id));
+    }
   };
 
   return (
@@ -63,6 +74,17 @@ export function MeetingModal({ isOpen, onClose, onSubmit, users }: MeetingModalP
           </div>
 
           <div>
+            <label className="block text-sm font-medium">Lieu</label>
+            <input
+              type="text"
+              className="w-full rounded-md border p-2"
+              value={location}
+              onChange={(e) => setLocation(e.target.value)}
+              placeholder="Ex: Salle 301, Visioconférence..."
+            />
+          </div>
+
+          <div>
             <label className="block text-sm font-medium">Date et heure</label>
             <input
               type="datetime-local"
@@ -74,10 +96,19 @@ export function MeetingModal({ isOpen, onClose, onSubmit, users }: MeetingModalP
           </div>
 
           <div>
-            <label className="block text-sm font-medium mb-1">Participants</label>
+            <div className="flex items-center justify-between mb-1">
+              <label className="block text-sm font-medium">Participants</label>
+              <button 
+                type="button" 
+                onClick={toggleAllAttendees}
+                className="text-xs text-blue-500 hover:underline"
+              >
+                {attendeeIds.length === users.length ? "Tout désélectionner" : "Tout sélectionner"}
+              </button>
+            </div>
             <div className="max-h-32 overflow-y-auto rounded-md border p-2 space-y-1">
               {users.map((user) => (
-                <label key={user.id} className="flex items-center gap-2 text-sm">
+                <label key={user.id} className="flex items-center gap-2 text-sm cursor-pointer">
                   <input
                     type="checkbox"
                     checked={attendeeIds.includes(user.id)}

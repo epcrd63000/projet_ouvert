@@ -68,6 +68,17 @@ export async function POST(request: NextRequest) {
         attendees: {
           create: attendeeIds.map((userId) => ({ userId })),
         },
+        events: {
+          create: {
+            projectId: project.id,
+            createdById: session.user.id,
+            title: meetingData.title,
+            description: meetingData.notes || undefined,
+            startAt: new Date(scheduledAt),
+            endAt: new Date(new Date(scheduledAt).getTime() + 60 * 60 * 1000), // Default 1 hour
+            type: "MEETING"
+          }
+        }
       },
       include: {
         attendees: {

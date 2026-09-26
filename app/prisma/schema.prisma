@@ -161,6 +161,7 @@ model Meeting {
   createdById String
   title       String
   scheduledAt DateTime
+  location    String?
   notes       String?
   status      MeetingStatus     @default(PLANNED)
   createdAt   DateTime          @default(now())

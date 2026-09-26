@@ -38,8 +38,18 @@ export function TaskModal({ isOpen, onClose, onSubmit, users, currentUserId, isA
   const [description, setDescription] = useState("");
   const [priority, setPriority] = useState<TaskFormData["priority"]>("NORMAL");
   const [dueDate, setDueDate] = useState("");
-  const [assigneeIds, setAssigneeIds] = useState<string[]>([]);
+  const [assigneeIds, setAssigneeIds] = useState<string[]>([currentUserId]);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  React.useEffect(() => {
+    if (isOpen) {
+      setTitle("");
+      setDescription("");
+      setPriority("NORMAL");
+      setDueDate("");
+      setAssigneeIds([currentUserId]);
+    }
+  }, [isOpen, currentUserId]);
 
   if (!isOpen) return null;
 
@@ -54,16 +64,10 @@ export function TaskModal({ isOpen, onClose, onSubmit, users, currentUserId, isA
     setIsSubmitting(true);
     await onSubmit({ title, description, priority, dueDate, assigneeIds });
     setIsSubmitting(false);
-    // Réinitialiser le formulaire
-    setTitle("");
-    setDescription("");
-    setPriority("NORMAL");
-    setDueDate("");
-    setAssigneeIds([]);
     onClose();
   };
 
-  const assignableUsers = isAdmin ? users : users.filter(u => u.id === currentUserId);
+  const assignableUsers = users; // All users can be assigned now
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">

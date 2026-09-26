@@ -2,9 +2,6 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAuth } from "@/lib/permissions";
 
-/**
- * GET /api/events — Récupère les réunions et tâches pour l'agenda.
- */
 export async function GET(request: NextRequest) {
   const session = await requireAuth();
   if (!session) {
@@ -12,30 +9,25 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    // 1. Récupérer les réunions
     const meetings = await prisma.meeting.findMany({
-      include: {
-        attendees: { include: { user: { select: { id: true, name: true } } } },
-      },
+      include: { attendees: { include: { user: { select: { id: true, name: true } } } } },
     });
 
-    // 2. Récupérer les tâches avec une dueDate
     const tasks = await prisma.task.findMany({
-      where: {
-        dueDate: { not: null },
-      },
-      include: {
-        assignments: { include: { user: { select: { id: true, name: true } } } },
-      },
+      where: { dueDate: { not: null } },
+      include: { assignments: { include: { user: { select: { id: true, name: true } } } } },
     });
 
-    // 3. Formater pour react-big-calendar ou un autre calendrier
+    const manualEvents = await prisma.event.findMany({
+      where: { type: "MANUAL" }
+    });
+
     const events = [
       ...meetings.map((m) => ({
         id: `meeting-${m.id}`,
         title: `Réunion: ${m.title}`,
         start: m.scheduledAt,
-        end: new Date(new Date(m.scheduledAt).getTime() + 60 * 60 * 1000), // +1h par défaut
+        end: new Date(new Date(m.scheduledAt).getTime() + 60 * 60 * 1000),
         type: "meeting",
         status: m.status,
         originalId: m.id,
@@ -50,11 +42,53 @@ export async function GET(request: NextRequest) {
         originalId: t.id,
         allDay: true,
       })),
+      ...manualEvents.map((e) => ({
+        id: `event-${e.id}`,
+        title: e.title,
+        start: e.startAt,
+        end: e.endAt,
+        type: "manual",
+        status: "PLANNED",
+        originalId: e.id,
+        allDay: e.allDay,
+      }))
     ];
 
     return NextResponse.json(events);
   } catch (error) {
     console.error("Erreur GET /api/events:", error);
+    return NextResponse.json({ error: "Erreur serveur" }, { status: 500 });
+  }
+}
+
+export async function POST(request: NextRequest) {
+  const session = await requireAuth();
+  if (!session) {
+    return NextResponse.json({ error: "Non autorisé" }, { status: 401 });
+  }
+
+  try {
+    const body = await request.json();
+    const { title, description, startAt, endAt, allDay } = body;
+
+    const project = await prisma.project.findFirst();
+    if (!project) return NextResponse.json({ error: "Projet introuvable" }, { status: 404 });
+
+    const newEvent = await prisma.event.create({
+      data: {
+        title,
+        description,
+        startAt: new Date(startAt),
+        endAt: new Date(endAt),
+        allDay: allDay || false,
+        type: "MANUAL",
+        projectId: project.id,
+        createdById: session.user.id,
+      }
+    });
+    return NextResponse.json(newEvent, { status: 201 });
+  } catch (error) {
+    console.error("Erreur POST /api/events:", error);
     return NextResponse.json({ error: "Erreur serveur" }, { status: 500 });
   }
 }
