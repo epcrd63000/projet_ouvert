@@ -42,7 +42,7 @@ export default function BudgetClient({
 
   const deleteEntry = async (id: string) => {
     if (!isAdmin) return;
-    if (!confirm("Voulez-vous vraiment supprimer cette dépense ?")) return;
+    if (!confirm("Voulez-vous vraiment supprimer cette dépense &quest;")) return;
 
     setLoading(true);
     const res = await fetch(`/api/budget/${id}`, { method: "DELETE" });

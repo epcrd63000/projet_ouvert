@@ -163,7 +163,7 @@ export default function GanttPage() {
                 </div>
               );
             })}
-            {tasks.length === 0 && <p className="text-sm text-muted-foreground">Aucune tâche avec date d'échéance.</p>}
+            {tasks.length === 0 && <p className="text-sm text-muted-foreground">Aucune tâche avec date d&apos;échéance.</p>}
           </div>
 
         </div>
