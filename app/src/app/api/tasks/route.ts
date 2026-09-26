@@ -70,10 +70,7 @@ export async function POST(request: NextRequest) {
 
     let { assigneeIds, dueDate, ...taskData } = parsed.data;
 
-    // Si pas ADMIN, on force l'assignation à lui-même uniquement
-    if (session.user.role !== "ADMIN") {
-      assigneeIds = [session.user.id];
-    }
+    
 
     // Récupérer le projet singleton
     const project = await prisma.project.findFirst();
