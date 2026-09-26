@@ -152,7 +152,7 @@ export default function GanttPage() {
 
           <div className="border-t pt-4 mt-6">
             <h3 className="font-semibold text-sm mb-4">Échéances des tâches</h3>
-            {tasks.length === 0 && <p className="text-sm text-muted-foreground">Aucune tâche avec date d'échéance.</p>}
+            {tasks.length === 0 && <p className="text-sm text-muted-foreground">Aucune tâche avec date d&apos;échéance.</p>}
             {tasks.map((t) => {
               const startOffset = Math.max(0, differenceInDays(new Date(t.start), minDate));
               const leftPercent = (startOffset / totalDays) * 100;
