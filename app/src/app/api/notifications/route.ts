@@ -1,28 +1,47 @@
-import { NextResponse } from "next/server";
-import { auth } from "@/lib/auth";
-import prisma from "@/lib/prisma";
+import { NextRequest, NextResponse } from "next/server";
+import { prisma } from "@/lib/prisma";
+import { requireAuth } from "@/lib/permissions";
 
 export const dynamic = "force-dynamic";
 
-export async function GET(req: Request) {
+/**
+ * GET /api/notifications — Récupère les notifications de l'utilisateur.
+ * Paramètres query : unreadOnly (booléen), page (défaut 1), limit (défaut 30).
+ */
+export async function GET(request: NextRequest) {
+  const session = await requireAuth();
+  if (!session) {
+    return NextResponse.json({ error: "Non autorisé" }, { status: 401 });
+  }
+
   try {
-    const session = await auth();
-    if (!session?.user) return new NextResponse("Unauthorized", { status: 401 });
-
-    const { searchParams } = new URL(req.url);
+    const { searchParams } = new URL(request.url);
     const unreadOnly = searchParams.get("unreadOnly") === "true";
+    const page = Math.max(1, Number(searchParams.get("page") || "1"));
+    const limit = Math.min(100, Math.max(1, Number(searchParams.get("limit") || "30")));
+    const skip = (page - 1) * limit;
 
-    const notifications = await prisma.notification.findMany({
-      where: {
-        userId: session.user.id,
-        ...(unreadOnly ? { isRead: false } : {})
-      },
-      orderBy: { createdAt: "desc" },
+    const where = {
+      userId: session.user.id,
+      ...(unreadOnly ? { isRead: false } : {}),
+    };
+
+    const [notifications, total] = await Promise.all([
+      prisma.notification.findMany({
+        where,
+        orderBy: { createdAt: "desc" },
+        skip,
+        take: limit,
+      }),
+      prisma.notification.count({ where }),
+    ]);
+
+    return NextResponse.json({
+      data: notifications,
+      pagination: { page, limit, total, totalPages: Math.ceil(total / limit) },
     });
-
-    return NextResponse.json(notifications);
   } catch (error) {
-    console.error(error);
-    return new NextResponse("Internal Server Error", { status: 500 });
+    console.error("Erreur GET /api/notifications:", error);
+    return NextResponse.json({ error: "Erreur serveur" }, { status: 500 });
   }
 }

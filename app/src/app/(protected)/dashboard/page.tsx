@@ -61,8 +61,8 @@ export default async function DashboardPage() {
   const achievedMilestones = milestones.filter(m => m.status === "ACHIEVED").length;
   const remainingMilestones = milestones.length - achievedMilestones;
 
-  const totalBudget = project?.totalBudget || 0;
-  const usedBudget = budgetEntries.reduce((sum, entry) => sum + entry.amount, 0);
+  const totalBudget = Number(project?.totalBudget) || 0;
+  const usedBudget = budgetEntries.reduce((sum, entry) => sum + Number(entry.amount), 0);
 
   // Group data by user
   const progressByMember = allUsers.map(u => {

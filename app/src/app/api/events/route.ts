@@ -1,7 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAuth } from "@/lib/permissions";
+import { createEventSchema } from "@/lib/validations/event";
 
+/**
+ * GET /api/events — Récupère les événements du calendrier.
+ * Paramètres query : start, end (filtres de date ISO 8601).
+ * Fusionne réunions, tâches avec dueDate, et événements manuels.
+ */
 export async function GET(request: NextRequest) {
   const session = await requireAuth();
   if (!session) {
@@ -10,30 +16,51 @@ export async function GET(request: NextRequest) {
 
   const isAdmin = session.user.role === "ADMIN";
   const userId = session.user.id;
+  const { searchParams } = new URL(request.url);
+
+  // Filtres de date optionnels pour limiter le chargement
+  const startParam = searchParams.get("start");
+  const endParam = searchParams.get("end");
+  const dateFilter = {
+    ...(startParam ? { gte: new Date(startParam) } : {}),
+    ...(endParam ? { lte: new Date(endParam) } : {}),
+  };
+  const hasDateFilter = Object.keys(dateFilter).length > 0;
 
   try {
+    // Récupérer les réunions (avec filtre de date optionnel)
     const meetings = await prisma.meeting.findMany({
-      include: { attendees: { include: { user: { select: { id: true, name: true } } } } },
-    });
-
-    const tasks = await prisma.task.findMany({
-      where: { 
-        dueDate: { not: null },
-        ...(isAdmin ? {} : { assignments: { some: { userId: userId } } })
+      where: hasDateFilter ? { scheduledAt: dateFilter } : undefined,
+      include: {
+        attendees: {
+          include: { user: { select: { id: true, name: true } } },
+        },
       },
-      include: { assignments: { include: { user: { select: { id: true, name: true } } } } },
     });
 
+    // Récupérer les tâches avec dueDate (avec filtre et visibilité)
+    const tasks = await prisma.task.findMany({
+      where: {
+        dueDate: { not: null, ...(hasDateFilter ? dateFilter : {}) },
+        ...(isAdmin ? {} : { assignments: { some: { userId } } }),
+      },
+      include: {
+        assignments: {
+          include: { user: { select: { id: true, name: true } } },
+        },
+      },
+    });
+
+    // Récupérer les événements manuels (avec filtre de date et visibilité)
     const manualEvents = await prisma.event.findMany({
-      where: { 
+      where: {
         type: "MANUAL",
-        OR: [
-          { visibility: "TEAM" },
-          { createdById: userId }
-        ]
-      }
+        ...(hasDateFilter ? { startAt: dateFilter } : {}),
+        OR: [{ visibility: "TEAM" }, { createdById: userId }],
+      },
     });
 
+    // Fusionner les résultats en format calendrier
     const events = [
       ...meetings.map((m) => ({
         id: `meeting-${m.id}`,
@@ -45,9 +72,9 @@ export async function GET(request: NextRequest) {
         originalId: m.id,
       })),
       ...tasks.map((t) => {
-        const isMine = t.assignments.some(a => a.userId === userId);
-        const assignees = t.assignments.map(a => a.user.name).join(", ");
-        const titleSuffix = (!isMine && assignees) ? ` (${assignees})` : "";
+        const isMine = t.assignments.some((a) => a.userId === userId);
+        const assignees = t.assignments.map((a) => a.user.name).join(", ");
+        const titleSuffix = !isMine && assignees ? ` (${assignees})` : "";
         return {
           id: `task-${t.id}`,
           title: `Tâche: ${t.title}${titleSuffix}`,
@@ -57,7 +84,7 @@ export async function GET(request: NextRequest) {
           status: t.status,
           originalId: t.id,
           allDay: true,
-          isMine: isMine, // custom property to style differently
+          isMine,
         };
       }),
       ...manualEvents.map((e) => ({
@@ -69,7 +96,7 @@ export async function GET(request: NextRequest) {
         status: "PLANNED",
         originalId: e.id,
         allDay: e.allDay,
-      }))
+      })),
     ];
 
     return NextResponse.json(events);
@@ -79,6 +106,10 @@ export async function GET(request: NextRequest) {
   }
 }
 
+/**
+ * POST /api/events — Crée un événement manuel dans le calendrier.
+ * Validation Zod obligatoire.
+ */
 export async function POST(request: NextRequest) {
   const session = await requireAuth();
   if (!session) {
@@ -87,23 +118,34 @@ export async function POST(request: NextRequest) {
 
   try {
     const body = await request.json();
-    const { title, description, startAt, endAt, allDay } = body;
+    const parsed = createEventSchema.safeParse(body);
+
+    if (!parsed.success) {
+      return NextResponse.json(
+        { error: "Données invalides", details: parsed.error.flatten() },
+        { status: 400 }
+      );
+    }
 
     const project = await prisma.project.findFirst();
-    if (!project) return NextResponse.json({ error: "Projet introuvable" }, { status: 404 });
+    if (!project) {
+      return NextResponse.json({ error: "Projet introuvable" }, { status: 404 });
+    }
 
     const newEvent = await prisma.event.create({
       data: {
-        title,
-        description,
-        startAt: new Date(startAt),
-        endAt: new Date(endAt),
-        allDay: allDay || false,
+        title: parsed.data.title,
+        description: parsed.data.description,
+        startAt: new Date(parsed.data.startAt),
+        endAt: new Date(parsed.data.endAt),
+        allDay: parsed.data.allDay,
+        visibility: parsed.data.visibility,
         type: "MANUAL",
         projectId: project.id,
         createdById: session.user.id,
-      }
+      },
     });
+
     return NextResponse.json(newEvent, { status: 201 });
   } catch (error) {
     console.error("Erreur POST /api/events:", error);

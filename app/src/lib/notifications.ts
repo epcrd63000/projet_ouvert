@@ -4,10 +4,15 @@ type NotificationType =
   | "TASK_ASSIGNED"
   | "TASK_DUE_SOON"
   | "TASK_COMPLETED"
+  | "TASK_DELETED"
   | "MEETING_SCHEDULED"
   | "MEETING_REMINDER"
+  | "MEETING_CANCELLED"
   | "MILESTONE_APPROACHING";
 
+/**
+ * Crée une notification pour un utilisateur donné.
+ */
 export async function createNotification(
   userId: string,
   type: NotificationType,
@@ -28,10 +33,47 @@ export async function createNotification(
       },
     });
   } catch (error) {
-    console.error("Failed to create notification", error);
+    console.error("Échec de création de la notification", error);
   }
 }
 
+/**
+ * Notifie un ensemble spécifique d'utilisateurs (par leurs IDs).
+ * Exclut optionnellement un utilisateur (ex: l'auteur de l'action).
+ */
+export async function notifyUsers(
+  userIds: string[],
+  type: NotificationType,
+  title: string,
+  body: string,
+  relatedEntityId?: string,
+  relatedEntityType?: "Task" | "Meeting" | "GanttMilestone",
+  excludeUserId?: string
+) {
+  try {
+    const filteredIds = excludeUserId
+      ? userIds.filter((id) => id !== excludeUserId)
+      : userIds;
+
+    if (filteredIds.length === 0) return;
+
+    const notifications = filteredIds.map((userId) => ({
+      userId,
+      type,
+      title,
+      body,
+      relatedEntityId,
+      relatedEntityType,
+    }));
+    await prisma.notification.createMany({ data: notifications });
+  } catch (error) {
+    console.error("Échec de création des notifications en masse", error);
+  }
+}
+
+/**
+ * Notifie tous les utilisateurs du projet.
+ */
 export async function notifyAllUsers(
   type: NotificationType,
   title: string,
@@ -41,7 +83,7 @@ export async function notifyAllUsers(
 ) {
   try {
     const users = await prisma.user.findMany({ select: { id: true } });
-    const notifications = users.map(u => ({
+    const notifications = users.map((u) => ({
       userId: u.id,
       type,
       title,
@@ -51,6 +93,6 @@ export async function notifyAllUsers(
     }));
     await prisma.notification.createMany({ data: notifications });
   } catch (error) {
-    console.error("Failed to create bulk notifications", error);
+    console.error("Échec de création des notifications en masse", error);
   }
 }

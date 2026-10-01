@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { requireAuth, requireAdmin } from "@/lib/permissions";
+import { requireAuth } from "@/lib/permissions";
 import { createMeetingSchema } from "@/lib/validations/meeting";
+import { notifyUsers } from "@/lib/notifications";
 
 /**
  * GET /api/meetings — Récupère les réunions.
@@ -32,12 +33,15 @@ export async function GET(request: NextRequest) {
 }
 
 /**
- * POST /api/meetings — Crée une nouvelle réunion (ADMIN uniquement).
+ * POST /api/meetings — Crée une nouvelle réunion.
+ * Accessible à tous les utilisateurs authentifiés.
+ * Crée automatiquement un Event calendrier de type MEETING.
+ * Notifie tous les participants ajoutés.
  */
 export async function POST(request: NextRequest) {
-  const session = await requireAdmin();
+  const session = await requireAuth();
   if (!session) {
-    return NextResponse.json({ error: "Accès réservé aux Admin" }, { status: 403 });
+    return NextResponse.json({ error: "Non autorisé" }, { status: 401 });
   }
 
   try {
@@ -68,6 +72,7 @@ export async function POST(request: NextRequest) {
         attendees: {
           create: attendeeIds.map((userId) => ({ userId })),
         },
+        // Création automatique de l'Event calendrier associé
         events: {
           create: {
             projectId: project.id,
@@ -75,10 +80,10 @@ export async function POST(request: NextRequest) {
             title: meetingData.title,
             description: meetingData.notes || undefined,
             startAt: new Date(scheduledAt),
-            endAt: new Date(new Date(scheduledAt).getTime() + 60 * 60 * 1000), // Default 1 hour
-            type: "MEETING"
-          }
-        }
+            endAt: new Date(new Date(scheduledAt).getTime() + 60 * 60 * 1000),
+            type: "MEETING",
+          },
+        },
       },
       include: {
         attendees: {
@@ -86,6 +91,19 @@ export async function POST(request: NextRequest) {
         },
       },
     });
+
+    // Notifier les participants de la nouvelle réunion
+    if (attendeeIds.length > 0) {
+      await notifyUsers(
+        attendeeIds,
+        "MEETING_SCHEDULED",
+        "Nouvelle réunion planifiée",
+        `Vous avez été invité à la réunion : ${meetingData.title}`,
+        meeting.id,
+        "Meeting",
+        session.user.id
+      );
+    }
 
     return NextResponse.json(meeting, { status: 201 });
   } catch (error) {

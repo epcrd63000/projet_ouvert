@@ -1,58 +1,116 @@
-import { NextResponse } from "next/server";
-import { auth } from "@/lib/auth";
-import prisma from "@/lib/prisma";
+import { NextRequest, NextResponse } from "next/server";
+import { prisma } from "@/lib/prisma";
+import { requireAuth } from "@/lib/permissions";
 import { z } from "zod";
 
-const updateSchema = z.object({
+interface RouteParams {
+  params: Promise<{ id: string }>;
+}
+
+/**
+ * Schéma de validation pour la mise à jour d'une entrée budget.
+ */
+const updateBudgetSchema = z.object({
   label: z.string().min(1).optional(),
+  quantity: z.number().int().positive().optional(),
+  unitPrice: z.number().positive().optional(),
+  deliveryCost: z.number().min(0).optional(),
   amount: z.number().positive().optional(),
-  date: z.string().datetime().or(z.date().transform(d => d.toISOString())).optional(),
+  date: z.string().datetime().or(z.date().transform((d) => d.toISOString())).optional(),
   category: z.enum(["SUPPLIES", "SERVICES", "SOFTWARE", "OTHER"]).optional(),
   comment: z.string().optional(),
   status: z.enum(["PLANNED", "VALIDATED", "PAID"]).optional(),
 });
 
-export async function PATCH(req: Request, { params }: { params: { id: string } }) {
-  try {
-    const session = await auth();
-    if (!session?.user) return new NextResponse("Unauthorized", { status: 401 });
-    if (session.user.role !== "ADMIN") return new NextResponse("Forbidden", { status: 403 });
+/**
+ * Recalcule le totalBudget du projet singleton.
+ */
+async function recalculateProjectBudget() {
+  const project = await prisma.project.findFirst();
+  if (!project) return;
 
-    const body = await req.json();
-    const data = updateSchema.parse(body);
+  const result = await prisma.budgetEntry.aggregate({
+    where: { projectId: project.id },
+    _sum: { amount: true },
+  });
+
+  await prisma.project.update({
+    where: { id: project.id },
+    data: { totalBudget: result._sum.amount ?? 0 },
+  });
+}
+
+/**
+ * PATCH /api/budget/[id] — Met à jour une entrée budget.
+ * Accessible à tous les utilisateurs authentifiés.
+ * Recalcule automatiquement le totalBudget.
+ */
+export async function PATCH(request: NextRequest, { params }: RouteParams) {
+  const session = await requireAuth();
+  if (!session) {
+    return NextResponse.json({ error: "Non autorisé" }, { status: 401 });
+  }
+
+  const { id } = await params;
+
+  try {
+    const body = await request.json();
+    const parsed = updateBudgetSchema.safeParse(body);
+
+    if (!parsed.success) {
+      return NextResponse.json(
+        { error: "Données invalides", details: parsed.error.flatten() },
+        { status: 400 }
+      );
+    }
 
     const updated = await prisma.budgetEntry.update({
-      where: { id: params.id },
+      where: { id },
       data: {
-        ...(data.label && { label: data.label }),
-        ...(data.amount && { amount: data.amount }),
-        ...(data.date && { date: new Date(data.date) }),
-        ...(data.category && { category: data.category }),
-        ...(data.comment !== undefined && { comment: data.comment }),
-        ...(data.status && { status: data.status }),
-      }
+        ...(parsed.data.label && { label: parsed.data.label }),
+        ...(parsed.data.quantity !== undefined && { quantity: parsed.data.quantity }),
+        ...(parsed.data.unitPrice !== undefined && { unitPrice: parsed.data.unitPrice }),
+        ...(parsed.data.deliveryCost !== undefined && { deliveryCost: parsed.data.deliveryCost }),
+        ...(parsed.data.amount !== undefined && { amount: parsed.data.amount }),
+        ...(parsed.data.date && { date: new Date(parsed.data.date) }),
+        ...(parsed.data.category && { category: parsed.data.category }),
+        ...(parsed.data.comment !== undefined && { comment: parsed.data.comment }),
+        ...(parsed.data.status && { status: parsed.data.status }),
+      },
     });
+
+    // Recalculer le totalBudget du projet
+    await recalculateProjectBudget();
 
     return NextResponse.json(updated);
   } catch (error) {
-    console.error(error);
-    return new NextResponse("Bad Request", { status: 400 });
+    console.error("Erreur PATCH /api/budget/[id]:", error);
+    return NextResponse.json({ error: "Erreur serveur" }, { status: 500 });
   }
 }
 
-export async function DELETE(req: Request, { params }: { params: { id: string } }) {
+/**
+ * DELETE /api/budget/[id] — Supprime une entrée budget.
+ * Accessible à tous les utilisateurs authentifiés.
+ * Recalcule automatiquement le totalBudget.
+ */
+export async function DELETE(_request: NextRequest, { params }: RouteParams) {
+  const session = await requireAuth();
+  if (!session) {
+    return NextResponse.json({ error: "Non autorisé" }, { status: 401 });
+  }
+
+  const { id } = await params;
+
   try {
-    const session = await auth();
-    if (!session?.user) return new NextResponse("Unauthorized", { status: 401 });
-    if (session.user.role !== "ADMIN") return new NextResponse("Forbidden", { status: 403 });
+    await prisma.budgetEntry.delete({ where: { id } });
 
-    await prisma.budgetEntry.delete({
-      where: { id: params.id }
-    });
+    // Recalculer le totalBudget du projet
+    await recalculateProjectBudget();
 
-    return new NextResponse(null, { status: 204 });
+    return NextResponse.json({ success: true });
   } catch (error) {
-    console.error(error);
-    return new NextResponse("Internal Server Error", { status: 500 });
+    console.error("Erreur DELETE /api/budget/[id]:", error);
+    return NextResponse.json({ error: "Erreur serveur" }, { status: 500 });
   }
 }

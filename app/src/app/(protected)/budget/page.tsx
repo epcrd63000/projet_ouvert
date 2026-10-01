@@ -14,7 +14,7 @@ export default async function BudgetPage() {
   }
 
   const project = await prisma.project.findFirst();
-  const totalBudget = project?.totalBudget || 0;
+  const totalBudget = Number(project?.totalBudget) || 0;
 
   const entries = await prisma.budgetEntry.findMany({
     orderBy: { date: "desc" },

@@ -8,7 +8,7 @@ const { auth } = NextAuth(authConfig);
  * Middleware d'authentification et de protection des routes (Edge Runtime).
  * Intercepte les requêtes pour appliquer les règles d'accès sécurisé et de redirection.
  */
-export default auth((req) => {
+export default auth((req: any) => { // eslint-disable-line
   const isLoggedIn = !!req.auth?.user;
   const { pathname } = req.nextUrl;
 

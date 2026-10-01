@@ -1,33 +1,40 @@
 import { NextResponse } from "next/server";
-import { auth } from "@/lib/auth";
-import prisma from "@/lib/prisma";
+import { prisma } from "@/lib/prisma";
+import { requireAuth } from "@/lib/permissions";
 import { format } from "date-fns";
 
 export const dynamic = "force-dynamic";
 
+/**
+ * GET /api/budget/export — Exporte les entrées budget en CSV.
+ */
 export async function GET() {
-  try {
-    const session = await auth();
-    if (!session?.user) return new NextResponse("Unauthorized", { status: 401 });
+  const session = await requireAuth();
+  if (!session) {
+    return NextResponse.json({ error: "Non autorisé" }, { status: 401 });
+  }
 
+  try {
     const entries = await prisma.budgetEntry.findMany({
       orderBy: { date: "desc" },
-      include: { createdBy: { select: { name: true } } }
+      include: { createdBy: { select: { name: true } } },
     });
 
     const header = "ID,Libellé,Montant,Date,Catégorie,Statut,Créé par,Commentaire\n";
-    const rows = entries.map(e => {
-      return [
-        e.id,
-        `"${e.label.replace(/"/g, '""')}"`,
-        e.amount,
-        format(new Date(e.date), "yyyy-MM-dd"),
-        e.category,
-        e.status,
-        `"${e.createdBy.name.replace(/"/g, '""')}"`,
-        `"${(e.comment || "").replace(/"/g, '""')}"`
-      ].join(",");
-    }).join("\n");
+    const rows = entries
+      .map((e) => {
+        return [
+          e.id,
+          `"${e.label.replace(/"/g, '""')}"`,
+          e.amount,
+          format(new Date(e.date), "yyyy-MM-dd"),
+          e.category,
+          e.status,
+          `"${(e.createdBy?.name || "Utilisateur supprimé").replace(/"/g, '""')}"`,
+          `"${(e.comment || "").replace(/"/g, '""')}"`,
+        ].join(",");
+      })
+      .join("\n");
 
     const csvData = header + rows;
 
@@ -38,7 +45,7 @@ export async function GET() {
       },
     });
   } catch (error) {
-    console.error(error);
-    return new NextResponse("Internal Server Error", { status: 500 });
+    console.error("Erreur GET /api/budget/export:", error);
+    return NextResponse.json({ error: "Erreur serveur" }, { status: 500 });
   }
 }
