@@ -126,7 +126,23 @@ export default function KanbanPage() {
         });
 
         if (!res.ok) {
-          throw new Error("Impossible de créer la tâche. Vérifiez les informations et réessayez.");
+          const responseError = await res.json().catch(() => null);
+          throw new Error(
+            responseError?.error ??
+              "Impossible de créer la tâche. Vérifiez les informations et réessayez."
+          );
+        }
+
+        const createdTask: KanbanTask = await res.json();
+        const isVisibleInCurrentView =
+          (isAdmin && showAll) ||
+          createdTask.assignments.some((assignment) => assignment.user.id === session?.user?.id);
+        if (isVisibleInCurrentView) {
+          setTasks((previousTasks) =>
+            previousTasks.some((task) => task.id === createdTask.id)
+              ? previousTasks
+              : [...previousTasks, createdTask]
+          );
         }
 
         await fetchTasks();
@@ -135,7 +151,7 @@ export default function KanbanPage() {
         throw error;
       }
     },
-    [fetchTasks]
+    [fetchTasks, isAdmin, showAll, session?.user?.id]
   );
 
   const handleTaskClick = useCallback((task: KanbanTask) => {

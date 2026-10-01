@@ -1,5 +1,12 @@
 import { Role, MilestoneStatus } from "@prisma/client";
 
+// Ressources recensées dans le bilan final : APICIL + BDE + consommables FabLab.
+export const PROJECT_FUNDING = {
+  apicil: 2997,
+  bde: 116,
+  fablab: 70,
+} as const;
+
 /**
  * Projet singleton de référence pour l'année universitaire IMT 2026-2027.
  */
@@ -7,7 +14,7 @@ export const SEED_PROJECT = {
   id: "00000000-0000-0000-0000-000000000001",
   name: "Projet Ouvert IMT 2026-2027",
   description: "Projet d'ingénierie d'ouverture IMT Nord Europe - Promotion CI1 2026-2027",
-  totalBudget: 500.0,
+  totalBudget: PROJECT_FUNDING.apicil + PROJECT_FUNDING.bde + PROJECT_FUNDING.fablab,
   startDate: new Date("2026-09-14T08:00:00.000Z"),
   endDate: new Date("2027-05-11T18:00:00.000Z"),
 };

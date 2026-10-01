@@ -11,6 +11,7 @@ import { View, Views } from "react-big-calendar";
 import { CalendarDays, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { EventModal, EventFormData } from "@/components/agenda/EventModal";
+import styles from "./agenda.module.css";
 
 const locales = {
   fr: fr,
@@ -29,11 +30,12 @@ interface AppEvent {
   title: string;
   start: Date;
   end: Date;
-  type: "meeting" | "task" | "manual";
+  type: "meeting" | "task" | "manual" | "milestone";
   status: string;
   originalId: string;
   allDay?: boolean;
   isMine?: boolean;
+  color?: string;
 }
 
 export default function AgendaPage() {
@@ -100,21 +102,43 @@ export default function AgendaPage() {
   }
 
   return (
-    <div className="space-y-4 h-[calc(100vh-8rem)] flex flex-col">
-      <div className="flex items-center justify-between">
+    <div className={`flex min-h-0 flex-col gap-5 ${styles.agendaPage}`}>
+      <header className="flex flex-wrap items-center justify-between gap-4">
         <div className="flex items-center gap-3">
           <CalendarDays className="h-8 w-8 text-primary" />
           <div>
             <h1 className="text-3xl font-bold tracking-tight">Agenda</h1>
-            <p className="text-muted-foreground">Calendrier des réunions et des échéances</p>
+            <p className="text-sm text-muted-foreground">Réunions, échéances et jalons du projet</p>
           </div>
         </div>
-        <Button onClick={() => setIsModalOpen(true)} className="gap-2">
-          <Plus className="h-4 w-4" /> Nouvel événement
-        </Button>
-      </div>
+        <div className="flex flex-wrap items-center gap-3">
+          <div aria-label="Légende des événements" className="flex flex-wrap gap-x-3 gap-y-1 text-xs text-muted-foreground">
+            {[
+              ["Réunion", "meeting"],
+              ["Tâche", "task"],
+              ["Jalon", "milestone"],
+              ["Événement", "manual"],
+            ].map(([label, type]) => (
+              <span key={type} className="inline-flex items-center gap-1.5">
+                <span
+                  aria-hidden="true"
+                  className="h-2.5 w-2.5 rounded-sm"
+                  style={{ backgroundColor: `hsl(var(--agenda-${type}))` }}
+                />
+                {label}
+              </span>
+            ))}
+          </div>
+          <Button onClick={() => setIsModalOpen(true)} className="gap-2" size="sm">
+            <Plus className="h-4 w-4" /> Nouvel événement
+          </Button>
+        </div>
+      </header>
 
-      <div className="flex-1 bg-card p-4 rounded-lg border shadow-sm flex flex-col">
+      <section
+        aria-label="Calendrier du projet"
+        className={`flex min-h-0 flex-1 flex-col rounded-xl border bg-card p-3 shadow-sm sm:p-5 ${styles.calendarPanel}`}
+      >
         <Calendar
           localizer={localizer}
           events={events}
@@ -129,39 +153,38 @@ export default function AgendaPage() {
             toolbar: CustomCalendarToolbar,
           }}
           onSelectEvent={handleSelectEvent}
-          className="flex-1"
+          className={`min-h-0 flex-1 ${styles.calendar}`}
           eventPropGetter={(event: AppEvent) => {
-            let backgroundColor = "hsl(var(--primary))";
-            let opacity = 1;
-            let border = "none";
-            let color = "hsl(var(--primary-foreground))";
-            
+            let backgroundColor = "hsl(var(--agenda-task))";
+            let color = "hsl(var(--agenda-task-foreground))";
+            let border = "1px solid transparent";
+
             if (event.type === "meeting") {
-              backgroundColor = "hsl(var(--accent))"; 
+              backgroundColor = "hsl(var(--agenda-meeting))";
+              color = "hsl(var(--agenda-meeting-foreground))";
+            } else if (event.type === "milestone") {
+              backgroundColor = "hsl(var(--agenda-milestone))";
+              color = "hsl(var(--agenda-milestone-foreground))";
             } else if (event.type === "manual") {
-              backgroundColor = "#10b981";
-            } else if (event.type === "task") {
-              if (event.isMine === false) {
-                // Admin viewing someone else's task
-                backgroundColor = "transparent";
-                border = "2px dashed hsl(var(--primary))";
-                opacity = 0.7;
-                color = "hsl(var(--foreground))"; // Dark text since bg is transparent
-              }
+              backgroundColor = event.color || "hsl(var(--agenda-manual))";
+              color = "hsl(var(--agenda-manual-foreground))";
             }
-            
-            return { 
-              style: { 
+
+            if (event.type === "task" && event.isMine === false) {
+              border = "1px dashed hsl(var(--agenda-task-foreground) / 0.7)";
+            }
+
+            return {
+              style: {
                 backgroundColor,
                 border,
-                opacity,
                 borderRadius: "4px",
-                color
-              } 
+                color,
+              },
             };
           }}
         />
-      </div>
+      </section>
 
       <EventModal
         isOpen={isModalOpen}

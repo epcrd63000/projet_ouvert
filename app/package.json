@@ -8,9 +8,11 @@
     "start": "next start",
     "lint": "next lint",
     "test:task-assignment": "tsx src/lib/task-behavior.test.ts",
+    "test:project-budget": "tsx src/lib/project-budget.test.ts",
     "prisma:generate": "prisma generate",
     "postinstall": "prisma generate",
     "db:seed": "prisma db seed",
+    "db:update-project-budget": "tsx prisma/update-project-budget.ts",
     "db:verify": "tsx prisma/verify-db.ts"
   },
   "dependencies": {

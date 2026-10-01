@@ -116,7 +116,7 @@ Graphiques mis à jour **en temps réel** affichant les KPI suivants :
 | ⏳ Countdown prochaine réunion | Compte à rebours affiché |
 
 ### 5.6 Gestion du Budget
-- Un budget global défini pour le projet
+- Un budget global de 3 183 € (2 997 € APICIL, 116 € BDE et 70 € FabLab), distinct des dépenses enregistrées
 - **Tableau de dépenses modifiable** (saisie manuelle)
 - **Export** du tableau (format CSV ou Excel)
 - Accessible et modifiable par les Admins

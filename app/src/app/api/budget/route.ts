@@ -19,24 +19,6 @@ const budgetSchema = z.object({
 });
 
 /**
- * Recalcule le totalBudget du projet singleton à partir de toutes les entrées.
- */
-async function recalculateProjectBudget() {
-  const project = await prisma.project.findFirst();
-  if (!project) return;
-
-  const result = await prisma.budgetEntry.aggregate({
-    where: { projectId: project.id },
-    _sum: { amount: true },
-  });
-
-  await prisma.project.update({
-    where: { id: project.id },
-    data: { totalBudget: result._sum.amount ?? 0 },
-  });
-}
-
-/**
  * GET /api/budget — Récupère toutes les entrées budget avec pagination.
  * Paramètres query : page (défaut 1), limit (défaut 50).
  */
@@ -75,7 +57,7 @@ export async function GET(request: NextRequest) {
 /**
  * POST /api/budget — Crée une nouvelle entrée budget.
  * Accessible à tous les utilisateurs authentifiés.
- * Recalcule automatiquement le totalBudget du projet.
+ * Le plafond de financement du projet reste distinct des dépenses enregistrées.
  */
 export async function POST(request: NextRequest) {
   const session = await requireAuth();
@@ -114,9 +96,6 @@ export async function POST(request: NextRequest) {
         createdById: session.user.id,
       },
     });
-
-    // Recalculer le totalBudget du projet
-    await recalculateProjectBudget();
 
     return NextResponse.json(newEntry, { status: 201 });
   } catch (error) {

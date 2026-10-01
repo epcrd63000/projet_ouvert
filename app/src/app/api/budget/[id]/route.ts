@@ -23,27 +23,9 @@ const updateBudgetSchema = z.object({
 });
 
 /**
- * Recalcule le totalBudget du projet singleton.
- */
-async function recalculateProjectBudget() {
-  const project = await prisma.project.findFirst();
-  if (!project) return;
-
-  const result = await prisma.budgetEntry.aggregate({
-    where: { projectId: project.id },
-    _sum: { amount: true },
-  });
-
-  await prisma.project.update({
-    where: { id: project.id },
-    data: { totalBudget: result._sum.amount ?? 0 },
-  });
-}
-
-/**
  * PATCH /api/budget/[id] — Met à jour une entrée budget.
  * Accessible à tous les utilisateurs authentifiés.
- * Recalcule automatiquement le totalBudget.
+ * Le plafond de financement du projet reste distinct des dépenses enregistrées.
  */
 export async function PATCH(request: NextRequest, { params }: RouteParams) {
   const session = await requireAuth();
@@ -79,9 +61,6 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
       },
     });
 
-    // Recalculer le totalBudget du projet
-    await recalculateProjectBudget();
-
     return NextResponse.json(updated);
   } catch (error) {
     console.error("Erreur PATCH /api/budget/[id]:", error);
@@ -92,7 +71,6 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
 /**
  * DELETE /api/budget/[id] — Supprime une entrée budget.
  * Accessible à tous les utilisateurs authentifiés.
- * Recalcule automatiquement le totalBudget.
  */
 export async function DELETE(_request: NextRequest, { params }: RouteParams) {
   const session = await requireAuth();
@@ -104,9 +82,6 @@ export async function DELETE(_request: NextRequest, { params }: RouteParams) {
 
   try {
     await prisma.budgetEntry.delete({ where: { id } });
-
-    // Recalculer le totalBudget du projet
-    await recalculateProjectBudget();
 
     return NextResponse.json({ success: true });
   } catch (error) {
