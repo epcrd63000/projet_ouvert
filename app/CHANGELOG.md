@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.2.1] — 2026-10-01
+
+### ✅ Module Tâches
+- La création standard assigne désormais la tâche à l'utilisateur connecté ; une action réservée aux Admins permet de l'assigner à un ou plusieurs membres.
+- Les tâches datées restent synchronisées avec l'agenda et le formulaire propose les deux prochaines réunions comme raccourcis d'échéance.
+- Les membres ne peuvent consulter que leurs tâches, même en passant un identifiant utilisateur à l'API.
+
 ## [1.2.0] — 2026-10-01
 
 ### 👥 Module Utilisateurs & Paramètres

@@ -11,6 +11,7 @@ export const createTaskSchema = z.object({
   dueDate: z.string().datetime().optional().nullable(),
   parentId: z.string().uuid().optional().nullable(),
   meetingId: z.string().uuid().optional().nullable(),
+  assignmentMode: z.enum(["self", "others"]).default("self"),
   assigneeIds: z.array(z.string().uuid()).optional().default([]),
 });
 

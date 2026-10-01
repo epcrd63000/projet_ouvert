@@ -79,8 +79,11 @@ Développement d'une **application web de suivi de projet** pour une équipe de 
 - **Tout le monde** peut rédiger et modifier le compte rendu (pendant et après la réunion)
 
 ### 5.2 Gestion des Tâches
-- Tâches assignées par les Admins à un ou plusieurs membres
-- Chaque tâche contient : titre, description, assigné, date d'échéance, statut, priorité
+- Chaque utilisateur peut créer une tâche qui lui est automatiquement assignée
+- Les Admins disposent d'une action dédiée pour assigner une tâche à un ou plusieurs membres
+- Chaque tâche contient : titre, description, assigné, date d'échéance facultative, statut, priorité
+- Les tâches avec une échéance apparaissent dans l'agenda à cette date ; les membres voient leurs tâches et les Admins conservent la vue globale
+- Le formulaire propose les deux prochaines réunions comme raccourcis pour choisir la date d'échéance, qui reste facultative
 - Les membres cochent leur avancement entre les réunions
 - L'avancement de chacun est **visible par tous** (transparence totale)
 
@@ -130,6 +133,7 @@ Graphiques mis à jour **en temps réel** affichant les KPI suivants :
 - **3 vues disponibles** : Jour / Semaine / Mois (switch rapide entre les vues)
 - Chaque membre peut **créer des événements** personnels ou d'équipe
 - Les **réunions planifiées** apparaissent automatiquement dans l'agenda (synchronisation)
+- Les tâches datées apparaissent dans l'agenda selon leurs assignations (vue globale pour les Admins)
 - Les **jalons du Gantt** apparaissent automatiquement dans l'agenda (synchronisation)
 - Un événement contient : titre, description, date/heure de début, date/heure de fin, couleur, visibilité (personnel ou équipe)
 - Possibilité d'événements **toute la journée** (all-day)

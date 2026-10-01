@@ -4,8 +4,9 @@ import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-
 import { Plus } from "lucide-react";
+import { format } from "date-fns";
+import { fr } from "date-fns/locale";
 
 interface User {
   id: string;
@@ -16,10 +17,18 @@ interface User {
 interface TaskModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSubmit: (data: TaskFormData) => void;
+  onSubmit: (data: TaskFormData) => Promise<void>;
   users: User[];
+  upcomingMeetings: MeetingOption[];
   currentUserId: string;
   isAdmin: boolean;
+  assignToOthers: boolean;
+}
+
+interface MeetingOption {
+  id: string;
+  title: string;
+  scheduledAt: string;
 }
 
 export interface TaskFormData {
@@ -27,19 +36,30 @@ export interface TaskFormData {
   description: string;
   priority: "LOW" | "NORMAL" | "HIGH" | "CRITICAL";
   dueDate: string;
+  assignmentMode: "self" | "others";
   assigneeIds: string[];
 }
 
 /**
- * Modale de création d'une nouvelle tâche avec sélection de priorité et d'assignés.
+ * Modale de création d'une tâche personnelle ou d'une tâche assignée par un admin.
  */
-export function TaskModal({ isOpen, onClose, onSubmit, users, currentUserId, isAdmin }: TaskModalProps) {
+export function TaskModal({
+  isOpen,
+  onClose,
+  onSubmit,
+  users,
+  upcomingMeetings,
+  currentUserId,
+  isAdmin,
+  assignToOthers,
+}: TaskModalProps) {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [priority, setPriority] = useState<TaskFormData["priority"]>("NORMAL");
   const [dueDate, setDueDate] = useState("");
   const [assigneeIds, setAssigneeIds] = useState<string[]>([currentUserId]);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState("");
 
   React.useEffect(() => {
     if (isOpen) {
@@ -47,9 +67,10 @@ export function TaskModal({ isOpen, onClose, onSubmit, users, currentUserId, isA
       setDescription("");
       setPriority("NORMAL");
       setDueDate("");
-      setAssigneeIds([currentUserId]);
+      setAssigneeIds(assignToOthers ? [] : [currentUserId]);
+      setSubmitError("");
     }
-  }, [isOpen, currentUserId]);
+  }, [isOpen, currentUserId, assignToOthers]);
 
   if (!isOpen) return null;
 
@@ -62,18 +83,30 @@ export function TaskModal({ isOpen, onClose, onSubmit, users, currentUserId, isA
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
-    await onSubmit({ title, description, priority, dueDate, assigneeIds });
-    setIsSubmitting(false);
-    onClose();
+    setSubmitError("");
+    try {
+      await onSubmit({
+        title,
+        description,
+        priority,
+        dueDate,
+        assignmentMode: assignToOthers ? "others" : "self",
+        assigneeIds: assignToOthers ? assigneeIds : [currentUserId],
+      });
+      onClose();
+    } catch (error) {
+      setSubmitError(error instanceof Error ? error.message : "Impossible de créer la tâche.");
+    } finally {
+      setIsSubmitting(false);
+    }
   };
-
-  const assignableUsers = users; // All users can be assigned now
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
       <div className="w-full max-w-lg rounded-lg border bg-background p-6 shadow-lg">
         <h2 className="mb-4 text-lg font-bold flex items-center gap-2">
-          <Plus className="h-5 w-5" /> Nouvelle tâche
+          <Plus className="h-5 w-5" />
+          {assignToOthers ? "Nouvelle tâche pour un membre" : "Nouvelle tâche"}
         </h2>
 
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -126,6 +159,22 @@ export function TaskModal({ isOpen, onClose, onSubmit, users, currentUserId, isA
           {/* Date d'échéance */}
           <div className="space-y-1">
             <Label htmlFor="due">Date d&apos;échéance</Label>
+            {upcomingMeetings.length > 0 && (
+              <div className="flex flex-wrap gap-2">
+                {upcomingMeetings.map((meeting, index) => (
+                  <Button
+                    key={meeting.id}
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setDueDate(format(new Date(meeting.scheduledAt), "yyyy-MM-dd"))}
+                  >
+                    {index === 0 ? "Prochaine réunion" : "Réunion suivante"} · {meeting.title} (
+                    {format(new Date(meeting.scheduledAt), "d MMM", { locale: fr })})
+                  </Button>
+                ))}
+              </div>
+            )}
             <Input
               id="due"
               type="date"
@@ -135,29 +184,38 @@ export function TaskModal({ isOpen, onClose, onSubmit, users, currentUserId, isA
           </div>
 
           {/* Assignés */}
-          <div className="space-y-1">
-            <Label>Assigner à</Label>
-            <div className="flex flex-wrap gap-2">
-              {assignableUsers.map((user) => (
-                <Button
-                  key={user.id}
-                  type="button"
-                  variant={assigneeIds.includes(user.id) ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => toggleAssignee(user.id)}
-                >
-                  {user.name}
-                </Button>
-              ))}
+          {assignToOthers && isAdmin ? (
+            <div className="space-y-1">
+              <Label>Assigner à</Label>
+              <div className="flex flex-wrap gap-2">
+                {users.map((user) => (
+                  <Button
+                    key={user.id}
+                    type="button"
+                    variant={assigneeIds.includes(user.id) ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => toggleAssignee(user.id)}
+                  >
+                    {user.name}
+                  </Button>
+                ))}
+              </div>
             </div>
-          </div>
+          ) : (
+            <p className="text-sm text-muted-foreground">Cette tâche vous sera assignée.</p>
+          )}
+
+          {submitError && <p className="text-sm text-destructive">{submitError}</p>}
 
           {/* Actions */}
           <div className="flex justify-end gap-2 pt-2">
             <Button type="button" variant="outline" onClick={onClose}>
               Annuler
             </Button>
-            <Button type="submit" disabled={isSubmitting || !title.trim()}>
+            <Button
+              type="submit"
+              disabled={isSubmitting || !title.trim() || (assignToOthers && assigneeIds.length === 0)}
+            >
               {isSubmitting ? "Création..." : "Créer la tâche"}
             </Button>
           </div>

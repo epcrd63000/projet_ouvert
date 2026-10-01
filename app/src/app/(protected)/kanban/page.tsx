@@ -6,6 +6,7 @@ import { KanbanBoard, KanbanTask } from "@/components/kanban/KanbanBoard";
 import { TaskModal, TaskFormData } from "@/components/kanban/TaskModal";
 import { Button } from "@/components/ui/button";
 import { CheckSquare, Eye, User as UserIcon, Plus } from "lucide-react";
+import { getUpcomingMeetings, ScheduledMeeting } from "@/lib/meeting-options";
 
 interface User {
   id: string;
@@ -21,7 +22,9 @@ export default function KanbanPage() {
   const { data: session } = useSession();
   const [tasks, setTasks] = useState<KanbanTask[]>([]);
   const [users, setUsers] = useState<User[]>([]);
+  const [upcomingMeetings, setUpcomingMeetings] = useState<ScheduledMeeting[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isAssignToOthers, setIsAssignToOthers] = useState(false);
   const [showAll, setShowAll] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -60,10 +63,23 @@ export default function KanbanPage() {
     }
   }, []);
 
+  const fetchUpcomingMeetings = useCallback(async () => {
+    try {
+      const res = await fetch("/api/meetings");
+      if (res.ok) {
+        const meetings: ScheduledMeeting[] = await res.json();
+        setUpcomingMeetings(getUpcomingMeetings(meetings));
+      }
+    } catch (error) {
+      console.error("Erreur chargement réunions à venir:", error);
+    }
+  }, []);
+
   useEffect(() => {
     fetchTasks();
     fetchUsers();
-  }, [fetchTasks, fetchUsers]);
+    fetchUpcomingMeetings();
+  }, [fetchTasks, fetchUsers, fetchUpcomingMeetings]);
 
   /**
    * Déplace une tâche (mise à jour optimiste du statut et de la position).
@@ -109,11 +125,14 @@ export default function KanbanPage() {
           }),
         });
 
-        if (res.ok) {
-          fetchTasks();
+        if (!res.ok) {
+          throw new Error("Impossible de créer la tâche. Vérifiez les informations et réessayez.");
         }
+
+        await fetchTasks();
       } catch (error) {
         console.error("Erreur création tâche:", error);
+        throw error;
       }
     },
     [fetchTasks]
@@ -142,6 +161,18 @@ export default function KanbanPage() {
           </div>
         </div>
         <div className="flex items-center gap-2">
+          {isAdmin && (
+            <Button
+              variant="outline"
+              onClick={() => {
+                setIsAssignToOthers(true);
+                setIsModalOpen(true);
+              }}
+              className="gap-2"
+            >
+              <Plus className="h-4 w-4" /> Tâche pour un membre
+            </Button>
+          )}
           {/* Toggle vue globale (Admin) */}
           {isAdmin && (
             <Button
@@ -154,8 +185,14 @@ export default function KanbanPage() {
               {showAll ? "Vue globale" : "Mes tâches"}
             </Button>
           )}
-          {/* Bouton création (Tous) */}
-          <Button onClick={() => setIsModalOpen(true)} className="gap-2">
+          {/* Création de tâche pour soi, accessible à tous */}
+          <Button
+            onClick={() => {
+              setIsAssignToOthers(false);
+              setIsModalOpen(true);
+            }}
+            className="gap-2"
+          >
             <Plus className="h-4 w-4" /> Nouvelle tâche
           </Button>
         </div>
@@ -174,8 +211,10 @@ export default function KanbanPage() {
         onClose={() => setIsModalOpen(false)}
         onSubmit={handleCreateTask}
         users={users}
+        upcomingMeetings={upcomingMeetings}
         currentUserId={session?.user?.id || ""}
         isAdmin={isAdmin}
+        assignToOthers={isAssignToOthers}
       />
     </div>
   );

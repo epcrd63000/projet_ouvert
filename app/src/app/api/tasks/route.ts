@@ -1,13 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { requireAuth, requireAdmin } from "@/lib/permissions";
+import { requireAuth } from "@/lib/permissions";
 import { createTaskSchema } from "@/lib/validations/task";
 import { createNotification } from "@/lib/notifications";
+import { getTaskListAssigneeId, resolveTaskAssignees } from "@/lib/task-assignment";
 
 /**
  * GET /api/tasks — Récupère les tâches.
- * Paramètres query : userId (optionnel), projectId (optionnel).
- * Les MEMBER ne voient que leurs tâches, les ADMIN voient tout.
+ * Paramètre query : userId (optionnel, ADMIN seulement) ou all=true (ADMIN seulement).
+ * Les MEMBER ne voient que leurs tâches.
  */
 export async function GET(request: NextRequest) {
   const session = await requireAuth();
@@ -16,18 +17,20 @@ export async function GET(request: NextRequest) {
   }
 
   const { searchParams } = new URL(request.url);
-  const userId = searchParams.get("userId");
+  const requestedUserId = searchParams.get("userId");
   const showAll = searchParams.get("all") === "true";
 
   try {
     // Requête de base avec relations
     const where: Record<string, unknown> = {};
-
-    // Les MEMBER ne voient que leurs tâches sauf si Admin demande tout
-    if (!showAll || session.user.role !== "ADMIN") {
-      where.assignments = {
-        some: { userId: userId || session.user.id },
-      };
+    const assigneeId = getTaskListAssigneeId(
+      session.user.role,
+      session.user.id,
+      requestedUserId,
+      showAll
+    );
+    if (assigneeId) {
+      where.assignments = { some: { userId: assigneeId } };
     }
 
     const tasks = await prisma.task.findMany({
@@ -49,7 +52,7 @@ export async function GET(request: NextRequest) {
 }
 
 /**
- * POST /api/tasks — Crée une nouvelle tâche (ADMIN pour tout le monde, MEMBER pour lui-même).
+ * POST /api/tasks — Crée une tâche pour soi, ou pour un autre utilisateur si l'appelant est ADMIN.
  */
 export async function POST(request: NextRequest) {
   const session = await requireAuth();
@@ -68,9 +71,31 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    let { assigneeIds, dueDate, ...taskData } = parsed.data;
+    const { assigneeIds, assignmentMode, dueDate, ...taskData } = parsed.data;
+    const assignment = resolveTaskAssignees(
+      session.user.role,
+      session.user.id,
+      assignmentMode,
+      assigneeIds
+    );
+    if ("error" in assignment && assignment.error === "forbidden") {
+      return NextResponse.json(
+        { error: "Seuls les administrateurs peuvent assigner une tâche à quelqu’un d’autre" },
+        { status: 403 }
+      );
+    }
 
-    
+    if ("error" in assignment && assignment.error === "missing-assignee") {
+      return NextResponse.json(
+        { error: "Sélectionnez au moins une personne à assigner" },
+        { status: 400 }
+      );
+    }
+
+    if ("error" in assignment) {
+      return NextResponse.json({ error: "Impossible de déterminer les assignés" }, { status: 400 });
+    }
+    const resolvedAssigneeIds = assignment.assigneeIds;
 
     // Récupérer le projet singleton
     const project = await prisma.project.findFirst();
@@ -91,17 +116,11 @@ export async function POST(request: NextRequest) {
         position: (maxPosition._max.position ?? -1) + 1,
         projectId: project.id,
         createdById: session.user.id,
-      }
+        assignments: {
+          create: resolvedAssigneeIds.map((userId) => ({ userId })),
+        },
+      },
     });
-
-    if (assigneeIds.length > 0) {
-      await prisma.taskAssignment.createMany({
-        data: assigneeIds.map((userId: string) => ({
-          taskId: task.id,
-          userId
-        }))
-      });
-    }
 
     const taskWithRelations = await prisma.task.findUnique({
       where: { id: task.id },
@@ -113,7 +132,7 @@ export async function POST(request: NextRequest) {
     });
 
     // Envoyer une notification aux assignés
-    for (const userId of assigneeIds) {
+    for (const userId of resolvedAssigneeIds) {
       if (userId !== session.user.id) {
         await createNotification(
           userId,
