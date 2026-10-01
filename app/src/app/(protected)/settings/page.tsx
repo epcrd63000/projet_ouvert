@@ -2,10 +2,8 @@ import React from "react";
 import { auth } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import prisma from "@/lib/prisma";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-
 import { ThemeSettings } from "@/components/theme/ThemeSettings";
+import { UserManagement } from "@/components/settings/UserManagement";
 
 export const dynamic = "force-dynamic";
 
@@ -17,7 +15,14 @@ export default async function SettingsPage() {
   }
 
   const users = await prisma.user.findMany({
-    orderBy: { role: "asc" }
+    select: {
+      id: true,
+      name: true,
+      email: true,
+      role: true,
+      createdAt: true,
+    },
+    orderBy: { role: "asc" },
   });
 
   return (
@@ -31,37 +36,7 @@ export default async function SettingsPage() {
 
       <ThemeSettings />
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Membres de l&apos;équipe</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="border rounded-md">
-            <table className="w-full text-sm text-left">
-              <thead className="bg-muted text-muted-foreground">
-                <tr>
-                  <th className="p-3">Nom</th>
-                  <th className="p-3">Email</th>
-                  <th className="p-3">Rôle</th>
-                  <th className="p-3">Inscrit le</th>
-                </tr>
-              </thead>
-              <tbody>
-                {users.map((u) => (
-                  <tr key={u.id} className="border-t">
-                    <td className="p-3 font-medium">{u.name}</td>
-                    <td className="p-3">{u.email}</td>
-                    <td className="p-3">
-                      <Badge variant={u.role === "ADMIN" ? "default" : "secondary"}>{u.role}</Badge>
-                    </td>
-                    <td className="p-3">{new Date(u.createdAt).toLocaleDateString("fr-FR")}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </CardContent>
-      </Card>
+      <UserManagement initialUsers={users} currentUserId={session.user.id} />
     </div>
   );
 }

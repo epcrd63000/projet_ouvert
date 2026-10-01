@@ -6,7 +6,7 @@ import { createEventSchema } from "@/lib/validations/event";
 /**
  * GET /api/events — Récupère les événements du calendrier.
  * Paramètres query : start, end (filtres de date ISO 8601).
- * Fusionne réunions, tâches avec dueDate, et événements manuels.
+ * Fusionne réunions, tâches avec dueDate, événements manuels et jalons.
  */
 export async function GET(request: NextRequest) {
   const session = await requireAuth();
@@ -18,7 +18,7 @@ export async function GET(request: NextRequest) {
   const userId = session.user.id;
   const { searchParams } = new URL(request.url);
 
-  // Filtres de date optionnels pour limiter le chargement
+  // Filtres de date optionnels pour limiter le volume
   const startParam = searchParams.get("start");
   const endParam = searchParams.get("end");
   const dateFilter = {
@@ -28,7 +28,7 @@ export async function GET(request: NextRequest) {
   const hasDateFilter = Object.keys(dateFilter).length > 0;
 
   try {
-    // Récupérer les réunions (avec filtre de date optionnel)
+    // 1. Récupérer les réunions (avec filtre de date optionnel)
     const meetings = await prisma.meeting.findMany({
       where: hasDateFilter ? { scheduledAt: dateFilter } : undefined,
       include: {
@@ -38,7 +38,7 @@ export async function GET(request: NextRequest) {
       },
     });
 
-    // Récupérer les tâches avec dueDate (avec filtre et visibilité)
+    // 2. Récupérer les tâches avec dueDate
     const tasks = await prisma.task.findMany({
       where: {
         dueDate: { not: null, ...(hasDateFilter ? dateFilter : {}) },
@@ -51,16 +51,19 @@ export async function GET(request: NextRequest) {
       },
     });
 
-    // Récupérer les événements manuels (avec filtre de date et visibilité)
-    const manualEvents = await prisma.event.findMany({
+    // 3. Récupérer les événements manuels et de jalons
+    const dbEvents = await prisma.event.findMany({
       where: {
-        type: "MANUAL",
         ...(hasDateFilter ? { startAt: dateFilter } : {}),
-        OR: [{ visibility: "TEAM" }, { createdById: userId }],
+        OR: [
+          { type: "MILESTONE" },
+          { type: "MANUAL", visibility: "TEAM" },
+          { type: "MANUAL", createdById: userId },
+        ],
       },
     });
 
-    // Fusionner les résultats en format calendrier
+    // 4. Fusionner les résultats au format attendu par le calendrier
     const events = [
       ...meetings.map((m) => ({
         id: `meeting-${m.id}`,
@@ -87,15 +90,16 @@ export async function GET(request: NextRequest) {
           isMine,
         };
       }),
-      ...manualEvents.map((e) => ({
+      ...dbEvents.map((e) => ({
         id: `event-${e.id}`,
         title: e.title,
         start: e.startAt,
         end: e.endAt,
-        type: "manual",
+        type: e.type === "MILESTONE" ? "milestone" : "manual",
         status: "PLANNED",
         originalId: e.id,
         allDay: e.allDay,
+        color: e.color,
       })),
     ];
 

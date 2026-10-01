@@ -1,20 +1,35 @@
-import { NextResponse } from "next/server";
-import { auth } from "@/lib/auth";
-import prisma from "@/lib/prisma";
+import { NextRequest, NextResponse } from "next/server";
+import { prisma } from "@/lib/prisma";
+import { requireAuth } from "@/lib/permissions";
 
-export async function PATCH(req: Request, { params }: { params: { id: string } }) {
+interface RouteParams {
+  params: Promise<{ id: string }>;
+}
+
+/**
+ * PATCH /api/notifications/[id]/read — Marque une notification spécifique comme lue.
+ */
+export async function PATCH(_request: NextRequest, { params }: RouteParams) {
+  const session = await requireAuth();
+  if (!session) {
+    return NextResponse.json({ error: "Non autorisé" }, { status: 401 });
+  }
+
+  const { id } = await params;
+
   try {
-    const session = await auth();
-    if (!session?.user) return new NextResponse("Unauthorized", { status: 401 });
-
-    await prisma.notification.update({
-      where: { id: params.id, userId: session.user.id },
+    const result = await prisma.notification.updateMany({
+      where: { id, userId: session.user.id },
       data: { isRead: true },
     });
 
-    return new NextResponse(null, { status: 204 });
+    if (result.count === 0) {
+      return NextResponse.json({ error: "Notification introuvable" }, { status: 404 });
+    }
+
+    return NextResponse.json({ success: true });
   } catch (error) {
-    console.error(error);
-    return new NextResponse("Internal Server Error", { status: 500 });
+    console.error("Erreur PATCH /api/notifications/[id]/read:", error);
+    return NextResponse.json({ error: "Erreur serveur" }, { status: 500 });
   }
 }
