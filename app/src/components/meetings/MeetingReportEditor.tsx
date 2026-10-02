@@ -38,7 +38,7 @@ export const MeetingReportEditor = ({ meetingId, initialContent, isDownloaded, o
   const handleSave = async () => {
     if (!editor) return;
     setIsSaving(true);
-    const markdown = editor.storage.markdown.getMarkdown();
+    const markdown = (editor.storage as any).markdown.getMarkdown();
     await onSave(markdown);
     setIsSaving(false);
   };
