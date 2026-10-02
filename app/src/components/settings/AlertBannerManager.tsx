@@ -7,6 +7,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Megaphone } from "lucide-react";
 
+import { toast } from "sonner";
+
 export function AlertBannerManager() {
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
@@ -23,15 +25,15 @@ export function AlertBannerManager() {
       });
 
       if (res.ok) {
-        alert("Notification diffusée à toute l'équipe avec succès");
+        toast.success("Notification diffusée à toute l'équipe avec succès");
         setMessage("");
       } else {
         const err = await res.json();
-        alert(err.error || "Erreur lors de la diffusion");
+        toast.error(err.error || "Erreur lors de la diffusion");
       }
     } catch (err) {
       console.error(err);
-      alert("Erreur de communication avec le serveur");
+      toast.error("Erreur de communication avec le serveur");
     } finally {
       setLoading(false);
     }

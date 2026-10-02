@@ -1,14 +1,6 @@
 import prisma from "./prisma";
 
-type NotificationType = 
-  | "TASK_ASSIGNED"
-  | "TASK_DUE_SOON"
-  | "TASK_COMPLETED"
-  | "TASK_DELETED"
-  | "MEETING_SCHEDULED"
-  | "MEETING_REMINDER"
-  | "MEETING_CANCELLED"
-  | "MILESTONE_APPROACHING";
+import { NotificationType } from "@prisma/client";
 
 /**
  * Crée une notification pour un utilisateur donné.

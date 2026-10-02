@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-
+import { revalidatePath } from "next/cache";
 export const dynamic = "force-dynamic";
 import { prisma } from "@/lib/prisma";
 import { requireAuth } from "@/lib/permissions";
@@ -107,9 +107,12 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    revalidatePath("/meetings");
+
     return NextResponse.json(meeting, { status: 201 });
   } catch (error) {
     console.error("Erreur POST /api/meetings:", error);
     return NextResponse.json({ error: "Erreur serveur" }, { status: 500 });
   }
 }
+

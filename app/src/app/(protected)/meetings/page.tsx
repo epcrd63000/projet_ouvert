@@ -5,6 +5,7 @@ import { useSession } from "next-auth/react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { toast } from "sonner";
 import { MeetingModal, MeetingFormData } from "@/components/meetings/MeetingModal";
 import { Users as UsersIcon, Plus, Calendar, Clock } from "lucide-react";
 import { format } from "date-fns";
@@ -65,6 +66,24 @@ export default function MeetingsPage() {
   }, [fetchMeetings, fetchUsers]);
 
   const handleCreateMeeting = async (data: MeetingFormData) => {
+    // Optimistic update
+    const tempId = "temp-" + Date.now();
+    const newMeeting: Meeting = {
+      id: tempId,
+      title: data.title,
+      scheduledAt: new Date(data.scheduledAt).toISOString(),
+      status: data.status,
+      attendees: data.attendeeIds.map(id => {
+        const u = users.find(u => u.id === id);
+        return { user: u ? u : { id, name: "Membre", email: "" } };
+      })
+    };
+
+    setMeetings(prev => {
+      const newList = [...prev, newMeeting];
+      return newList.sort((a, b) => new Date(a.scheduledAt).getTime() - new Date(b.scheduledAt).getTime());
+    });
+
     try {
       const res = await fetch("/api/meetings", {
         method: "POST",
@@ -76,10 +95,18 @@ export default function MeetingsPage() {
       });
 
       if (res.ok) {
+        toast.success("Réunion créée avec succès");
+        // Refetch to get real ID and data from DB
         fetchMeetings();
+      } else {
+        const err = await res.json();
+        toast.error(err.error || "Impossible de créer la réunion");
+        fetchMeetings(); // Revert on failure
       }
     } catch (error) {
       console.error("Erreur création réunion:", error);
+      toast.error("Erreur de connexion lors de la création");
+      fetchMeetings(); // Revert on failure
     }
   };
 

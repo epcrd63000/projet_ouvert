@@ -33,6 +33,8 @@ interface RootLayoutProps {
   children: React.ReactNode;
 }
 
+import { Toaster } from "@/components/ui/sonner";
+
 export default function RootLayout({ children }: RootLayoutProps) {
   return (
     <html lang="fr" suppressHydrationWarning>
@@ -41,6 +43,7 @@ export default function RootLayout({ children }: RootLayoutProps) {
       >
         <Providers>
           {children}
+          <Toaster />
         </Providers>
       </body>
     </html>
