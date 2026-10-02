@@ -76,7 +76,7 @@ export function AlertBannerManager({ initialAlerts = [] }: { initialAlerts?: Ale
           Diffuser une alerte globale
         </CardTitle>
         <CardDescription>
-          Créez une bannière visible par tous les utilisateurs de l'application.
+          Créez une bannière visible par tous les utilisateurs de l&apos;application.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
