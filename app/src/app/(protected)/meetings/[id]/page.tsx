@@ -36,6 +36,24 @@ export default function MeetingDetailPage() {
   const [meeting, setMeeting] = useState<Meeting | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
+  const [prompts, setPrompts] = useState<{ id: string; title: string; content: string }[]>([]);
+  const [selectedPromptId, setSelectedPromptId] = useState<string>("");
+
+  const fetchPrompts = useCallback(async () => {
+    try {
+      const res = await fetch("/api/prompts");
+      if (res.ok) {
+        const data = await res.json();
+        setPrompts(data);
+        if (data.length > 0) {
+          setSelectedPromptId(data[0].id);
+        }
+      }
+    } catch (error) {
+      console.error("Erreur chargement prompts:", error);
+    }
+  }, []);
+
   const isAdmin = session?.user?.role === "ADMIN";
 
   const fetchMeeting = useCallback(async () => {
@@ -48,7 +66,7 @@ export default function MeetingDetailPage() {
         router.push("/meetings");
       }
     } catch (error) {
-      console.error("Erreur chargement rǸunion:", error);
+      console.error("Erreur chargement réunion:", error);
     } finally {
       setIsLoading(false);
     }
@@ -66,7 +84,7 @@ export default function MeetingDetailPage() {
         body: JSON.stringify({ reportContent: markdown }),
       });
       if (res.ok) {
-        toast.success("Compte rendu enregistrǸ avec succs.");
+        toast.success("Compte rendu enregistré avec succès.");
         fetchMeeting();
       } else {
         toast.error("Erreur lors de la sauvegarde.");
@@ -92,7 +110,7 @@ export default function MeetingDetailPage() {
   };
 
   const handleDelete = async () => {
-    if (!confirm("Voulez-vous vraiment supprimer cette rǸunion ?")) return;
+    if (!confirm("Voulez-vous vraiment supprimer cette réunion ?")) return;
     try {
       const res = await fetch(`/api/meetings/${params.id}`, {
         method: "DELETE",
@@ -105,31 +123,25 @@ export default function MeetingDetailPage() {
     }
   };
 
-  const PROMPT_TEXT = `Voici la transcription de notre rǸunion. Peux-tu me gǸnǸrer un compte rendu formatǸ en Markdown (sans en-tǸte de code Markdown, juste le texte) avec cette structure exacte :
+  
+  const getPromptText = () => {
+    const p = prompts.find(p => p.id === selectedPromptId);
+    if (!p) return "Aucun modèle de prompt disponible.";
+    let txt = p.content;
+    if (meeting) {
+      txt = txt.replace(/\{meeting\.title\}/g, meeting.title);
+      txt = txt.replace(/\{meeting\.date\}/g, new Date(meeting.scheduledAt).toLocaleDateString("fr-FR"));
+      const attendeesList = meeting.attendees.map(a => a.user.name).join(", ");
+      txt = txt.replace(/\{meeting\.attendees\}/g, attendeesList || "Aucun");
+    }
+    return txt;
+  };
 
-# Compte-Rendu de RǸunion : ${meeting?.title}
-
-## 1. 📅 Informations
-- **Date :** ${meeting ? new Date(meeting.scheduledAt).toLocaleDateString("fr-FR") : ""}
-- **Objectif :** [RǸsumǸr l'objectif en une phrase]
-- **Participants prǸsents :** [Lister les participants reconnus dans la transcription]
-
-## 2. 📝 Points clǸs abordǸs
-[Lister sous forme de puces les sujets principaux discutǸs]
-
-## 3. ✅ DǸcisions actǸes
-[Lister de fa?on claire et concise les dǸcisions finales prises]
-
-## 4. 🎯 Prochaines Ǹtapes
-[Sous forme de tirets : Qui fait quoi pour quand]
-
-Voici la transcription brute :
-[COLLEZ LA TRANSCRIPTION ICI]`;
 
   const handleCopyPrompt = async () => {
     try {
-      await navigator.clipboard.writeText(PROMPT_TEXT);
-      toast.success("Prompt IA copiǸ dans le presse-papier !");
+      await navigator.clipboard.writeText(getPromptText());
+      toast.success("Prompt IA copié dans le presse-papier !");
     } catch (err) {
       toast.error("Erreur lors de la copie.");
     }
@@ -148,43 +160,43 @@ Voici la transcription brute :
       <div className="flex items-center justify-between border-b pb-4">
         <div>
           <Button variant="ghost" onClick={() => router.push("/meetings")} className="mb-2 -ml-4">
-            ? Retour aux rǸunions
+            ← Retour aux réunions
           </Button>
           <h1 className="text-3xl font-bold tracking-tight flex items-center gap-2">
             {meeting.title}
             {meeting.isReportDownloaded ? (
               <span className="text-xs font-normal px-2 py-1 bg-green-100 text-green-700 rounded-full border border-green-200">
-                TǸlǸchargǸ
+                Téléchargé
               </span>
             ) : (
               <span className="text-xs font-normal px-2 py-1 bg-red-100 text-red-700 rounded-full border border-red-200">
-                Non tǸlǸchargǸ
+                Non téléchargé
               </span>
             )}
           </h1>
           <p className="text-muted-foreground mt-1">
-            PrǸvue le : {new Date(meeting.scheduledAt).toLocaleString("fr-FR")}
+            Prévue le : {new Date(meeting.scheduledAt).toLocaleString("fr-FR")}
           </p>
         </div>
         <div className="flex gap-2">
           {isAdmin && (
             <Button variant="destructive" onClick={handleDelete}>
-              Supprimer la rǸunion
+              Supprimer la réunion
             </Button>
           )}
         </div>
       </div>
 
       <div className="grid gap-6 md:grid-cols-4">
-        {/* Colonne latǸrale */}
+        {/* Colonne latérale */}
         <div className="md:col-span-1 space-y-4">
           <div className="rounded-xl border bg-primary/5 p-4 shadow-sm border-primary/20">
             <h3 className="font-semibold pb-2 mb-2 flex items-center gap-2 text-primary">
               <Bot className="h-5 w-5" />
-              G avec l&apos;IA
+              Générer avec l&apos;IA
             </h3>
             <p className="text-sm text-muted-foreground mb-4">
-              Copiez ce prompt prǸ-formatǸ, collez-le dans ChatGPT/Claude avec votre transcription, puis collez le rǸsultat Markdown dans l&apos;.
+              Copiez ce prompt pré-formaté, collez-le dans ChatGPT/Claude avec votre transcription, puis collez le résultat Markdown dans l&apos;éditeur.
             </p>
             <Button onClick={handleCopyPrompt} className="w-full flex gap-2">
               <Copy className="h-4 w-4" /> Copier le Prompt IA
@@ -194,7 +206,7 @@ Voici la transcription brute :
           <div className="rounded-xl border bg-card p-4 shadow-sm">
             <h3 className="font-semibold border-b pb-2 mb-2">Informations</h3>
             <p className="text-sm mb-1"><strong>Statut :</strong> {meeting.status}</p>
-            <p className="text-sm"><strong>CrǸǸe par :</strong> {meeting.createdBy?.name}</p>
+            <p className="text-sm"><strong>Créée par :</strong> {meeting.createdBy?.name}</p>
           </div>
           
           <div className="rounded-xl border bg-card p-4 shadow-sm">
@@ -208,7 +220,7 @@ Voici la transcription brute :
           </div>
         </div>
 
-        {/* ?diteur Markdown */}
+        {/* Éditeur Markdown */}
         <div className="md:col-span-3 space-y-4">
           <div className="rounded-xl border bg-card p-4 shadow-sm flex flex-col h-full min-h-[500px]">
             <h3 className="font-semibold mb-4 text-lg">Compte Rendu (Markdown)</h3>
