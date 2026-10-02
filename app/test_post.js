@@ -1,1 +1,0 @@
-fetch('http://localhost:3000/api/meetings', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ title: 'Test API', scheduledAt: new Date().toISOString(), status: 'PLANNED', attendeeIds: [] }) }).then(res => res.json()).then(console.log).catch(console.error);
