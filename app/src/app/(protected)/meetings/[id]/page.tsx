@@ -181,10 +181,10 @@ Voici la transcription brute :
           <div className="rounded-xl border bg-primary/5 p-4 shadow-sm border-primary/20">
             <h3 className="font-semibold pb-2 mb-2 flex items-center gap-2 text-primary">
               <Bot className="h-5 w-5" />
-              GǸnǸrer avec l'IA
+              G avec l&apos;IA
             </h3>
             <p className="text-sm text-muted-foreground mb-4">
-              Copiez ce prompt prǸ-formatǸ, collez-le dans ChatGPT/Claude avec votre transcription, puis collez le rǸsultat Markdown dans l'Ǹditeur.
+              Copiez ce prompt prǸ-formatǸ, collez-le dans ChatGPT/Claude avec votre transcription, puis collez le rǸsultat Markdown dans l&apos;.
             </p>
             <Button onClick={handleCopyPrompt} className="w-full flex gap-2">
               <Copy className="h-4 w-4" /> Copier le Prompt IA

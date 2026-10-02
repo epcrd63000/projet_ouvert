@@ -93,7 +93,7 @@ export const MeetingReportEditor = ({ meetingId, initialContent, isDownloaded, o
   };
 
   if (!editor) {
-    return <div>Chargement de l'éditeur...</div>;
+    return <div>Chargement de l&apos;éditeur...</div>;
   }
 
   return (
