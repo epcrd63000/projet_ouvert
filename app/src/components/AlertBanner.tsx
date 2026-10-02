@@ -14,19 +14,47 @@ export function AlertBanner() {
   const [alerts, setAlerts] = useState<AlertBannerData[]>([]);
 
   useEffect(() => {
-    const eventSource = new EventSource("/api/alerts");
+    let eventSource: EventSource | null = null;
+    let fallbackInterval: NodeJS.Timeout;
 
-    eventSource.onmessage = (event) => {
+    const connectSSE = () => {
+      if (eventSource) eventSource.close();
+      eventSource = new EventSource("/api/alerts");
+
+      eventSource.onmessage = (event) => {
+        try {
+          const data = JSON.parse(event.data);
+          setAlerts(data);
+        } catch (error) {
+          console.error("Failed to parse alert data", error);
+        }
+      };
+
+      eventSource.onerror = () => {
+        console.error("SSE connection lost. Reconnecting in 5s...");
+        eventSource?.close();
+        setTimeout(connectSSE, 5000);
+      };
+    };
+
+    const pollAlerts = async () => {
       try {
-        const data = JSON.parse(event.data);
-        setAlerts(data);
+        const res = await fetch("/api/alerts", { headers: { Accept: "application/json" } });
+        if (res.ok) {
+          const data = await res.json();
+          setAlerts(data);
+        }
       } catch (error) {
-        console.error("Failed to parse alert data", error);
+        console.error("Polling fallback failed", error);
       }
     };
 
+    connectSSE();
+    fallbackInterval = setInterval(pollAlerts, 60000); // 60s fallback poll
+
     return () => {
-      eventSource.close();
+      if (eventSource) eventSource.close();
+      clearInterval(fallbackInterval);
     };
   }, []);
 

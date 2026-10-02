@@ -118,3 +118,13 @@ Développement d'une **application web de suivi de projet** pour une équipe de 
 2. Extension du modèle *Task* pour inclure les tags/catégories et les champs spécifiques au tableau détaillé (% Avancement, Retard, Cause, Validation).
 3. Intégration d'une librairie d'export PDF (ex: `jspdf` ou `react-pdf`).
 4. Développement de la vue Data-Grid pour le Tableau de Suivi.
+
+
+---
+
+## 8. Évolutions Futures Envisagées (Scope V3 - Feuille de Route)
+Suite au déploiement de la V2 et au passage vers un modèle de transparence totale (Tableau M2V5), les priorités futures sont :
+- **Historique des modifications (Audit log)** : Tracer qui a modifié l'avancement, la date de rendu ou la priorité d'une tâche.
+- **Intégration Google Calendar** : Synchronisation bidirectionnelle avec l'agenda personnel des membres.
+- **Gestion multi-projets** : Permettre à l'équipe de gérer plusieurs voiliers ou projets en parallèle.
+- **Commentaires sur les tâches** : Fil de discussion intégré à chaque tâche.
