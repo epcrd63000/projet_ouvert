@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import prisma from "@/lib/prisma";
 import { ThemeSettings } from "@/components/theme/ThemeSettings";
 import { UserManagement } from "@/components/settings/UserManagement";
+import { AlertBannerManager } from "@/components/settings/AlertBannerManager";
 
 export const dynamic = "force-dynamic";
 
@@ -25,6 +26,11 @@ export default async function SettingsPage() {
     orderBy: { role: "asc" },
   });
 
+  const activeAlerts = await prisma.alertBanner.findMany({
+    where: { isActive: true },
+    orderBy: { createdAt: "desc" },
+  });
+
   return (
     <div className="space-y-6 max-w-4xl mx-auto">
       <div className="pb-4 border-b border-border">
@@ -35,6 +41,8 @@ export default async function SettingsPage() {
       </div>
 
       <ThemeSettings />
+
+      <AlertBannerManager initialAlerts={activeAlerts} />
 
       <UserManagement initialUsers={users} currentUserId={session.user.id} />
     </div>

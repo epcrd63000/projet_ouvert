@@ -53,3 +53,12 @@ Toutes les modifications notables apportées à ce projet sont consignées dans 
   - Correction des tooltips Recharts en mode sombre sur le Dashboard.
   - Alerte de dépassement de budget en rouge sur la jauge du Dashboard.
   - Formatage français complet (date-fns) et ajout de Badges colorés sur la page Réunions.
+
+## [2.0.0] - 2026-10-02
+### Added
+- Mise à jour majeure du Cahier des Charges (V2).
+- Ajout des spécifications pour l'export PDF des comptes rendus.
+- Ajout des spécifications pour la Bibliothèque de Prompts IA (templates Markdown).
+- Ajout des spécifications pour le système de Bannières d'Alerte globales.
+- Ajout des spécifications pour le Tableau de Suivi opérationnel (Vue perso/globale avec champs détaillés).
+- Ajout des catégories/tags pour le profilage des tâches.

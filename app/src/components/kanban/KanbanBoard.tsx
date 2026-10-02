@@ -30,6 +30,9 @@ export interface KanbanTask {
   validationCriteria?: string | null;
   progress?: number;
   delayReason?: string | null;
+  validator?: string | null;
+  tags?: string[];
+  lastUpdate?: string | null;
   createdById?: string | null;
   createdBy?: { id: string; name: string; email: string; avatarUrl?: string | null } | null;
   assignments: {

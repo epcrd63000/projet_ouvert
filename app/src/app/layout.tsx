@@ -33,6 +33,8 @@ interface RootLayoutProps {
   children: React.ReactNode;
 }
 
+import { AlertBanner } from "@/components/AlertBanner";
+
 /**
  * Layout racine de l'application Next.js 14.
  * Fournit la structure HTML de base, les polices globales et les thèmes.
@@ -43,7 +45,10 @@ export default function RootLayout({ children }: RootLayoutProps) {
       <body
         className={`min-h-screen bg-background font-sans text-foreground antialiased ${inter.variable}`}
       >
-        <Providers>{children}</Providers>
+        <Providers>
+          <AlertBanner />
+          {children}
+        </Providers>
       </body>
     </html>
   );

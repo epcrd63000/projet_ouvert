@@ -134,10 +134,13 @@ model Task {
   position           Int
   dueDate            DateTime?
   completedAt        DateTime?
+  tags               String[]
   workload           String?          // Charge de travail estimée (ex: "4h", "2 jours")
   deliverables       String?          // Livrables attendus (ex: "PCB, code testé, compte-rendu")
   validationCriteria String?          // Qui valide ? Comment ?
+  validator          String?
   progress           Int              @default(0) // % d'avancement (0 à 100)
+  lastUpdate         DateTime?
   delayReason        String?          // Cause du retard déclarée
   createdAt          DateTime         @default(now())
   updatedAt          DateTime         @updatedAt
@@ -276,4 +279,31 @@ model Event {
   createdBy          User?           @relation("EventCreator", fields: [createdById], references: [id], onDelete: SetNull)
   relatedMeeting     Meeting?        @relation(fields: [relatedMeetingId], references: [id], onDelete: SetNull)
   relatedMilestone   GanttMilestone? @relation(fields: [relatedMilestoneId], references: [id], onDelete: SetNull)
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// 3. NOUVEAUX MODÈLES (AI PROMPT & ALERT BANNER)
+// ─────────────────────────────────────────────────────────────────────────────
+
+model AiPrompt {
+  id        String   @id @default(uuid())
+  title     String
+  content   String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+enum AlertLevel {
+  INFO
+  WARNING
+  CRITICAL
+}
+
+model AlertBanner {
+  id        String     @id @default(uuid())
+  message   String
+  level     AlertLevel @default(INFO)
+  isActive  Boolean    @default(false)
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
 }

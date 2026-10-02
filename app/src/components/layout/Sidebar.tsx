@@ -12,7 +12,8 @@ import {
   BarChart3, 
   Banknote, 
   Bell, 
-  Settings 
+  Settings,
+  BookOpen
 } from "lucide-react";
 
 /**
@@ -37,6 +38,7 @@ const NAV_ITEMS: NavItem[] = [
   { href: "/gantt", label: "Gantt", icon: BarChart3 },
   { href: "/budget", label: "Budget", icon: Banknote },
   { href: "/notifications", label: "Notifications", icon: Bell },
+  { href: "/ai-prompts", label: "Prompts IA", icon: BookOpen },
   { href: "/settings", label: "Paramètres", icon: Settings, adminOnly: true },
 ];
 

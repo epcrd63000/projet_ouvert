@@ -59,7 +59,7 @@ async function verifyDatabase() {
   // 5. Contrôle des tables dans le schéma public
   console.log("\n3. Contrôle des tables dans information_schema...");
   const rawTables = await prisma.$queryRaw<Array<{ table_name: string }>>`
-    SELECT table_name 
+    SELECT CAST(table_name AS text) as table_name
     FROM information_schema.tables 
     WHERE table_schema = 'public' 
       AND table_type = 'BASE TABLE'
@@ -72,7 +72,8 @@ async function verifyDatabase() {
   const expectedTables = [
     "User", "Project", "Task", "TaskAssignment",
     "Meeting", "MeetingAttendee", "MeetingDecision",
-    "GanttMilestone", "BudgetEntry", "Notification", "Event"
+    "GanttMilestone", "BudgetEntry", "Notification", "Event",
+    "AiPrompt", "AlertBanner"
   ];
 
   const lowerDetected = new Set(detectedTables.map((t) => t.toLowerCase()));

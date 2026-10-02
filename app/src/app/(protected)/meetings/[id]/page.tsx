@@ -20,6 +20,9 @@ interface Meeting {
   createdBy: User;
 }
 
+import jsPDF from "jspdf";
+import html2canvas from "html2canvas";
+
 export default function MeetingDetailPage({ params }: { params: { id: string } }) {
   const router = useRouter();
   const { data: session } = useSession();
@@ -80,6 +83,37 @@ export default function MeetingDetailPage({ params }: { params: { id: string } }
     }
   };
 
+  const handleExportPDF = async () => {
+    const element = document.getElementById("meeting-report-content");
+    if (!element) return;
+    try {
+      const canvas = await html2canvas(element, { scale: 2 });
+      const imgData = canvas.toDataURL("image/png");
+      const pdf = new jsPDF("p", "mm", "a4");
+      
+      const pdfWidth = pdf.internal.pageSize.getWidth();
+      const pageHeight = pdf.internal.pageSize.getHeight();
+      const imgHeight = (canvas.height * pdfWidth) / canvas.width;
+      
+      let heightLeft = imgHeight;
+      let position = 0;
+      
+      pdf.addImage(imgData, "PNG", 0, position, pdfWidth, imgHeight);
+      heightLeft -= pageHeight;
+      
+      while (heightLeft > 0) {
+        position = heightLeft - imgHeight; // This moves the image up
+        pdf.addPage();
+        pdf.addImage(imgData, "PNG", 0, position, pdfWidth, imgHeight);
+        heightLeft -= pageHeight;
+      }
+      
+      pdf.save(`compte-rendu-${meeting?.title.replace(/[^a-z0-9]/gi, '_').toLowerCase()}.pdf`);
+    } catch (error) {
+      console.error("Erreur génération PDF:", error);
+    }
+  };
+
   if (isLoading) {
     return <div className="p-8 text-center text-muted-foreground">Chargement...</div>;
   }
@@ -100,14 +134,19 @@ export default function MeetingDetailPage({ params }: { params: { id: string } }
             Prévue le : {new Date(meeting.scheduledAt).toLocaleString("fr-FR")}
           </p>
         </div>
-        {isAdmin && (
-          <Button variant="destructive" onClick={handleDelete}>
-            Supprimer la réunion
+        <div className="flex gap-2">
+          <Button variant="secondary" onClick={handleExportPDF}>
+            Exporter en PDF
           </Button>
-        )}
+          {isAdmin && (
+            <Button variant="destructive" onClick={handleDelete}>
+              Supprimer la réunion
+            </Button>
+          )}
+        </div>
       </div>
 
-      <div className="grid gap-6 md:grid-cols-3">
+      <div id="meeting-report-content" className="grid gap-6 md:grid-cols-3 bg-background p-4 rounded-xl">
         <div className="md:col-span-1 space-y-4">
           <div className="rounded-lg border bg-card p-4 shadow-sm">
             <h3 className="font-semibold border-b pb-2 mb-2">Informations</h3>
@@ -136,7 +175,7 @@ export default function MeetingDetailPage({ params }: { params: { id: string } }
               onChange={(e) => setNotes(e.target.value)}
             />
             <div className="mt-4 flex justify-end">
-              <Button onClick={handleSaveNotes}>Enregistrer le compte rendu</Button>
+              <Button onClick={handleSaveNotes} data-html2canvas-ignore>Enregistrer le compte rendu</Button>
             </div>
           </div>
         </div>
