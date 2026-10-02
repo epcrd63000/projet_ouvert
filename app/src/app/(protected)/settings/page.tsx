@@ -32,11 +32,6 @@ export default async function SettingsPage() {
     });
   }
 
-  const activeAlerts = await prisma.alertBanner.findMany({
-    where: { isActive: true },
-    orderBy: { createdAt: "desc" },
-  });
-
   return (
     <div className="space-y-6 max-w-4xl mx-auto">
       <div className="pb-4 border-b border-border">
@@ -50,7 +45,7 @@ export default async function SettingsPage() {
       
       <UserSettings />
 
-      <AlertBannerManager initialAlerts={activeAlerts} />
+      <AlertBannerManager />
 
       {isAdmin && <UserManagement initialUsers={users} currentUserId={session.user.id} />}
     </div>
