@@ -29,6 +29,8 @@ export default function MeetingDetailPage({ params }: { params: { id: string } }
   const [meeting, setMeeting] = useState<Meeting | null>(null);
   const [notes, setNotes] = useState("");
   const [isLoading, setIsLoading] = useState(true);
+  const [prompts, setPrompts] = useState<{ id: string; title: string; content: string }[]>([]);
+  const [isPromptsOpen, setIsPromptsOpen] = useState(false);
 
   const isAdmin = session?.user?.role === "ADMIN";
 
@@ -49,9 +51,38 @@ export default function MeetingDetailPage({ params }: { params: { id: string } }
     }
   }, [params.id, router]);
 
+  const [promptsError, setPromptsError] = useState<string | null>(null);
+
+  const fetchPrompts = useCallback(async () => {
+    try {
+      const res = await fetch("/api/prompts");
+      if (res.ok) {
+        const data = await res.json();
+        setPrompts(data);
+        setPromptsError(null);
+      } else {
+        setPromptsError("Impossible de charger les modèles.");
+      }
+    } catch (err) {
+      console.error("Erreur chargement prompts:", err);
+      setPromptsError("Erreur de réseau.");
+    }
+  }, []);
+
   useEffect(() => {
     fetchMeeting();
-  }, [fetchMeeting]);
+    fetchPrompts();
+  }, [fetchMeeting, fetchPrompts]);
+
+  const copyToClipboard = async (content: string) => {
+    try {
+      await navigator.clipboard.writeText(content);
+      alert("Modèle copié dans le presse-papier !");
+      setIsPromptsOpen(false);
+    } catch (err) {
+      console.error("Erreur copie", err);
+    }
+  };
 
   const handleSaveNotes = async () => {
     try {
@@ -134,7 +165,37 @@ export default function MeetingDetailPage({ params }: { params: { id: string } }
             Prévue le : {new Date(meeting.scheduledAt).toLocaleString("fr-FR")}
           </p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex gap-2 relative">
+          <div className="relative">
+            <Button variant="outline" onClick={() => setIsPromptsOpen(!isPromptsOpen)}>
+              ✨ Modèles IA
+            </Button>
+            {isPromptsOpen && (
+              <div className="absolute right-0 mt-2 w-72 bg-popover text-popover-foreground border rounded-md shadow-lg z-50 overflow-hidden">
+                <div className="p-2 border-b bg-muted/50">
+                  <h4 className="text-sm font-semibold text-center">Modèles de Prompts</h4>
+                </div>
+                <div className="max-h-60 overflow-y-auto">
+                  {promptsError ? (
+                    <div className="p-3 text-sm text-destructive text-center">{promptsError}</div>
+                  ) : prompts.length === 0 ? (
+                    <div className="p-3 text-sm text-muted-foreground text-center">Aucun modèle disponible</div>
+                  ) : (
+                    prompts.map((p) => (
+                      <button
+                        key={p.id}
+                        onClick={() => copyToClipboard(p.content)}
+                        className="w-full text-left px-3 py-2 text-sm hover:bg-muted transition-colors border-b last:border-0"
+                      >
+                        <div className="font-medium">{p.title}</div>
+                        <div className="text-xs text-muted-foreground truncate mt-1">{p.content}</div>
+                      </button>
+                    ))
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
           <Button variant="secondary" onClick={handleExportPDF}>
             Exporter en PDF
           </Button>

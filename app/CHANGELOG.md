@@ -1,6 +1,11 @@
 # Changelog
 
-## [1.2.2] — 2026-10-02
+## [1.3.0] — 2026-10-02
+
+### ✨ Nouveautés & Modèles IA
+- **Bibliothèque de Prompts IA dans les Réunions** : Ajout d'un menu déroulant interactif dans la vue de détail des réunions permettant d'accéder aux modèles IA (`AiPrompt`) et de les copier dans le presse-papier en un clic. Gestion robuste des erreurs réseau (silencieuses remplacées par une alerte UI explicite).
+- **Prisma Seed Automatisé** : Ajout d'une configuration formelle `ts-node` pour le script de peuplement dans `package.json`. Introduction de 3 prompts IA de haute qualité (Générateur de Compte Rendu, Générateur de Tâches, Analyse des Risques Techniques) conçus pour le contexte de l'ingénierie du projet "Voilier MINIMOCA".
+
 
 ### 📌 Module Kanban & Tâches
 - **Visibilité des tâches personnelles** : Extension du filtre `GET /api/tasks` pour récupérer les tâches assignées à l'utilisateur ET celles créées par lui (`where.OR = [{ assignments: ... }, { createdById: ... }]`), garantissant l'apparition immédiate des tâches dans le Kanban personnel ("Mes tâches").

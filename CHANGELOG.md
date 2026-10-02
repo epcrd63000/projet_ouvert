@@ -22,7 +22,13 @@ Toutes les modifications notables apportées à ce projet sont consignées dans 
   - Sécurisation du chargement des variables d'environnement (`DATABASE_URL`, `DIRECT_URL`) depuis `app/.env`.
   - Validation avec succès des 4 tests d'acceptation Tier 1 (`test-01-compilation.mjs`, `test-02-database-tables.mjs`, `test-03-seed-users.mjs`, `test-04-seed-milestones.mjs`) avec code de sortie 0 directement contre la base PostgreSQL Neon en direct.
 
-## [2026-10-02] - Gestion des Tâches M2V5, Agenda Modernisé & Visibilité Kanban
+## [2.1.0] - 2026-10-02
+
+### Ajouté
+- **Bibliothèque de Prompts IA dans les Réunions** : Ajout d'un menu déroulant interactif dans la vue de détail des réunions permettant d'accéder aux modèles IA (`AiPrompt`) et de les copier dans le presse-papier. Intégration d'une gestion d'erreurs UI si la base de données est injoignable.
+- **Prisma Seed Automatisé** : Ajout d'une configuration `ts-node` pour le script de peuplement dans `package.json`. Introduction de 3 prompts IA pour le contexte "Voilier MINIMOCA" (Générateur de Compte Rendu, Tâches, Risques).
+
+## [2.0.0] - 2026-10-02
 
 ### Ajouté
 - **Tableau de Bord Exhaustif M2V5 (`TaskTableView.tsx`)** :

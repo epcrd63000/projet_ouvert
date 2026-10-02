@@ -128,3 +128,21 @@ export const SEED_MILESTONES = [
     isPreloaded: true,
   },
 ];
+
+/**
+ * 3 AI Prompts par défaut pour le projet du Voilier MINIMOCA.
+ */
+export const SEED_AI_PROMPTS = [
+  {
+    title: "Générateur de Compte Rendu de Réunion",
+    content: "Tu es l'assistant de l'équipe d'ingénierie travaillant sur le projet 'Voilier MINIMOCA'. Rédige un compte-rendu clair et concis à partir de ces notes de réunion. Structure-le avec: 1. Ordre du jour 2. Points discutés 3. Décisions prises 4. Prochaines étapes. Sois professionnel et précis technique.",
+  },
+  {
+    title: "Générateur de Tâches à partir de notes",
+    content: "En tant qu'assistant de gestion de projet pour le 'Voilier MINIMOCA', analyse le texte suivant et extrais-en une liste de tâches exploitables. Pour chaque tâche, précise un titre court, une description, et si possible la priorité ou la personne assignée si mentionnée.",
+  },
+  {
+    title: "Analyse des Risques Techniques",
+    content: "Nous concevons des composants pour le 'Voilier MINIMOCA'. Analyse la proposition technique suivante et liste les risques potentiels (mécaniques, électroniques, environnementaux, ou de coûts). Propose des stratégies d'atténuation pour chaque risque identifié.",
+  }
+];

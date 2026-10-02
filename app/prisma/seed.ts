@@ -1,6 +1,6 @@
 import { PrismaClient } from "@prisma/client";
 import bcrypt from "bcryptjs";
-import { SEED_PROJECT, SEED_USERS, SEED_MILESTONES } from "./seed-data";
+import { SEED_PROJECT, SEED_USERS, SEED_MILESTONES, SEED_AI_PROMPTS } from "./seed-data";
 
 const prisma = new PrismaClient();
 
@@ -89,14 +89,38 @@ async function main() {
   }
   console.log("     ✓ 11 jalons Gantt synchronisés.");
 
-  // 5. Validation finale des volumes
+  // 5. Peuplement idempotent des modèles IA (AiPrompt)
+  console.log("  🤖 Enregistrement des modèles IA par défaut...");
+  for (const prompt of SEED_AI_PROMPTS) {
+    const existingPrompt = await prisma.aiPrompt.findFirst({
+      where: { title: prompt.title },
+    });
+
+    if (existingPrompt) {
+      await prisma.aiPrompt.update({
+        where: { id: existingPrompt.id },
+        data: { content: prompt.content },
+      });
+    } else {
+      await prisma.aiPrompt.create({
+        data: {
+          title: prompt.title,
+          content: prompt.content,
+        },
+      });
+    }
+  }
+  console.log("     ✓ Modèles IA synchronisés.");
+
+  // 6. Validation finale des volumes
   const userCount = await prisma.user.count();
   const milestoneCount = await prisma.ganttMilestone.count();
-  console.log(`\n📊 Bilan : ${userCount} utilisateurs / 6, ${milestoneCount} jalons / 11.`);
+  const aiPromptCount = await prisma.aiPrompt.count();
+  console.log(`\n📊 Bilan : ${userCount} utilisateurs / 6, ${milestoneCount} jalons / 11, ${aiPromptCount} modèles IA / 3.`);
 
-  if (userCount !== 6 || milestoneCount !== 11) {
+  if (userCount !== 6 || milestoneCount !== 11 || aiPromptCount < 3) {
     throw new Error(
-      `Anomalie de seed : attendu 6 users et 11 jalons, obtenu ${userCount} users et ${milestoneCount} jalons.`
+      `Anomalie de seed : attendu 6 users, 11 jalons, au moins 3 modèles IA. Obtenu ${userCount} users, ${milestoneCount} jalons, ${aiPromptCount} modèles IA.`
     );
   }
 
