@@ -9,7 +9,7 @@ import { authConfig } from "./auth.config";
  * Schéma de validation Zod pour le formulaire de connexion.
  */
 const loginSchema = z.object({
-  email: z.string().email("Format d'adresse email invalide"),
+  email: z.string().trim().toLowerCase().email("Format d'adresse email invalide"),
   password: z.string().min(1, "Le mot de passe est obligatoire"),
 });
 

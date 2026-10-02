@@ -27,9 +27,12 @@ export const authConfig = {
      */
     async jwt({ token, user }) {
       if (user) {
-        if (user.id) token.id = user.id;
+        token.id = user.id || (token.sub as string);
         if (user.role) token.role = user.role;
         if (user.avatarUrl) token.avatarUrl = user.avatarUrl;
+      }
+      if (!token.id && token.sub) {
+        token.id = token.sub;
       }
       return token;
     },
@@ -38,9 +41,7 @@ export const authConfig = {
      */
     async session({ session, token }) {
       if (token && session.user) {
-        if (token.id) {
-          session.user.id = token.id as string;
-        }
+        session.user.id = (token.id || token.sub) as string;
         if (token.role) {
           session.user.role = token.role as "ADMIN" | "MEMBER";
         }

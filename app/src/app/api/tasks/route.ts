@@ -25,16 +25,25 @@ export async function GET(request: NextRequest) {
 
     // Les MEMBER ne voient que leurs tâches sauf si Admin demande tout
     if (!showAll || session.user.role !== "ADMIN") {
-      where.assignments = {
-        some: { userId: userId || session.user.id },
-      };
+      const targetUserId = userId || session.user.id;
+      where.OR = [
+        { assignments: { some: { userId: targetUserId } } },
+        { createdById: targetUserId },
+      ];
     }
 
     const tasks = await prisma.task.findMany({
       where,
       include: {
         assignments: {
-          include: { user: { select: { id: true, name: true, email: true } } },
+          include: {
+            user: {
+              select: { id: true, name: true, email: true, avatarUrl: true },
+            },
+          },
+        },
+        createdBy: {
+          select: { id: true, name: true, email: true, avatarUrl: true },
         },
         subTasks: { select: { id: true, title: true, status: true } },
       },
@@ -70,7 +79,11 @@ export async function POST(request: NextRequest) {
 
     let { assigneeIds, dueDate, ...taskData } = parsed.data;
 
-    
+    // Résoudre les assignés : assigner au créateur par défaut si la liste est vide
+    const validAssigneeIds =
+      assigneeIds && assigneeIds.length > 0
+        ? Array.from(new Set(assigneeIds.filter(Boolean)))
+        : [session.user.id];
 
     // Récupérer le projet singleton
     const project = await prisma.project.findFirst();
@@ -91,15 +104,16 @@ export async function POST(request: NextRequest) {
         position: (maxPosition._max.position ?? -1) + 1,
         projectId: project.id,
         createdById: session.user.id,
-      }
+      },
     });
 
-    if (assigneeIds.length > 0) {
+    if (validAssigneeIds.length > 0) {
       await prisma.taskAssignment.createMany({
-        data: assigneeIds.map((userId: string) => ({
+        data: validAssigneeIds.map((userId: string) => ({
           taskId: task.id,
-          userId
-        }))
+          userId,
+        })),
+        skipDuplicates: true,
       });
     }
 
@@ -107,13 +121,18 @@ export async function POST(request: NextRequest) {
       where: { id: task.id },
       include: {
         assignments: {
-          include: { user: { select: { id: true, name: true, email: true } } },
+          include: {
+            user: { select: { id: true, name: true, email: true, avatarUrl: true } },
+          },
+        },
+        createdBy: {
+          select: { id: true, name: true, email: true, avatarUrl: true },
         },
       },
     });
 
     // Envoyer une notification aux assignés
-    for (const userId of assigneeIds) {
+    for (const userId of validAssigneeIds) {
       if (userId !== session.user.id) {
         await createNotification(
           userId,

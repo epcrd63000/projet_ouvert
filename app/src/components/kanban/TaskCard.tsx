@@ -5,16 +5,17 @@ import { useDraggable } from "@dnd-kit/core";
 import { cn } from "@/lib/utils";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Trash2 } from "lucide-react";
 import type { KanbanTask } from "./KanbanBoard";
 
 /**
  * Couleurs des badges de priorité.
  */
 const PRIORITY_STYLES: Record<string, string> = {
-  LOW: "bg-slate-500/20 text-slate-400",
-  NORMAL: "bg-blue-500/20 text-blue-400",
-  HIGH: "bg-orange-500/20 text-orange-400",
-  CRITICAL: "bg-red-500/20 text-red-400",
+  LOW: "bg-slate-500/20 text-slate-400 border-slate-500/30",
+  NORMAL: "bg-blue-500/20 text-blue-400 border-blue-500/30",
+  HIGH: "bg-orange-500/20 text-orange-400 border-orange-500/30",
+  CRITICAL: "bg-red-500/20 text-red-400 border-red-500/30",
 };
 
 /**
@@ -31,13 +32,15 @@ interface TaskCardProps {
   task: KanbanTask;
   isDragging?: boolean;
   onClick?: () => void;
+  onDelete?: () => void;
+  canDelete?: boolean;
 }
 
 /**
  * Carte draggable représentant une tâche dans le Kanban.
- * Affiche titre, priorité, assignés et date d'échéance.
+ * Affiche titre, priorité, date d'échéance et les noms complets des assignés ou du créateur.
  */
-export function TaskCard({ task, isDragging, onClick }: TaskCardProps) {
+export function TaskCard({ task, isDragging, onClick, onDelete, canDelete = false }: TaskCardProps) {
   const { attributes, listeners, setNodeRef, transform } = useDraggable({
     id: task.id,
   });
@@ -53,24 +56,46 @@ export function TaskCard({ task, isDragging, onClick }: TaskCardProps) {
     <div ref={setNodeRef} style={style} {...listeners} {...attributes}>
       <Card
         className={cn(
-          "cursor-grab transition-shadow hover:shadow-md",
+          "group relative cursor-grab transition-all hover:shadow-md border bg-card",
           isDragging && "opacity-50 shadow-lg rotate-2",
           isOverdue && "border-red-500/50"
         )}
         onClick={onClick}
       >
-        <CardContent className="space-y-2 p-3">
-          {/* Titre */}
-          <p className="text-sm font-medium leading-tight">{task.title}</p>
+        <CardContent className="space-y-2.5 p-3">
+          {/* Titre et action de suppression */}
+          <div className="flex items-start justify-between gap-2">
+            <p className="text-sm font-medium leading-snug flex-1">{task.title}</p>
+            {canDelete && onDelete && (
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onDelete();
+                }}
+                className="opacity-0 group-hover:opacity-100 transition-opacity p-1 text-muted-foreground hover:text-destructive rounded hover:bg-muted shrink-0"
+                title="Supprimer la tâche"
+              >
+                <Trash2 className="h-3.5 w-3.5" />
+              </button>
+            )}
+          </div>
+
+          {/* Description optionnelle */}
+          {task.description && (
+            <p className="text-xs text-muted-foreground line-clamp-2">
+              {task.description}
+            </p>
+          )}
 
           {/* Priorité + date */}
           <div className="flex items-center gap-2">
-            <Badge variant="outline" className={cn("text-xs", PRIORITY_STYLES[task.priority])}>
+            <Badge variant="outline" className={cn("text-[11px] px-1.5 py-0 font-medium", PRIORITY_STYLES[task.priority])}>
               {PRIORITY_LABELS[task.priority]}
             </Badge>
             {task.dueDate && (
-              <span className={cn("text-xs text-muted-foreground", isOverdue && "text-red-400")}>
-                {new Date(task.dueDate).toLocaleDateString("fr-FR", {
+              <span className={cn("text-xs text-muted-foreground", isOverdue && "text-red-400 font-semibold")}>
+                📅 {new Date(task.dueDate).toLocaleDateString("fr-FR", {
                   day: "numeric",
                   month: "short",
                 })}
@@ -78,20 +103,31 @@ export function TaskCard({ task, isDragging, onClick }: TaskCardProps) {
             )}
           </div>
 
-          {/* Avatars des assignés */}
-          {task.assignments.length > 0 && (
-            <div className="flex items-center gap-1">
-              {task.assignments.map((a) => (
-                <span
+          {/* Noms et avatars des membres assignés ou du créateur */}
+          <div className="pt-2 border-t border-border/50 flex flex-wrap items-center gap-1.5">
+            {task.assignments && task.assignments.length > 0 ? (
+              task.assignments.map((a) => (
+                <div
                   key={a.user.id}
-                  className="flex h-6 w-6 items-center justify-center rounded-full bg-primary/20 text-[10px] font-bold text-primary"
-                  title={a.user.name}
+                  className="inline-flex items-center gap-1.5 rounded-full bg-secondary/80 border border-border px-2 py-0.5 text-xs font-medium text-foreground"
                 >
-                  {a.user.name.charAt(0).toUpperCase()}
+                  <span className="flex h-4 w-4 items-center justify-center rounded-full bg-primary/20 text-[9px] font-bold text-primary">
+                    {a.user.name.charAt(0).toUpperCase()}
+                  </span>
+                  <span>{a.user.name}</span>
+                </div>
+              ))
+            ) : task.createdBy ? (
+              <div className="inline-flex items-center gap-1.5 rounded-full bg-muted/70 border border-border/60 px-2 py-0.5 text-xs text-muted-foreground">
+                <span className="flex h-4 w-4 items-center justify-center rounded-full bg-muted-foreground/20 text-[9px] font-medium">
+                  {task.createdBy.name.charAt(0).toUpperCase()}
                 </span>
-              ))}
-            </div>
-          )}
+                <span>Créé par {task.createdBy.name}</span>
+              </div>
+            ) : (
+              <span className="text-[11px] text-muted-foreground italic">Non assignée</span>
+            )}
+          </div>
         </CardContent>
       </Card>
     </div>

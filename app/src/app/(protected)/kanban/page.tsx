@@ -119,9 +119,35 @@ export default function KanbanPage() {
     [fetchTasks]
   );
 
+  // Déterminer l'ID utilisateur courant (depuis session ou correspondance email)
+  const currentUserId =
+    session?.user?.id ||
+    users.find((u) => u.email.toLowerCase() === session?.user?.email?.toLowerCase())?.id ||
+    "";
+
+  /**
+   * Supprime une tâche via l'API.
+   */
+  const handleDeleteTask = useCallback(
+    async (taskId: string) => {
+      if (!confirm("Voulez-vous vraiment supprimer cette tâche ?")) return;
+
+      try {
+        const res = await fetch(`/api/tasks/${taskId}`, { method: "DELETE" });
+        if (res.ok) {
+          setTasks((prev) => prev.filter((t) => t.id !== taskId));
+        } else {
+          console.error("Erreur suppression tâche:", await res.text());
+        }
+      } catch (error) {
+        console.error("Erreur suppression tâche:", error);
+      }
+    },
+    []
+  );
+
   const handleTaskClick = useCallback((task: KanbanTask) => {
     console.log("Tâche sélectionnée:", task.id);
-    // TODO Sprint futur : ouvrir la fiche détail de la tâche
   }, []);
 
   if (isLoading) {
@@ -137,7 +163,7 @@ export default function KanbanPage() {
           <div>
             <h1 className="text-3xl font-bold tracking-tight">Mes Tâches</h1>
             <p className="text-muted-foreground">
-              {showAll ? "Vue globale de toutes les tâches" : "Vos tâches assignées"}
+              {showAll ? "Vue globale de toutes les tâches de l'équipe" : "Vos tâches assignées et créées"}
             </p>
           </div>
         </div>
@@ -166,6 +192,9 @@ export default function KanbanPage() {
         tasks={tasks}
         onTaskMove={handleTaskMove}
         onTaskClick={handleTaskClick}
+        onTaskDelete={handleDeleteTask}
+        currentUserId={currentUserId}
+        isAdmin={isAdmin}
       />
 
       {/* Modale de création */}
@@ -174,7 +203,7 @@ export default function KanbanPage() {
         onClose={() => setIsModalOpen(false)}
         onSubmit={handleCreateTask}
         users={users}
-        currentUserId={session?.user?.id || ""}
+        currentUserId={currentUserId}
         isAdmin={isAdmin}
       />
     </div>

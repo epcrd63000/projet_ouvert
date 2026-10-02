@@ -30,6 +30,22 @@ function LoginForm() {
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
+  const urlError = searchParams.get("error");
+
+  React.useEffect(() => {
+    if (urlError) {
+      if (urlError === "CredentialsSignin") {
+        setErrorMessage(
+          "Identifiants incorrects. Veuillez vérifier votre adresse email et votre mot de passe."
+        );
+      } else {
+        setErrorMessage(
+          "Erreur d'authentification ou session expirée. Veuillez vous reconnecter."
+        );
+      }
+    }
+  }, [urlError]);
+
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setIsLoading(true);
@@ -60,8 +76,9 @@ function LoginForm() {
       }
 
       console.log("[login] Connexion réussie ! Redirection vers :", callbackUrl);
-      router.push(callbackUrl);
-      router.refresh();
+      // Navigation complète pour garantir l'envoi immédiat du cookie de session au serveur
+      // et éliminer les comportements de cache client figé dans Next.js 14 App Router
+      window.location.href = result?.url || callbackUrl;
     } catch (error) {
       console.error("[login] Exception attrapée :", error);
       setErrorMessage("Une erreur inattendue est survenue. Veuillez réessayer.");

@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
-import { Plus } from "lucide-react";
+import { Plus, Check } from "lucide-react";
 
 interface User {
   id: string;
@@ -38,7 +38,7 @@ export function TaskModal({ isOpen, onClose, onSubmit, users, currentUserId, isA
   const [description, setDescription] = useState("");
   const [priority, setPriority] = useState<TaskFormData["priority"]>("NORMAL");
   const [dueDate, setDueDate] = useState("");
-  const [assigneeIds, setAssigneeIds] = useState<string[]>([currentUserId]);
+  const [assigneeIds, setAssigneeIds] = useState<string[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   React.useEffect(() => {
@@ -47,22 +47,43 @@ export function TaskModal({ isOpen, onClose, onSubmit, users, currentUserId, isA
       setDescription("");
       setPriority("NORMAL");
       setDueDate("");
-      setAssigneeIds([currentUserId]);
+      // Pré-sélectionner l'utilisateur connecté par défaut s'il est valide
+      setAssigneeIds(currentUserId && currentUserId.trim() !== "" ? [currentUserId] : []);
     }
   }, [isOpen, currentUserId]);
 
   if (!isOpen) return null;
 
   const toggleAssignee = (userId: string) => {
-    setAssigneeIds((prev) =>
-      prev.includes(userId) ? prev.filter((id) => id !== userId) : [...prev, userId]
-    );
+    setAssigneeIds((prev) => {
+      const filtered = prev.filter((id) => id && id.trim() !== "");
+      return filtered.includes(userId)
+        ? filtered.filter((id) => id !== userId)
+        : [...filtered, userId];
+    });
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!title.trim()) return;
+
     setIsSubmitting(true);
-    await onSubmit({ title, description, priority, dueDate, assigneeIds });
+    const validAssignees = assigneeIds.filter((id) => id && id.trim() !== "");
+    // Si aucun membre sélectionné, assigner par défaut à l'utilisateur courant
+    const finalAssignees =
+      validAssignees.length > 0
+        ? validAssignees
+        : currentUserId && currentUserId.trim() !== ""
+        ? [currentUserId]
+        : [];
+
+    await onSubmit({
+      title: title.trim(),
+      description: description.trim(),
+      priority,
+      dueDate,
+      assigneeIds: finalAssignees,
+    });
     setIsSubmitting(false);
     onClose();
   };
@@ -136,20 +157,37 @@ export function TaskModal({ isOpen, onClose, onSubmit, users, currentUserId, isA
 
           {/* Assignés */}
           <div className="space-y-1">
-            <Label>Assigner à</Label>
-            <div className="flex flex-wrap gap-2">
-              {assignableUsers.map((user) => (
-                <Button
-                  key={user.id}
-                  type="button"
-                  variant={assigneeIds.includes(user.id) ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => toggleAssignee(user.id)}
-                >
-                  {user.name}
-                </Button>
-              ))}
+            <div className="flex items-center justify-between">
+              <Label>Assigner à</Label>
+              <span className="text-xs text-muted-foreground">
+                {assigneeIds.length} sélectionné{assigneeIds.length > 1 ? "s" : ""}
+              </span>
             </div>
+            <div className="flex flex-wrap gap-2">
+              {assignableUsers.map((user) => {
+                const isSelected = assigneeIds.includes(user.id);
+                const isMe = user.id === currentUserId;
+                return (
+                  <Button
+                    key={user.id}
+                    type="button"
+                    variant={isSelected ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => toggleAssignee(user.id)}
+                    className="gap-1.5"
+                  >
+                    {isSelected && <Check className="h-3.5 w-3.5" />}
+                    <span>{user.name}</span>
+                    {isMe && <span className="text-[10px] opacity-80">(Moi)</span>}
+                  </Button>
+                );
+              })}
+            </div>
+            {assigneeIds.length === 0 && (
+              <p className="text-xs text-muted-foreground mt-1">
+                ℹ️ Aucun membre sélectionné : la tâche vous sera automatiquement assignée.
+              </p>
+            )}
           </div>
 
           {/* Actions */}

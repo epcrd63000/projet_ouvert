@@ -1,5 +1,22 @@
 # Changelog
 
+## [1.2.2] — 2026-10-02
+
+### 📌 Module Kanban & Tâches
+- **Visibilité des tâches personnelles** : Extension du filtre `GET /api/tasks` pour récupérer les tâches assignées à l'utilisateur ET celles créées par lui (`where.OR = [{ assignments: ... }, { createdById: ... }]`), garantissant l'apparition immédiate des tâches dans le Kanban personnel ("Mes tâches").
+- **Assignation par défaut** : Assignation automatique au créateur dans l'API `POST /api/tasks` et dans `TaskModal` si aucun membre n'est sélectionné manuellement.
+- **Affichage des noms d'utilisateurs sur les cartes Kanban** : Remplacement des badges à lettre unique par des pilules lisibles affichant l'initiale et le nom complet de chaque membre assigné, ainsi que la mention "Créé par [Nom]" pour les tâches sans assigné.
+- **Action de suppression rapide** : Ajout d'un bouton de suppression avec confirmation sur les cartes de tâches (autorisé pour les administrateurs, les créateurs et les assignés).
+- **Réconciliation des données existantes** : Exécution du script `01_repair_existing_task_assignments.ts` pour associer les tâches historiques orphelines à leur créateur.
+
+## [1.2.1] — 2026-10-02
+
+### 🔐 Authentification & Connexion
+- **Correction du processus serveur** : Résolution du conflit de port 3000 monopolisé par un processus Node orphelin sans variables d'environnement (.env), entraînant des rejets systématiques (`CredentialsSignin`).
+- **Fiabilisation de la redirection client** : Remplacement de `router.push()` par une navigation standardisée `window.location.href` dans `LoginPage` pour garantir la transmission immédiate du cookie de session `authjs.session-token` au serveur et supprimer les effets de cache de l'App Router.
+- **Robustesse Zod** : Nettoyage et normalisation automatique des espaces et de la casse (`trim()`, `toLowerCase()`) sur l'email dans `loginSchema`.
+- **Gestion des erreurs URL** : Prise en charge des paramètres d'erreur d'authentification (`?error=...`) dans l'interface de connexion.
+
 ## [1.2.0] — 2026-10-01
 
 ### 👥 Module Utilisateurs & Paramètres

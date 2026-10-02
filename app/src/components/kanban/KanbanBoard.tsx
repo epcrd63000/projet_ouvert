@@ -15,17 +15,20 @@ import { KanbanColumn } from "./KanbanColumn";
 import { TaskCard } from "./TaskCard";
 
 /**
- * Type simplifié d'une tâche pour l'affichage Kanban.
+ * Type complet d'une tâche pour l'affichage Kanban.
  */
 export interface KanbanTask {
   id: string;
   title: string;
+  description?: string | null;
   status: "TODO" | "IN_PROGRESS" | "DONE" | "BLOCKED";
   priority: "LOW" | "NORMAL" | "HIGH" | "CRITICAL";
   position: number;
   dueDate: string | null;
+  createdById?: string | null;
+  createdBy?: { id: string; name: string; email: string; avatarUrl?: string | null } | null;
   assignments: {
-    user: { id: string; name: string; email: string };
+    user: { id: string; name: string; email: string; avatarUrl?: string | null };
   }[];
 }
 
@@ -42,13 +45,23 @@ const COLUMNS = [
 interface KanbanBoardProps {
   tasks: KanbanTask[];
   onTaskMove: (taskId: string, newStatus: string, newPosition: number) => void;
-  onTaskClick: (task: KanbanTask) => void;
+  onTaskClick?: (task: KanbanTask) => void;
+  onTaskDelete?: (taskId: string) => void;
+  currentUserId?: string;
+  isAdmin?: boolean;
 }
 
 /**
  * Tableau Kanban complet avec drag & drop entre colonnes.
  */
-export function KanbanBoard({ tasks, onTaskMove, onTaskClick }: KanbanBoardProps) {
+export function KanbanBoard({
+  tasks,
+  onTaskMove,
+  onTaskClick,
+  onTaskDelete,
+  currentUserId,
+  isAdmin = false,
+}: KanbanBoardProps) {
   const [activeTask, setActiveTask] = useState<KanbanTask | null>(null);
 
   const sensors = useSensors(
@@ -112,13 +125,23 @@ export function KanbanBoard({ tasks, onTaskMove, onTaskClick }: KanbanBoardProps
               color={column.color}
               count={columnTasks.length}
             >
-              {columnTasks.map((task) => (
-                <TaskCard
-                  key={task.id}
-                  task={task}
-                  onClick={() => onTaskClick(task)}
-                />
-              ))}
+              {columnTasks.map((task) => {
+                const canDelete = Boolean(
+                  isAdmin ||
+                  (currentUserId && task.createdById === currentUserId) ||
+                  (currentUserId && task.assignments?.some((a) => a.user.id === currentUserId))
+                );
+
+                return (
+                  <TaskCard
+                    key={task.id}
+                    task={task}
+                    onClick={() => onTaskClick?.(task)}
+                    onDelete={onTaskDelete ? () => onTaskDelete(task.id) : undefined}
+                    canDelete={canDelete}
+                  />
+                );
+              })}
             </KanbanColumn>
           );
         })}

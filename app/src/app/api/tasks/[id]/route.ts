@@ -43,12 +43,13 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
       return NextResponse.json({ error: "Tâche introuvable" }, { status: 404 });
     }
 
-    // Les MEMBER ne peuvent modifier que le statut et la position de leurs propres tâches
+    // Les MEMBER ne peuvent modifier que le statut et la position de leurs propres tâches (assignées ou créées)
     if (session.user.role !== "ADMIN") {
       const isAssigned = existingTask.assignments.some(
         (a) => a.userId === session.user.id
       );
-      if (!isAssigned) {
+      const isCreator = existingTask.createdById === session.user.id;
+      if (!isAssigned && !isCreator) {
         return NextResponse.json({ error: "Accès refusé" }, { status: 403 });
       }
 
@@ -145,13 +146,14 @@ export async function DELETE(_request: NextRequest, { params }: RouteParams) {
       return NextResponse.json({ error: "Tâche introuvable" }, { status: 404 });
     }
 
-    // Vérifier les permissions : ADMIN ou membre assigné
+    // Vérifier les permissions : ADMIN, créateur ou membre assigné
     const isAdmin = session.user.role === "ADMIN";
     const isAssigned = task.assignments.some(
       (a) => a.userId === session.user.id
     );
+    const isCreator = task.createdById === session.user.id;
 
-    if (!isAdmin && !isAssigned) {
+    if (!isAdmin && !isAssigned && !isCreator) {
       return NextResponse.json({ error: "Accès refusé" }, { status: 403 });
     }
 
