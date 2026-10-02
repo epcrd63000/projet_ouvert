@@ -35,7 +35,7 @@ export default function MeetingsPage() {
 
   const fetchMeetings = useCallback(async () => {
     try {
-      const res = await fetch("/api/meetings");
+      const res = await fetch("/api/meetings", { cache: "no-store" });
       if (res.ok) {
         const data = await res.json();
         setMeetings(data);

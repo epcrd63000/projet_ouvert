@@ -22,6 +22,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 
 export function MemberProgressChart({ data }: { data: { name: string; done: number; total: number }[] }) {
+  const maxTotal = Math.max(1, ...data.map(d => Math.max(d.done, d.total)));
+  
   return (
     <Card className="col-span-1 lg:col-span-2">
       <CardHeader>
@@ -33,7 +35,7 @@ export function MemberProgressChart({ data }: { data: { name: string; done: numb
             <BarChart data={data} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
               <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(var(--border))" />
               <XAxis dataKey="name" fontSize={12} tickLine={false} axisLine={false} tick={{ fill: "hsl(var(--foreground))" }} />
-              <YAxis fontSize={12} tickLine={false} axisLine={false} tick={{ fill: "hsl(var(--foreground))" }} />
+              <YAxis fontSize={12} tickLine={false} axisLine={false} tick={{ fill: "hsl(var(--foreground))" }} allowDecimals={false} domain={[0, maxTotal]} />
               <RechartsTooltip 
                 cursor={{ fill: "hsl(var(--muted))" }} 
                 contentStyle={{ backgroundColor: "hsl(var(--background))", borderColor: "hsl(var(--border))", color: "hsl(var(--foreground))", borderRadius: "8px" }}
@@ -49,6 +51,8 @@ export function MemberProgressChart({ data }: { data: { name: string; done: numb
 }
 
 export function WorkloadChart({ data }: { data: { name: string; inProgress: number }[] }) {
+  const maxInProgress = Math.max(1, ...data.map(d => d.inProgress));
+
   return (
     <Card className="col-span-1 lg:col-span-1">
       <CardHeader>
@@ -60,7 +64,7 @@ export function WorkloadChart({ data }: { data: { name: string; inProgress: numb
             <RadarChart cx="50%" cy="50%" outerRadius="55%" data={data} margin={{ top: 10, right: 10, bottom: 10, left: 10 }}>
               <PolarGrid stroke="hsl(var(--border))" />
               <PolarAngleAxis dataKey="name" fontSize={12} tick={{ fill: "hsl(var(--foreground))" }} />
-              <PolarRadiusAxis angle={30} domain={[0, 'dataMax + 1']} tick={false} axisLine={false} />
+              <PolarRadiusAxis angle={30} domain={[0, maxInProgress]} tick={false} axisLine={false} />
               <Radar name="Tâches" dataKey="inProgress" stroke="#4f46e5" fill="#4f46e5" fillOpacity={0.5} />
               <RechartsTooltip 
                 contentStyle={{ backgroundColor: "hsl(var(--background))", borderColor: "hsl(var(--border))", color: "hsl(var(--foreground))", borderRadius: "8px" }}

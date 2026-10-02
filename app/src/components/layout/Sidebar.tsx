@@ -32,6 +32,7 @@ interface NavItem {
  */
 const NAV_ITEMS: NavItem[] = [
   { href: "/dashboard", label: "Tableau de bord", icon: LayoutDashboard },
+  { href: "/infos", label: "Infos Importantes", icon: BookOpen },
   { href: "/kanban", label: "Mes Tâches", icon: CheckSquare },
   { href: "/meetings", label: "Réunions", icon: Users },
   { href: "/agenda", label: "Agenda", icon: CalendarDays },
@@ -39,7 +40,7 @@ const NAV_ITEMS: NavItem[] = [
   { href: "/budget", label: "Budget", icon: Banknote },
   { href: "/notifications", label: "Notifications", icon: Bell },
   { href: "/ai-prompts", label: "Prompts IA", icon: BookOpen },
-  { href: "/settings", label: "Paramètres", icon: Settings, adminOnly: true },
+  { href: "/settings", label: "Paramètres", icon: Settings },
 ];
 
 interface SidebarProps {
