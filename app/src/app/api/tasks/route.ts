@@ -79,10 +79,12 @@ export async function POST(request: NextRequest) {
 
     let { assigneeIds, dueDate, ...taskData } = parsed.data;
 
-    // Résoudre les assignés : assigner au créateur par défaut si la liste est vide
+    // Résoudre les assignés : les MEMBER ne peuvent s'assigner qu'à eux-mêmes, les ADMIN peuvent assigner à tous
     const validAssigneeIds =
-      assigneeIds && assigneeIds.length > 0
-        ? Array.from(new Set(assigneeIds.filter(Boolean)))
+      session.user.role === "ADMIN"
+        ? assigneeIds && assigneeIds.length > 0
+          ? Array.from(new Set(assigneeIds.filter(Boolean)))
+          : [session.user.id]
         : [session.user.id];
 
     // Récupérer le projet singleton

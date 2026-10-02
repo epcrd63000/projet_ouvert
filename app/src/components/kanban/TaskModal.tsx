@@ -157,36 +157,51 @@ export function TaskModal({ isOpen, onClose, onSubmit, users, currentUserId, isA
 
           {/* Assignés */}
           <div className="space-y-1">
-            <div className="flex items-center justify-between">
-              <Label>Assigner à</Label>
-              <span className="text-xs text-muted-foreground">
-                {assigneeIds.length} sélectionné{assigneeIds.length > 1 ? "s" : ""}
-              </span>
-            </div>
-            <div className="flex flex-wrap gap-2">
-              {assignableUsers.map((user) => {
-                const isSelected = assigneeIds.includes(user.id);
-                const isMe = user.id === currentUserId;
-                return (
-                  <Button
-                    key={user.id}
-                    type="button"
-                    variant={isSelected ? "default" : "outline"}
-                    size="sm"
-                    onClick={() => toggleAssignee(user.id)}
-                    className="gap-1.5"
-                  >
-                    {isSelected && <Check className="h-3.5 w-3.5" />}
-                    <span>{user.name}</span>
-                    {isMe && <span className="text-[10px] opacity-80">(Moi)</span>}
-                  </Button>
-                );
-              })}
-            </div>
-            {assigneeIds.length === 0 && (
-              <p className="text-xs text-muted-foreground mt-1">
-                ℹ️ Aucun membre sélectionné : la tâche vous sera automatiquement assignée.
-              </p>
+            <Label>Assignation</Label>
+            {isAdmin ? (
+              <>
+                <div className="flex items-center justify-between">
+                  <span className="text-xs text-muted-foreground">
+                    {assigneeIds.length} membre{assigneeIds.length > 1 ? "s" : ""} sélectionné{assigneeIds.length > 1 ? "s" : ""}
+                  </span>
+                </div>
+                <div className="flex flex-wrap gap-2 pt-1">
+                  {users.map((user) => {
+                    const isSelected = assigneeIds.includes(user.id);
+                    const isMe = user.id === currentUserId;
+                    return (
+                      <Button
+                        key={user.id}
+                        type="button"
+                        variant={isSelected ? "default" : "outline"}
+                        size="sm"
+                        onClick={() => toggleAssignee(user.id)}
+                        className="gap-1.5"
+                      >
+                        {isSelected && <Check className="h-3.5 w-3.5" />}
+                        <span>{user.name}</span>
+                        {isMe && <span className="text-[10px] opacity-80">(Moi)</span>}
+                      </Button>
+                    );
+                  })}
+                </div>
+                {assigneeIds.length === 0 && (
+                  <p className="text-xs text-muted-foreground mt-1">
+                    ℹ️ Aucun membre sélectionné : la tâche vous sera automatiquement assignée.
+                  </p>
+                )}
+              </>
+            ) : (
+              <div className="flex items-center gap-2 rounded-md border bg-muted/40 px-3 py-2 text-sm text-muted-foreground">
+                <Check className="h-4 w-4 text-primary" />
+                <span>
+                  Tâche personnelle assignée à vous-même (
+                  <strong className="text-foreground">
+                    {users.find((u) => u.id === currentUserId)?.name || "Vous"}
+                  </strong>
+                  )
+                </span>
+              </div>
             )}
           </div>
 

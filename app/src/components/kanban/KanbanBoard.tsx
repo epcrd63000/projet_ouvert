@@ -25,11 +25,18 @@ export interface KanbanTask {
   priority: "LOW" | "NORMAL" | "HIGH" | "CRITICAL";
   position: number;
   dueDate: string | null;
+  workload?: string | null;
+  deliverables?: string | null;
+  validationCriteria?: string | null;
+  progress?: number;
+  delayReason?: string | null;
   createdById?: string | null;
   createdBy?: { id: string; name: string; email: string; avatarUrl?: string | null } | null;
   assignments: {
     user: { id: string; name: string; email: string; avatarUrl?: string | null };
   }[];
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 /**

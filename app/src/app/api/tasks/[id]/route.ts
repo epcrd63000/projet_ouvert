@@ -54,7 +54,15 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
       }
 
       // Restreindre les champs modifiables pour les MEMBER
-      const allowedFields = ["status", "position"];
+      const allowedFields = [
+        "status",
+        "position",
+        "progress",
+        "delayReason",
+        "workload",
+        "deliverables",
+        "validationCriteria",
+      ];
       const requestedFields = Object.keys(parsed.data);
       const forbidden = requestedFields.filter((f) => !allowedFields.includes(f));
       if (forbidden.length > 0) {
@@ -65,16 +73,42 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
       }
     }
 
-    const { dueDate, parentId, ...updateFields } = parsed.data;
+    const { dueDate, parentId, status, progress, ...updateFields } = parsed.data;
+
+    let resolvedStatus = status;
+    let resolvedProgress = progress;
+
+    // Synchronisation bi-directionnelle entre avancement (%) et statut Kanban
+    if (resolvedProgress !== undefined) {
+      if (resolvedProgress === 100 && !resolvedStatus) {
+        resolvedStatus = "DONE";
+      } else if (resolvedProgress === 0 && !resolvedStatus && existingTask.status === "DONE") {
+        resolvedStatus = "TODO";
+      } else if (
+        resolvedProgress > 0 &&
+        resolvedProgress < 100 &&
+        (!resolvedStatus || resolvedStatus === "TODO")
+      ) {
+        resolvedStatus = "IN_PROGRESS";
+      }
+    } else if (resolvedStatus !== undefined) {
+      if (resolvedStatus === "DONE" && existingTask.progress < 100) {
+        resolvedProgress = 100;
+      } else if (resolvedStatus === "TODO" && existingTask.progress === 100) {
+        resolvedProgress = 0;
+      }
+    }
 
     // Détecter si le statut passe à DONE
     const isCompletingTask =
-      parsed.data.status === "DONE" && existingTask.status !== "DONE";
+      resolvedStatus === "DONE" && existingTask.status !== "DONE";
 
     const task = await prisma.task.update({
       where: { id },
       data: {
         ...updateFields,
+        ...(resolvedStatus !== undefined ? { status: resolvedStatus } : {}),
+        ...(resolvedProgress !== undefined ? { progress: resolvedProgress } : {}),
         ...(dueDate !== undefined
           ? { dueDate: dueDate ? new Date(dueDate) : null }
           : {}),

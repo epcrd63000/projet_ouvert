@@ -22,6 +22,28 @@ Toutes les modifications notables apportées à ce projet sont consignées dans 
   - Sécurisation du chargement des variables d'environnement (`DATABASE_URL`, `DIRECT_URL`) depuis `app/.env`.
   - Validation avec succès des 4 tests d'acceptation Tier 1 (`test-01-compilation.mjs`, `test-02-database-tables.mjs`, `test-03-seed-users.mjs`, `test-04-seed-milestones.mjs`) avec code de sortie 0 directement contre la base PostgreSQL Neon en direct.
 
+## [2026-10-02] - Gestion des Tâches M2V5, Agenda Modernisé & Visibilité Kanban
+
+### Ajouté
+- **Tableau de Bord Exhaustif M2V5 (`TaskTableView.tsx`)** :
+  - Support de la vue tabulaire en 10 colonnes conforme aux exigences méthodologiques IMT M2V5 (Tâche, Pilote, Échéance, Charge, Livrables, Priorité, Qui valide/Comment, % Avancement, Dernière MAJ, Retard/Cause).
+  - Synchronisation bidirectionnelle automatique entre statut (`TODO`, `IN_PROGRESS`, `DONE`) et pourcentage d'avancement.
+  - Détection automatique et mise en évidence visuelle des tâches en retard avec badge animé et saisie directe de la cause.
+  - Filtres multi-critères temps réel (texte/pilote, statut, priorité).
+  - Module d'exportation CSV (`csvExport.ts`) encodé en UTF-8 BOM avec séparateur point-virgule pour une compatibilité native Excel.
+- **Hook Réutilisable `useTasks` (`useTasks.ts`)** :
+  - Extraction et centralisation de la logique de requêtage, des mises à jour optimistes et de la gestion d'erreurs pour respecter la règle de découpage strict (< 200 lignes).
+- **Test TDD Tier 1 (`test-09-m2v5-task-exhaustive-table.ts`)** :
+  - Validation automatique de la persistance et des contraintes des champs étendus M2V5 en base Neon.
+
+### Modifié
+- **Kanban & Visibilité des Tâches** :
+  - `app/src/app/api/tasks/route.ts` & `[id]/route.ts` : visibilité garantie pour les créateurs et assignés ; restriction stricte pour les membres ordinaires (auto-assignation uniquement, les admins peuvent assigner tout le monde).
+  - `TaskCard.tsx` & `TaskModal.tsx` : affichage des capsules nominatives complètes au lieu d'une simple initiale, attribution du créateur et suppression autorisée pour le créateur/admin.
+  - Bascule ergonomique "Kanban" / "Tableau M2V5" sur la page `/kanban`.
+- **Agenda Modernisé (`agenda.module.css` & `agenda/page.tsx`)** :
+  - Restauration et modernisation complète de l'agenda avec CSS scoped, tokens d'événements colorés (Réunions, Tâches, Jalons), légende visuelle et intégration des échéances personnelles des membres (et globales pour l'admin).
+
 ## [2026-09-27] - Refonte UI/UX et Fix API
 ### Corrigé
 - **API Tasks (Neon HTTP)** : Résolution de l'erreur 500 "Transactions are not supported in HTTP mode" en remplaçant l'écriture imbriquée Prisma par un create suivi d'un createMany pour les assignations.

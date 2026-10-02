@@ -131,11 +131,16 @@ model Task {
   description String?
   status      TaskStatus       @default(TODO)
   priority    TaskPriority     @default(NORMAL)
-  position    Int
-  dueDate     DateTime?
-  completedAt DateTime?
-  createdAt   DateTime         @default(now())
-  updatedAt   DateTime         @updatedAt
+  position           Int
+  dueDate            DateTime?
+  completedAt        DateTime?
+  workload           String?          // Charge de travail estimée (ex: "4h", "2 jours")
+  deliverables       String?          // Livrables attendus (ex: "PCB, code testé, compte-rendu")
+  validationCriteria String?          // Qui valide ? Comment ?
+  progress           Int              @default(0) // % d'avancement (0 à 100)
+  delayReason        String?          // Cause du retard déclarée
+  createdAt          DateTime         @default(now())
+  updatedAt          DateTime         @updatedAt
   project     Project          @relation(fields: [projectId], references: [id], onDelete: Cascade)
   createdBy   User?            @relation("TaskCreator", fields: [createdById], references: [id], onDelete: SetNull)
   parent      Task?            @relation("SubTasks", fields: [parentId], references: [id], onDelete: Cascade) // Suppression en cascade des sous-tâches

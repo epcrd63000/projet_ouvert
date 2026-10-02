@@ -42,7 +42,14 @@ export async function GET(request: NextRequest) {
     const tasks = await prisma.task.findMany({
       where: {
         dueDate: { not: null, ...(hasDateFilter ? dateFilter : {}) },
-        ...(isAdmin ? {} : { assignments: { some: { userId } } }),
+        ...(isAdmin
+          ? {}
+          : {
+              OR: [
+                { assignments: { some: { userId } } },
+                { createdById: userId },
+              ],
+            }),
       },
       include: {
         assignments: {
