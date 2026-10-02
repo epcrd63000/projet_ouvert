@@ -1,13 +1,18 @@
 "use client";
 
 import React, { useState, useEffect, useCallback } from "react";
-import { useRouter } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { Button } from "@/components/ui/button";
+import { MeetingReportEditor } from "@/components/meetings/MeetingReportEditor";
+import { Copy, Bot } from "lucide-react";
+import { toast } from "sonner";
 
 interface User {
   id: string;
   name: string;
+  email: string;
+  avatarUrl?: string | null;
 }
 
 interface Meeting {
@@ -15,22 +20,21 @@ interface Meeting {
   title: string;
   scheduledAt: string;
   status: string;
-  notes: string | null;
+  location?: string | null;
+  notes?: string | null;
+  reportContent?: string | null;
+  isReportDownloaded: boolean;
+  createdBy: User | null;
   attendees: { user: User }[];
-  createdBy: User;
 }
 
-import jsPDF from "jspdf";
-import html2canvas from "html2canvas";
-
-export default function MeetingDetailPage({ params }: { params: { id: string } }) {
+export default function MeetingDetailPage() {
+  const params = useParams<{ id: string }>();
   const router = useRouter();
   const { data: session } = useSession();
+  
   const [meeting, setMeeting] = useState<Meeting | null>(null);
-  const [notes, setNotes] = useState("");
   const [isLoading, setIsLoading] = useState(true);
-  const [prompts, setPrompts] = useState<{ id: string; title: string; content: string }[]>([]);
-  const [isPromptsOpen, setIsPromptsOpen] = useState(false);
 
   const isAdmin = session?.user?.role === "ADMIN";
 
@@ -40,68 +44,55 @@ export default function MeetingDetailPage({ params }: { params: { id: string } }
       if (res.ok) {
         const data = await res.json();
         setMeeting(data);
-        setNotes(data.notes || "");
       } else {
         router.push("/meetings");
       }
     } catch (error) {
-      console.error("Erreur chargement réunion:", error);
+      console.error("Erreur chargement rǸunion:", error);
     } finally {
       setIsLoading(false);
     }
   }, [params.id, router]);
 
-  const [promptsError, setPromptsError] = useState<string | null>(null);
-
-  const fetchPrompts = useCallback(async () => {
-    try {
-      const res = await fetch("/api/prompts");
-      if (res.ok) {
-        const data = await res.json();
-        setPrompts(data);
-        setPromptsError(null);
-      } else {
-        setPromptsError("Impossible de charger les modèles.");
-      }
-    } catch (err) {
-      console.error("Erreur chargement prompts:", err);
-      setPromptsError("Erreur de réseau.");
-    }
-  }, []);
-
   useEffect(() => {
     fetchMeeting();
-    fetchPrompts();
-  }, [fetchMeeting, fetchPrompts]);
+  }, [fetchMeeting]);
 
-  const copyToClipboard = async (content: string) => {
-    try {
-      await navigator.clipboard.writeText(content);
-      alert("Modèle copié dans le presse-papier !");
-      setIsPromptsOpen(false);
-    } catch (err) {
-      console.error("Erreur copie", err);
-    }
-  };
-
-  const handleSaveNotes = async () => {
+  const handleSaveReport = async (markdown: string) => {
     try {
       const res = await fetch(`/api/meetings/${params.id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ notes }),
+        body: JSON.stringify({ reportContent: markdown }),
+      });
+      if (res.ok) {
+        toast.success("Compte rendu enregistrǸ avec succs.");
+        fetchMeeting();
+      } else {
+        toast.error("Erreur lors de la sauvegarde.");
+      }
+    } catch (error) {
+      console.error("Erreur sauvegarde reportContent:", error);
+    }
+  };
+
+  const handleDownloaded = async () => {
+    try {
+      const res = await fetch(`/api/meetings/${params.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ isReportDownloaded: true }),
       });
       if (res.ok) {
         fetchMeeting();
-        alert("Compte rendu enregistré avec succès.");
       }
     } catch (error) {
-      console.error("Erreur sauvegarde notes:", error);
+      console.error("Erreur maj isReportDownloaded:", error);
     }
   };
 
   const handleDelete = async () => {
-    if (!confirm("Voulez-vous vraiment supprimer cette réunion ?")) return;
+    if (!confirm("Voulez-vous vraiment supprimer cette rǸunion ?")) return;
     try {
       const res = await fetch(`/api/meetings/${params.id}`, {
         method: "DELETE",
@@ -114,34 +105,33 @@ export default function MeetingDetailPage({ params }: { params: { id: string } }
     }
   };
 
-  const handleExportPDF = async () => {
-    const element = document.getElementById("meeting-report-content");
-    if (!element) return;
+  const PROMPT_TEXT = `Voici la transcription de notre rǸunion. Peux-tu me gǸnǸrer un compte rendu formatǸ en Markdown (sans en-tǸte de code Markdown, juste le texte) avec cette structure exacte :
+
+# Compte-Rendu de RǸunion : ${meeting?.title}
+
+## 1. 📅 Informations
+- **Date :** ${meeting ? new Date(meeting.scheduledAt).toLocaleDateString("fr-FR") : ""}
+- **Objectif :** [RǸsumǸr l'objectif en une phrase]
+- **Participants prǸsents :** [Lister les participants reconnus dans la transcription]
+
+## 2. 📝 Points clǸs abordǸs
+[Lister sous forme de puces les sujets principaux discutǸs]
+
+## 3. ✅ DǸcisions actǸes
+[Lister de fa?on claire et concise les dǸcisions finales prises]
+
+## 4. 🎯 Prochaines Ǹtapes
+[Sous forme de tirets : Qui fait quoi pour quand]
+
+Voici la transcription brute :
+[COLLEZ LA TRANSCRIPTION ICI]`;
+
+  const handleCopyPrompt = async () => {
     try {
-      const canvas = await html2canvas(element, { scale: 2 });
-      const imgData = canvas.toDataURL("image/png");
-      const pdf = new jsPDF("p", "mm", "a4");
-      
-      const pdfWidth = pdf.internal.pageSize.getWidth();
-      const pageHeight = pdf.internal.pageSize.getHeight();
-      const imgHeight = (canvas.height * pdfWidth) / canvas.width;
-      
-      let heightLeft = imgHeight;
-      let position = 0;
-      
-      pdf.addImage(imgData, "PNG", 0, position, pdfWidth, imgHeight);
-      heightLeft -= pageHeight;
-      
-      while (heightLeft > 0) {
-        position = heightLeft - imgHeight; // This moves the image up
-        pdf.addPage();
-        pdf.addImage(imgData, "PNG", 0, position, pdfWidth, imgHeight);
-        heightLeft -= pageHeight;
-      }
-      
-      pdf.save(`compte-rendu-${meeting?.title.replace(/[^a-z0-9]/gi, '_').toLowerCase()}.pdf`);
-    } catch (error) {
-      console.error("Erreur génération PDF:", error);
+      await navigator.clipboard.writeText(PROMPT_TEXT);
+      toast.success("Prompt IA copiǸ dans le presse-papier !");
+    } catch (err) {
+      toast.error("Erreur lors de la copie.");
     }
   };
 
@@ -150,93 +140,86 @@ export default function MeetingDetailPage({ params }: { params: { id: string } }
   }
 
   if (!meeting) {
-    return null; // ou erreur
+    return null;
   }
 
   return (
-    <div className="space-y-6 max-w-4xl">
+    <div className="space-y-6 max-w-6xl mx-auto">
       <div className="flex items-center justify-between border-b pb-4">
         <div>
-          <Button variant="ghost" onClick={() => router.push("/meetings")} className="mb-2">
-            ← Retour aux réunions
+          <Button variant="ghost" onClick={() => router.push("/meetings")} className="mb-2 -ml-4">
+            ? Retour aux rǸunions
           </Button>
-          <h1 className="text-3xl font-bold tracking-tight">{meeting.title}</h1>
+          <h1 className="text-3xl font-bold tracking-tight flex items-center gap-2">
+            {meeting.title}
+            {meeting.isReportDownloaded ? (
+              <span className="text-xs font-normal px-2 py-1 bg-green-100 text-green-700 rounded-full border border-green-200">
+                TǸlǸchargǸ
+              </span>
+            ) : (
+              <span className="text-xs font-normal px-2 py-1 bg-red-100 text-red-700 rounded-full border border-red-200">
+                Non tǸlǸchargǸ
+              </span>
+            )}
+          </h1>
           <p className="text-muted-foreground mt-1">
-            Prévue le : {new Date(meeting.scheduledAt).toLocaleString("fr-FR")}
+            PrǸvue le : {new Date(meeting.scheduledAt).toLocaleString("fr-FR")}
           </p>
         </div>
-        <div className="flex gap-2 relative">
-          <div className="relative">
-            <Button variant="outline" onClick={() => setIsPromptsOpen(!isPromptsOpen)}>
-              ✨ Modèles IA
-            </Button>
-            {isPromptsOpen && (
-              <div className="absolute right-0 mt-2 w-72 bg-popover text-popover-foreground border rounded-md shadow-lg z-50 overflow-hidden">
-                <div className="p-2 border-b bg-muted/50">
-                  <h4 className="text-sm font-semibold text-center">Modèles de Prompts</h4>
-                </div>
-                <div className="max-h-60 overflow-y-auto">
-                  {promptsError ? (
-                    <div className="p-3 text-sm text-destructive text-center">{promptsError}</div>
-                  ) : prompts.length === 0 ? (
-                    <div className="p-3 text-sm text-muted-foreground text-center">Aucun modèle disponible</div>
-                  ) : (
-                    prompts.map((p) => (
-                      <button
-                        key={p.id}
-                        onClick={() => copyToClipboard(p.content)}
-                        className="w-full text-left px-3 py-2 text-sm hover:bg-muted transition-colors border-b last:border-0"
-                      >
-                        <div className="font-medium">{p.title}</div>
-                        <div className="text-xs text-muted-foreground truncate mt-1">{p.content}</div>
-                      </button>
-                    ))
-                  )}
-                </div>
-              </div>
-            )}
-          </div>
-          <Button variant="secondary" onClick={handleExportPDF}>
-            Exporter en PDF
-          </Button>
+        <div className="flex gap-2">
           {isAdmin && (
             <Button variant="destructive" onClick={handleDelete}>
-              Supprimer la réunion
+              Supprimer la rǸunion
             </Button>
           )}
         </div>
       </div>
 
-      <div id="meeting-report-content" className="grid gap-6 md:grid-cols-3 bg-background p-4 rounded-xl">
+      <div className="grid gap-6 md:grid-cols-4">
+        {/* Colonne latǸrale */}
         <div className="md:col-span-1 space-y-4">
-          <div className="rounded-lg border bg-card p-4 shadow-sm">
+          <div className="rounded-xl border bg-primary/5 p-4 shadow-sm border-primary/20">
+            <h3 className="font-semibold pb-2 mb-2 flex items-center gap-2 text-primary">
+              <Bot className="h-5 w-5" />
+              GǸnǸrer avec l'IA
+            </h3>
+            <p className="text-sm text-muted-foreground mb-4">
+              Copiez ce prompt prǸ-formatǸ, collez-le dans ChatGPT/Claude avec votre transcription, puis collez le rǸsultat Markdown dans l'Ǹditeur.
+            </p>
+            <Button onClick={handleCopyPrompt} className="w-full flex gap-2">
+              <Copy className="h-4 w-4" /> Copier le Prompt IA
+            </Button>
+          </div>
+
+          <div className="rounded-xl border bg-card p-4 shadow-sm">
             <h3 className="font-semibold border-b pb-2 mb-2">Informations</h3>
-            <p className="text-sm"><strong>Statut :</strong> {meeting.status}</p>
-            <p className="text-sm"><strong>Créée par :</strong> {meeting.createdBy?.name}</p>
+            <p className="text-sm mb-1"><strong>Statut :</strong> {meeting.status}</p>
+            <p className="text-sm"><strong>CrǸǸe par :</strong> {meeting.createdBy?.name}</p>
           </div>
           
-          <div className="rounded-lg border bg-card p-4 shadow-sm">
+          <div className="rounded-xl border bg-card p-4 shadow-sm">
             <h3 className="font-semibold border-b pb-2 mb-2">Participants ({meeting.attendees.length})</h3>
             <ul className="text-sm space-y-1">
               {meeting.attendees.map((a) => (
-                <li key={a.user.id}>• {a.user.name}</li>
+                <li key={a.user.id}>? {a.user.name}</li>
               ))}
               {meeting.attendees.length === 0 && <li className="text-muted-foreground">Aucun</li>}
             </ul>
           </div>
         </div>
 
-        <div className="md:col-span-2 space-y-4">
-          <div className="rounded-lg border bg-card p-4 shadow-sm">
-            <h3 className="font-semibold border-b pb-2 mb-2">Compte Rendu</h3>
-            <textarea
-              className="w-full min-h-[300px] p-3 rounded-md border text-sm"
-              placeholder="Saisissez le compte rendu de la réunion ici..."
-              value={notes}
-              onChange={(e) => setNotes(e.target.value)}
-            />
-            <div className="mt-4 flex justify-end">
-              <Button onClick={handleSaveNotes} data-html2canvas-ignore>Enregistrer le compte rendu</Button>
+        {/* ?diteur Markdown */}
+        <div className="md:col-span-3 space-y-4">
+          <div className="rounded-xl border bg-card p-4 shadow-sm flex flex-col h-full min-h-[500px]">
+            <h3 className="font-semibold mb-4 text-lg">Compte Rendu (Markdown)</h3>
+            <div className="flex-1">
+              <MeetingReportEditor 
+                meetingId={meeting.id}
+                initialContent={meeting.reportContent || ""}
+                isDownloaded={meeting.isReportDownloaded}
+                onSave={handleSaveReport}
+                onDownloaded={handleDownloaded}
+              />
             </div>
           </div>
         </div>

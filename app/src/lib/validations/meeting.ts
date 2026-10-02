@@ -14,6 +14,8 @@ export const updateMeetingSchema = z.object({
   scheduledAt: z.string().datetime().optional(),
   location: z.string().optional().nullable(),
   notes: z.string().optional().nullable(),
+  reportContent: z.string().optional().nullable(),
+  isReportDownloaded: z.boolean().optional(),
   status: z.enum(["PLANNED", "IN_PROGRESS", "DONE"]).optional(),
   attendeeIds: z.array(z.string()).optional(),
 });

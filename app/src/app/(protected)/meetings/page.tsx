@@ -7,9 +7,14 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { MeetingModal, MeetingFormData } from "@/components/meetings/MeetingModal";
-import { Users as UsersIcon, Plus, Calendar, Clock } from "lucide-react";
+import { Users as UsersIcon, Plus, Calendar, Clock, Download, CheckSquare, Square } from "lucide-react";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
+import JSZip from "jszip";
+import { saveAs } from "file-saver";
+import jsPDF from "jspdf";
+import html2canvas from "html2canvas";
+import { marked } from "marked";
 
 interface User {
   id: string;
@@ -22,6 +27,8 @@ interface Meeting {
   title: string;
   scheduledAt: string;
   status: string;
+  reportContent?: string | null;
+  isReportDownloaded: boolean;
   attendees: { user: User }[];
 }
 
@@ -31,6 +38,8 @@ export default function MeetingsPage() {
   const [users, setUsers] = useState<User[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [selectedMeetings, setSelectedMeetings] = useState<Set<string>>(new Set());
+  const [isExporting, setIsExporting] = useState(false);
 
   const isAdmin = session?.user?.role === "ADMIN";
 
@@ -66,24 +75,6 @@ export default function MeetingsPage() {
   }, [fetchMeetings, fetchUsers]);
 
   const handleCreateMeeting = async (data: MeetingFormData) => {
-    // Optimistic update
-    const tempId = "temp-" + Date.now();
-    const newMeeting: Meeting = {
-      id: tempId,
-      title: data.title,
-      scheduledAt: new Date(data.scheduledAt).toISOString(),
-      status: data.status,
-      attendees: data.attendeeIds.map(id => {
-        const u = users.find(u => u.id === id);
-        return { user: u ? u : { id, name: "Membre", email: "" } };
-      })
-    };
-
-    setMeetings(prev => {
-      const newList = [...prev, newMeeting];
-      return newList.sort((a, b) => new Date(a.scheduledAt).getTime() - new Date(b.scheduledAt).getTime());
-    });
-
     try {
       const res = await fetch("/api/meetings", {
         method: "POST",
@@ -96,19 +87,106 @@ export default function MeetingsPage() {
 
       if (res.ok) {
         toast.success("Réunion créée avec succès");
-        // Refetch to get real ID and data from DB
         fetchMeetings();
       } else {
         const err = await res.json();
         toast.error(err.error || "Impossible de créer la réunion");
-        fetchMeetings(); // Revert on failure
       }
     } catch (error) {
       console.error("Erreur création réunion:", error);
       toast.error("Erreur de connexion lors de la création");
-      fetchMeetings(); // Revert on failure
     }
   };
+
+  const toggleSelection = (id: string) => {
+    const newSet = new Set(selectedMeetings);
+    if (newSet.has(id)) {
+      newSet.delete(id);
+    } else {
+      newSet.add(id);
+    }
+    setSelectedMeetings(newSet);
+  };
+
+  const handleBatchExport = async () => {
+    if (selectedMeetings.size === 0) return;
+    setIsExporting(true);
+    
+    try {
+      const zip = new JSZip();
+      const tempDiv = document.createElement("div");
+      tempDiv.style.padding = "40px";
+      tempDiv.style.fontFamily = "sans-serif";
+      tempDiv.style.color = "#000";
+      tempDiv.style.background = "#fff";
+      tempDiv.style.width = "800px";
+      tempDiv.style.position = "absolute";
+      tempDiv.style.left = "-9999px"; // hide it
+      
+      const style = document.createElement("style");
+      style.innerHTML = `
+        h1 { color: #1a56db; font-size: 24px; border-bottom: 2px solid #e5e7eb; padding-bottom: 8px; }
+        h2 { color: #2563eb; font-size: 20px; margin-top: 20px; }
+        p { line-height: 1.6; margin-bottom: 12px; }
+        ul { padding-left: 20px; }
+        li { margin-bottom: 4px; }
+        strong { color: #111827; }
+      `;
+      tempDiv.appendChild(style);
+      document.body.appendChild(tempDiv);
+
+      const meetingsToExport = meetings.filter(m => selectedMeetings.has(m.id));
+
+      for (const meeting of meetingsToExport) {
+        if (!meeting.reportContent) continue;
+
+        // Convert markdown to HTML using marked
+        const htmlContent = await marked.parse(meeting.reportContent);
+        const contentContainer = document.createElement("div");
+        contentContainer.innerHTML = htmlContent;
+        tempDiv.appendChild(contentContainer);
+
+        const canvas = await html2canvas(tempDiv, { scale: 2 });
+        const imgData = canvas.toDataURL("image/jpeg", 1.0);
+        const pdf = new jsPDF("p", "mm", "a4");
+        const pdfWidth = pdf.internal.pageSize.getWidth();
+        const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
+        
+        pdf.addImage(imgData, "JPEG", 0, 0, pdfWidth, pdfHeight);
+        
+        const pdfBlob = pdf.output("blob");
+        const safeTitle = meeting.title.replace(/[^a-z0-9]/gi, '_').toLowerCase();
+        zip.file(`Compte_Rendu_${safeTitle}.pdf`, pdfBlob);
+        
+        tempDiv.removeChild(contentContainer); // clean up for next
+
+        // Update downloaded status in DB
+        if (!meeting.isReportDownloaded) {
+            await fetch(`/api/meetings/${meeting.id}`, {
+                method: "PATCH",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ isReportDownloaded: true }),
+            });
+        }
+      }
+
+      document.body.removeChild(tempDiv);
+      
+      const content = await zip.generateAsync({ type: "blob" });
+      saveAs(content, "Comptes_Rendus_Reunions.zip");
+      toast.success("Archive ZIP téléchargée avec succès");
+      
+      // Clear selection and refresh
+      setSelectedMeetings(new Set());
+      fetchMeetings();
+    } catch (error) {
+      console.error(error);
+      toast.error("Erreur lors de l'exportation par lot.");
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
 
   if (isLoading) {
     return <div className="p-8 text-center text-muted-foreground">Chargement...</div>;
@@ -129,7 +207,7 @@ export default function MeetingsPage() {
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between flex-wrap gap-4">
         <div className="flex items-center gap-3">
           <UsersIcon className="h-8 w-8 text-primary" />
           <div>
@@ -137,11 +215,19 @@ export default function MeetingsPage() {
             <p className="text-muted-foreground">Planification et comptes rendus</p>
           </div>
         </div>
-        {isAdmin && (
-          <Button onClick={() => setIsModalOpen(true)} className="gap-2">
-            <Plus className="h-4 w-4" /> Nouvelle réunion
-          </Button>
-        )}
+        <div className="flex gap-2 items-center flex-wrap">
+          {selectedMeetings.size > 0 && (
+            <Button onClick={handleBatchExport} variant="secondary" disabled={isExporting} className="gap-2">
+              <Download className="h-4 w-4" /> 
+              {isExporting ? "Création ZIP..." : `Exporter ${selectedMeetings.size} compte(s) rendu(s)`}
+            </Button>
+          )}
+          {isAdmin && (
+            <Button onClick={() => setIsModalOpen(true)} className="gap-2">
+              <Plus className="h-4 w-4" /> Nouvelle réunion
+            </Button>
+          )}
+        </div>
       </div>
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
@@ -149,10 +235,21 @@ export default function MeetingsPage() {
           <p className="text-muted-foreground col-span-full text-center py-10">Aucune réunion prévue.</p>
         ) : (
           meetings.map((meeting) => (
-            <div key={meeting.id} className="rounded-xl border bg-card p-5 shadow-sm hover:shadow-md transition-shadow flex flex-col justify-between">
-              <div>
+            <div key={meeting.id} className="relative rounded-xl border bg-card p-5 shadow-sm hover:shadow-md transition-shadow flex flex-col justify-between">
+              
+              <div className="absolute top-4 left-4 z-10 cursor-pointer" onClick={() => toggleSelection(meeting.id)}>
+                {selectedMeetings.has(meeting.id) ? (
+                  <CheckSquare className="h-5 w-5 text-primary" />
+                ) : (
+                  <Square className="h-5 w-5 text-muted-foreground hover:text-primary" />
+                )}
+              </div>
+
+              <div className="pl-8">
                 <div className="flex justify-between items-start mb-2">
-                  <h3 className="font-semibold text-lg line-clamp-1" title={meeting.title}>{meeting.title}</h3>
+                  <h3 className={`font-semibold text-lg line-clamp-1 ${meeting.isReportDownloaded ? 'text-green-600' : 'text-red-600'}`} title={meeting.title}>
+                    {meeting.title}
+                  </h3>
                   {getStatusBadge(meeting.status)}
                 </div>
                 

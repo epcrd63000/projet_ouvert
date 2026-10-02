@@ -78,13 +78,14 @@ export async function PATCH(
     const { attendeeIds, scheduledAt, ...meetingData } = parsed.data;
     const isAdmin = session.user.role === "ADMIN";
 
-    // Si on n'est pas Admin, on ne peut modifier que "notes"
+    // Si on n'est pas Admin, on ne peut modifier que "notes" ou "reportContent" ou "isReportDownloaded"
     if (!isAdmin) {
       if (
         attendeeIds !== undefined ||
         scheduledAt !== undefined ||
         meetingData.title !== undefined ||
-        meetingData.status !== undefined
+        meetingData.status !== undefined ||
+        meetingData.location !== undefined
       ) {
         return NextResponse.json(
           { error: "Les membres ne peuvent modifier que le compte rendu." },

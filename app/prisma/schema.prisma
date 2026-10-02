@@ -173,9 +173,11 @@ model Meeting {
   createdById String?
   title       String
   scheduledAt DateTime
-  location    String?
-  notes       String?
-  status      MeetingStatus     @default(PLANNED)
+  location           String?
+  notes              String?
+  reportContent      String?
+  isReportDownloaded Boolean           @default(false)
+  status             MeetingStatus     @default(PLANNED)
   createdAt   DateTime          @default(now())
   updatedAt   DateTime          @updatedAt
   project     Project           @relation(fields: [projectId], references: [id], onDelete: Cascade)

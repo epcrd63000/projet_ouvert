@@ -1,5 +1,15 @@
 # Journal des Modifications (CHANGELOG)
 
+
+## [2.2.0] - 2026-10-02
+
+### Ajouté
+- **Éditeur de Compte Rendu (TipTap)** : Intégration d'un éditeur WYSIWYG robuste pour les réunions, avec export PDF (html2canvas, jsPDF) et sauvegarde native en Markdown.
+- **Export PDF en Lot (Batch Export)** : Possibilité de sélectionner plusieurs réunions depuis la liste et de les exporter dans une archive ZIP générée côté client (JSZip).
+- **Indicateurs de Suivi** : Ajout d'un statut visuel (Rouge/Vert) pour identifier rapidement les comptes rendus téléchargés ou non téléchargés.
+- **Prompt IA Intégré** : Le prompt de structuration de la réunion est désormais accessible et copiable directement en un clic depuis la page de la réunion pour fluidifier l'utilisation de l'IA (ChatGPT/Claude).
+- **Mise à jour BDD** : Ajout des champs eportContent et isReportDownloaded sur le modèle \Meeting\ de Prisma.
+
 Toutes les modifications notables apportÃ©es Ã  ce projet sont consignÃ©es dans ce document.
 
 ## [Non publiÃ©] - 2026-09-25
