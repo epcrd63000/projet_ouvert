@@ -126,47 +126,27 @@ export function buildInvitationEmailBody(
     ? user.tempPassword
     : "(Identifiant existant ou déjà configuré)";
 
-  return `Bonjour ${firstName},
+  return `Salut ${firstName},
 
-Pour organiser au mieux notre Projet Ouvert IMT et centraliser tout notre travail d'équipe, voici la plateforme collaborative que j'ai mise en place pour nous 6.
+(Je t'avais déjà envoyé un premier mail tout à l'heure, mais je pense qu'il a dû atterrir direct dans tes spams / courriers indésirables !)
 
-Accès direct : ${appUrl}
-Identifiant : ${user.pseudo}
-Mot de passe temporaire : ${passwordText}
+Pour qu'on puisse s'organiser facilement à 6 sur notre Projet Ouvert IMT, j'ai mis en place une petite plateforme collaborative. L'idée c'est de tout centraliser au même endroit.
 
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-PREMIERS PAS & TOUR D'HORIZON :
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Voici tes accès :
+- Lien : ${appUrl}
+- Identifiant : ${user.pseudo}
+- Mot de passe temporaire : ${passwordText}
 
-Je t'invite à te connecter et à explorer les différents onglets pour découvrir l'outil :
+Je te laisse te connecter et faire un petit tour pour découvrir l'outil. J'ai préparé pas mal de choses :
+- Un tableau pour nos tâches (je t'ai d'ailleurs assigné une petite tâche de test pour que tu puisses essayer !)
+- Un espace pour nos comptes-rendus de réunion
+- Un agenda avec les gros jalons IMT et nos créneaux
+- Un suivi pour le budget et nos dépenses
+- Et un coin doc avec le cahier des charges et les consignes
 
-- Tableau Kanban & Tâches :
-  Tu y trouveras une première tâche d'exemple qui t'est assignée pour tester le fonctionnement (statuts À faire / En cours / Terminé, priorités, détails).
+Tu pourras changer ton mot de passe dans les paramètres si tu le souhaites.
 
-- Réunions & Comptes rendus :
-  Jette un œil aux premiers exemples de réunions préparées pour voir comment sont structurés l'ordre du jour, les présences et la génération automatique des relevés de décisions.
-
-- Agenda & Jalons :
-  Tous les jalons officiels IMT (TD, livrables, soutenances) et nos créneaux d'équipe sont répertoriés pour garder le cap.
-
-- Budget & Trésorerie :
-  Le suivi en temps réel de nos lignes de financement (APICIL, BDE, Fablab) et nos dépenses de matériel.
-
-- Documentation & Infos :
-  Le cahier des charges, les consignes officielles et les ressources techniques du projet.
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-POUR DÉMARRER :
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-1. Ouvre le lien : ${appUrl}
-2. Connecte-toi avec ton identifiant ("${user.pseudo}") et ton mot de passe temporaire ci-dessus.
-3. Rends-toi dans les Paramètres si tu souhaites personnaliser ton mot de passe.
-4. Fais le tour des onglets et teste la tâche d'exemple !
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-TES RETOURS SONT LES BIENVENUS :
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-N'hésite surtout pas à me faire tes retours (ce qui te semble pratique, ce qu'on peut améliorer ou ajuster). L'idée est de peaufiner la plateforme ensemble avant d'attaquer nos premières vraies réunions et séances de travail !
+N'hésite pas à me dire ce que tu en penses, ce qui est pratique ou ce qu'on pourrait améliorer. Le but, c'est de peaufiner ça ensemble avant de se lancer dans nos premières vraies réunions de travail !
 
 À très vite,
 Étienne`;

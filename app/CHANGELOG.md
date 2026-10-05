@@ -1,5 +1,14 @@
 # Changelog
 
+## [2.10.2] - 2026-10-05
+
+### Corrigé & Amélioré
+- **Allègement du Mail d'Invitation & Compatibilité Webmail (Zimbra / Erreur 431)** :
+  - Intégration du nouveau gabarit d'invitation épuré et naturel rédigé par Étienne.
+  - Ajout d'une mention discrète signalant que le premier message a pu atterrir dans les courriers indésirables / spams.
+  - Élimination des séparateurs Unicode lourds réduisant la taille de l'URL mailto de plus de 70%, évitant le débordement de taille d'en-tête (HTTP 431 / Request Header Fields Too Large).
+  - Ajout de la copie automatique du texte personnalisé dans le presse-papier lors du clic sur le bouton « Envoyer par mail » (`UserCredentialRow.tsx`).
+
 ## [2.10.1] - 2026-10-05
 
 ### Corrigé

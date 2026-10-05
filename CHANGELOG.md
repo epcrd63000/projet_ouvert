@@ -1,5 +1,17 @@
 # Journal des Modifications (CHANGELOG)
 
+## [2.12.4] - 2026-10-05
+
+### Allègement du Mail d'Invitation & Compatibilité Webmail (Zimbra / HTTP 431)
+- **Nouveau Squelette Épuré & Mention Anti-Spam (`src/lib/auth/credentialsLogic.ts`)** :
+  - Remplacement du corps avec barres Unicode par le format concis et naturel rédigé par Étienne.
+  - Ajout d'une mention bienveillante prévenant de l'éventuel routage du premier email dans le dossier Spam/Courrier indésirable.
+  - Suppression des caractères de soulignement lourds qui faisaient exploser l'encodage URI (évite l'erreur HTTP 431 / Request Header Fields Too Large sur les serveurs Jetty de Zimbra).
+- **Copie Automatique dans le Presse-Papier au Clic (`src/components/settings/UserCredentialRow.tsx`)** :
+  - Le clic sur « Envoyer par mail » copie désormais automatiquement l'intégralité du message personnalisé dans le presse-papier en parallèle de l'ouverture du client de messagerie.
+- **Tests Unitaires TDD Validés (`src/__tests__/05_auth_credentials_logic.test.ts`)** :
+  - Validation du nouveau texte et vérification de la structure compacte.
+
 ## [2.12.3] - 2026-10-05
 
 ### Communication & Expérience d'Accueil (Onboarding)

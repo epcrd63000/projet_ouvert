@@ -160,7 +160,8 @@ export function UserCredentialRow({
           target="_blank"
           rel="noopener noreferrer"
           className="inline-block"
-          title="Ouvrir le client mail dans un nouvel onglet avec les identifiants pré-remplis"
+          title="Ouvrir le client mail et copier automatiquement le message dans le presse-papier"
+          onClick={handleCopyEmailText}
         >
           <Button size="sm" variant="outline" className="h-8 gap-1.5 text-xs">
             <Mail className="h-3.5 w-3.5 text-primary" />
