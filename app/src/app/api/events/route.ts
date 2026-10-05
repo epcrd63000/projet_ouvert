@@ -38,24 +38,20 @@ export async function GET(request: NextRequest) {
       },
     });
 
-    // 2. Récupérer les tâches avec dueDate
+    // 2. Récupérer les tâches avec dueDate (visibilité d'équipe globale avec distinction perso/équipe)
     const tasks = await prisma.task.findMany({
       where: {
         dueDate: { not: null, ...(hasDateFilter ? dateFilter : {}) },
-        ...(isAdmin
-          ? {}
-          : {
-              OR: [
-                { assignments: { some: { userId } } },
-                { createdById: userId },
-              ],
-            }),
       },
       include: {
         assignments: {
-          include: { user: { select: { id: true, name: true } } },
+          include: { user: { select: { id: true, name: true, email: true, avatarUrl: true } } },
+        },
+        createdBy: {
+          select: { id: true, name: true, email: true, avatarUrl: true },
         },
       },
+      orderBy: { dueDate: "asc" },
     });
 
     // 3. Récupérer les événements manuels et de jalons
@@ -82,9 +78,10 @@ export async function GET(request: NextRequest) {
         originalId: m.id,
       })),
       ...tasks.map((t) => {
-        const isMine = t.assignments.some((a) => a.userId === userId);
+        const isMine = t.assignments.some((a) => a.userId === userId) || t.createdById === userId;
         const assignees = t.assignments.map((a) => a.user.name).join(", ");
         const titleSuffix = !isMine && assignees ? ` (${assignees})` : "";
+        const isOverdue = !!(t.dueDate && new Date(t.dueDate) < new Date() && t.status !== "DONE");
         return {
           id: `task-${t.id}`,
           title: `Tâche: ${t.title}${titleSuffix}`,
@@ -92,9 +89,20 @@ export async function GET(request: NextRequest) {
           end: t.dueDate,
           type: "task",
           status: t.status,
+          priority: t.priority,
+          progress: t.progress,
           originalId: t.id,
           allDay: true,
           isMine,
+          isOverdue,
+          description: t.description,
+          workload: t.workload,
+          deliverables: t.deliverables,
+          validationCriteria: t.validationCriteria,
+          validator: t.validator,
+          delayReason: t.delayReason,
+          assignments: t.assignments,
+          createdBy: t.createdBy,
         };
       }),
       ...dbEvents.map((e) => ({

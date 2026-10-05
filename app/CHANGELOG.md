@@ -1,5 +1,22 @@
 # Changelog
 
+## [2.6.0] - 2026-10-05
+
+### Ajouté
+- **Volet Latéral des Tâches (Task Drawer) & Refonte Graphique de l'Agenda** :
+  - **Volet Latéral Coulissant Découplé (`TaskSideDrawer.tsx`)** : Intégration d'un tiroir latéral fluide sur la droite, s'ouvrant au clic sur n'importe quel événement tâche du calendrier ou via le nouveau bouton *"📋 Volet des tâches"* dans l'en-tête de l'Agenda.
+  - **Double Vue & Navigation Intégrée** :
+    - *Vue Liste (`TaskDrawerList.tsx`)* : Onglets de filtrage *"Mes tâches"* et *"Toutes les tâches (Équipe)"*, recherche textuelle instantanée par titre ou par nom de membre assigné, badges visuels et indicateur d'échéance.
+    - *Vue Fiche Détaillée (`TaskDrawerDetail.tsx`)* : Fiche complète de la tâche sélectionnée avec bouton de retour rapide `← Retour à la liste`, affichage des critères méthodologiques IMT (charge estimée, livrables attendus, qui valide / comment, cause du retard).
+  - **Action Rapide de Changement de Statut** : Modification en 1 clic du statut (*À faire*, *En cours*, *Terminé*) directement dans le panneau avec synchronisation optimiste 0ms et persistance API (`PATCH /api/tasks/[id]`).
+  - **Harmonisation des Couleurs & Légende Dédiée** :
+    - *Calendrier* : Tâches personnelles en ambré chaleureux (`hsl(var(--agenda-task-mine))`), tâches d'équipe en indigo doux (`hsl(var(--agenda-task-team))`), contour rouge vif pulsé pour les tâches en retard.
+    - *Panneau* : Badges normalisés pour la priorité (Basse, Normale, Haute, Critique) et pastilles d'état.
+    - *Légende* : Intégration de la distinction explicite "Mes tâches" vs "Tâches équipe" dans l'en-tête de l'Agenda (`AgendaHeader.tsx`).
+  - **Architecture & Règles Respectées** :
+    - Découpage strict en composants légers (`AgendaHeader`, `TaskSideDrawer`, `TaskDrawerList`, `TaskDrawerDetail`, `agendaUtils`, `agendaTypes`), tous `< 200 lignes`.
+    - Suite de tests TDD Tier 1 (`tests/01_tier1_feature_coverage/test-14-agenda-task-drawer.ts`) validant les métadonnées et la compatibilité Neon HTTP.
+
 ## [2.5.0] - 2026-10-05
 
 ### Ajouté

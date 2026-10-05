@@ -5,6 +5,10 @@
   --agenda-meeting-foreground: 222 47% 11%;
   --agenda-task: 43 91% 68%;
   --agenda-task-foreground: 222 47% 11%;
+  --agenda-task-mine: 43 91% 68%;
+  --agenda-task-mine-foreground: 222 47% 11%;
+  --agenda-task-team: 226 70% 68%;
+  --agenda-task-team-foreground: 222 47% 11%;
   --agenda-milestone: 160 62% 55%;
   --agenda-milestone-foreground: 222 47% 11%;
   --agenda-manual: 266 72% 76%;

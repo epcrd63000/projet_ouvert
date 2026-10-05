@@ -23,8 +23,8 @@ export async function GET(request: NextRequest) {
     // Requête de base avec relations
     const where: Record<string, unknown> = {};
 
-    // Les MEMBER ne voient que leurs tâches sauf si Admin demande tout
-    if (!showAll || session.user.role !== "ADMIN") {
+    // Si showAll n'est pas activé, restreindre à l'utilisateur ciblé ou courant
+    if (!showAll) {
       const targetUserId = userId || session.user.id;
       where.OR = [
         { assignments: { some: { userId: targetUserId } } },
