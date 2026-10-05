@@ -1,5 +1,27 @@
 # Journal des Modifications (CHANGELOG)
 
+## [2.12.1] - 2026-10-05
+
+### Initialisation & Déploiement Équipe
+- **Nettoyage Intégral des Tâches de Simulation** :
+  - Purge des 20 anciennes tâches de test et de leurs 29 assignations obsolètes en base Neon.
+  - Conservation rigoureuse des 11 jalons officiels IMT, des réunions d'équipe planifiées, du budget et des utilisateurs.
+- **Création des 6 Tâches Officielles de Démarrage (Semaine du 12 au 18 octobre 2026)** :
+  - Attribution d'une tâche concrète, détaillée et réaliste pour chaque membre de l'équipe :
+    - Étienne : *Revue du cahier des charges et préparation du jalon S2* (Échéance 14/10)
+    - Liam : *Engagement des bons de commande pour les fournitures composites* (Échéance 13/10)
+    - Hugo : *Finalisation de la modélisation 3D de la coque sur SolidWorks* (Échéance 15/10)
+    - Milane : *Dimensionnement de l'architecture d'alimentation et banc d'essai batterie* (Échéance 16/10)
+    - Solal : *Dimensionnement du gréement et découpe des laizes de voile* (Échéance 15/10)
+    - Peter : *Calibrage de la découpeuse laser et usinage des membrures en contreplaqué* (Échéance 16/10)
+  - Données d'ingénierie complètes associées : charge estimée (`workload`), livrables (`deliverables`), tags et priorités.
+- **Enrichissement du Premier Mail d'Onboarding (`src/lib/auth/credentialsLogic.ts`)** :
+  - Restructuration du message `mailto:` individuel généré pour chaque camarade :
+    - Message d'accueil convivial personnalisé au prénom de chacun.
+    - Tour d'horizon des fonctionnalités clés du site (Kanban, Agenda/Jalons, Budget/Trésorerie, Réunions & Décisions, Documentation).
+    - Identifiants de première connexion (prénom + mot de passe temporaire unique).
+    - Guide étape par étape pour se connecter et découvrir sa première tâche assignée.
+
 ## [2.12.0] - 2026-10-05
 
 ### Sécurité & Authentification

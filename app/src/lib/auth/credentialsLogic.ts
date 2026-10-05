@@ -113,7 +113,7 @@ export function buildMailtoUrl(
   appUrl: string
 ): string {
   const firstName = user.name.split(" ")[0] || user.name;
-  const subject = `[Projet Ouvert IMT] Tes accès à l'application de suivi de projet`;
+  const subject = `[Projet Ouvert IMT] Bienvenue sur notre espace projet — Tes accès & démarrage`;
 
   const passwordText = user.tempPassword
     ? user.tempPassword
@@ -121,16 +121,39 @@ export function buildMailtoUrl(
 
   const body = `Bonjour ${firstName},
 
-Voici tes identifiants pour te connecter à notre application de gestion et suivi de projet (Projet Ouvert IMT) :
+Pour organiser au mieux notre Projet Ouvert IMT et centraliser tout notre travail d'équipe, voici la plateforme collaborative que j'ai mise en place pour nous 6 !
 
-🔗 Lien de l'application : ${appUrl}
-👤 Identifiant de connexion : ${user.pseudo}
-🔑 Mot de passe temporaire : ${passwordText}
+🔗 Accès direct : ${appUrl}
+👤 Ton identifiant : ${user.pseudo}
+🔑 Ton mot de passe temporaire : ${passwordText}
 
-Pour te connecter, il te suffit d'aller sur le lien et de renseigner ton identifiant "${user.pseudo}" ainsi que ton mot de passe.
-Tu pourras ensuite modifier ton mot de passe à tout moment dans l'onglet Paramètres.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+🚀 CE QUE TU VAS RETROUVER SUR LE SITE :
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📋 Kanban & Tâches :
+Un tableau interactif (À faire, En cours, Terminé) avec une première tâche de démarrage qui t'est déjà assignée pour la semaine prochaine !
 
-Bon travail et à très vite pour le projet !
+📅 Agenda & Jalons officiels :
+Tous les jalons IMT officiels (TD, livrables, soutenances) et les créneaux de réunions de notre équipe pour ne rien manquer.
+
+💰 Budget & Trésorerie :
+Le suivi en direct de nos financements (APICIL, BDE, Fablab) et la gestion de nos devis et achats de matériel.
+
+🤝 Réunions & Décisions :
+L'ordre du jour de nos points hebdos, les feuilles de présence et les décisions actées converties directement en actions.
+
+📚 Infos Importantes :
+Les consignes du module, le cahier des charges et la documentation technique de référence.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+👉 POUR COMMENCER :
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+1. Clique sur le lien ci-dessus.
+2. Connecte-toi avec ton prénom ("${user.pseudo}") et ton mot de passe ci-dessus.
+3. Rends-toi dans l'onglet Paramètres pour personnaliser ton mot de passe si tu le souhaites.
+4. Va jeter un œil à ta première tâche sur le tableau Kanban !
+
+À très vite en séance pour qu'on avance ensemble !
 Étienne`;
 
   return `mailto:${user.email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
