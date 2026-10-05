@@ -7,7 +7,7 @@ export const SEED_PROJECT = {
   id: "00000000-0000-0000-0000-000000000001",
   name: "Projet Ouvert IMT 2026-2027",
   description: "Projet d'ingénierie d'ouverture IMT Nord Europe - Promotion CI1 2026-2027",
-  totalBudget: 500.0,
+  totalBudget: 3183.0, // Cumul initial des enveloppes (APICIL 2997€ + BDE 116€ + Fablab 70€)
   startDate: new Date("2026-09-14T08:00:00.000Z"),
   endDate: new Date("2027-05-11T18:00:00.000Z"),
 };
@@ -16,12 +16,12 @@ export const SEED_PROJECT = {
  * Liste des 6 utilisateurs officiels du projet avec leurs rôles respectifs.
  */
 export const SEED_USERS = [
-  { name: "Etienne", email: "etienne@imt.fr", role: Role.ADMIN },
-  { name: "Liam", email: "liam@imt.fr", role: Role.ADMIN },
-  { name: "Hugo", email: "hugo@imt.fr", role: Role.MEMBER },
-  { name: "Milane", email: "milane@imt.fr", role: Role.MEMBER },
-  { name: "Solal", email: "solal@imt.fr", role: Role.MEMBER },
-  { name: "Peter", email: "peter@imt.fr", role: Role.MEMBER },
+  { name: "Etienne PICARD", email: "etienne.picard@etu.imt-nord-europe.fr", role: Role.ADMIN },
+  { name: "Liam BEAN", email: "liam.bean@etu.imt-nord-europe.fr", role: Role.ADMIN },
+  { name: "Hugo RAMPAZZO", email: "hugo.rampazzo@etu.imt-nord-europe.fr", role: Role.MEMBER },
+  { name: "Milane FARGUES", email: "milane.fargues@etu.imt-nord-europe.fr", role: Role.MEMBER },
+  { name: "Solal BENQADI", email: "solal.benqadi@etu.imt-nord-europe.fr", role: Role.MEMBER },
+  { name: "Peter BATLLO", email: "peter.batllo@etu.imt-nord-europe.fr", role: Role.MEMBER },
 ];
 
 /**

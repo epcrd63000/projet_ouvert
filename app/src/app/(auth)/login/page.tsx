@@ -15,18 +15,19 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Badge } from "@/components/ui/badge";
+import { Eye, EyeOff, Lock, User } from "lucide-react";
 
 /**
- * Formulaire de connexion interactif avec gestion d'état et pré-remplissage.
+ * Formulaire de connexion sécurisé sans divulgation d'informations sensibles.
  */
 function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const callbackUrl = searchParams.get("callbackUrl") || "/dashboard";
 
-  const [email, setEmail] = useState("");
+  const [identifier, setIdentifier] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
@@ -35,13 +36,9 @@ function LoginForm() {
   React.useEffect(() => {
     if (urlError) {
       if (urlError === "CredentialsSignin") {
-        setErrorMessage(
-          "Identifiants incorrects. Veuillez vérifier votre adresse email et votre mot de passe."
-        );
+        setErrorMessage("Identifiants incorrects. Veuillez vérifier votre identifiant et votre mot de passe.");
       } else {
-        setErrorMessage(
-          "Erreur d'authentification ou session expirée. Veuillez vous reconnecter."
-        );
+        setErrorMessage("Session expirée ou erreur d'authentification. Veuillez vous reconnecter.");
       }
     }
   }, [urlError]);
@@ -51,57 +48,47 @@ function LoginForm() {
     setIsLoading(true);
     setErrorMessage(null);
 
-    console.log("[login] Soumission du formulaire...");
-    console.log("[login] Email :", email.trim().toLowerCase());
-    console.log("[login] Callback URL :", callbackUrl);
+    const cleanIdentifier = identifier.trim();
+    if (!cleanIdentifier || !password) {
+      setErrorMessage("Veuillez renseigner votre identifiant et votre mot de passe.");
+      setIsLoading(false);
+      return;
+    }
 
     try {
-      console.log("[login] Appel signIn('credentials') en cours...");
       const result = await signIn("credentials", {
-        email: email.trim().toLowerCase(),
+        identifier: cleanIdentifier,
         password,
         redirect: false,
         callbackUrl,
       });
 
-      console.log("[login] Résultat signIn :", JSON.stringify(result, null, 2));
-
       if (!result || result.error) {
-        console.error("[login] Erreur signIn :", result?.error);
-        setErrorMessage(
-          "Identifiants invalides. Veuillez vérifier votre adresse email et mot de passe."
-        );
+        setErrorMessage("Identifiants incorrects. Veuillez vérifier votre identifiant et mot de passe.");
         setIsLoading(false);
         return;
       }
 
-      console.log("[login] Connexion réussie ! Redirection vers :", callbackUrl);
-      // Navigation complète pour garantir l'envoi immédiat du cookie de session au serveur
-      // et éliminer les comportements de cache client figé dans Next.js 14 App Router
+      // Redirection complète pour prise en compte immédiate du cookie de session
       window.location.href = result?.url || callbackUrl;
     } catch (error) {
-      console.error("[login] Exception attrapée :", error);
+      console.error("[login] Erreur d'authentification :", error);
       setErrorMessage("Une erreur inattendue est survenue. Veuillez réessayer.");
       setIsLoading(false);
     }
   };
 
-  const handleQuickLogin = (testEmail: string) => {
-    setEmail(testEmail);
-    setPassword("password");
-  };
-
   return (
-    <Card className="shadow-lg border-border">
+    <Card className="shadow-xl border-border max-w-md w-full mx-auto">
       <CardHeader className="space-y-1 text-center">
-        <div className="mx-auto mb-2 flex h-10 w-10 items-center justify-center rounded-full bg-primary text-primary-foreground font-bold">
+        <div className="mx-auto mb-2 flex h-12 w-12 items-center justify-center rounded-xl bg-primary text-primary-foreground font-bold text-lg shadow-sm">
           IMT
         </div>
         <CardTitle className="text-2xl font-bold tracking-tight">
           Projet Ouvert IMT
         </CardTitle>
         <CardDescription>
-          Connectez-vous avec vos identifiants institutionnels
+          Connectez-vous avec votre identifiant ou votre prénom
         </CardDescription>
       </CardHeader>
 
@@ -114,67 +101,60 @@ function LoginForm() {
           )}
 
           <div className="space-y-2">
-            <Label htmlFor="email">Adresse email</Label>
-            <Input
-              id="email"
-              name="email"
-              type="email"
-              placeholder="etienne@imt.fr"
-              required
-              autoComplete="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              disabled={isLoading}
-            />
+            <Label htmlFor="identifier">Identifiant</Label>
+            <div className="relative">
+              <User className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
+              <Input
+                id="identifier"
+                name="identifier"
+                type="text"
+                placeholder="Ex: etienne, hugo..."
+                required
+                autoComplete="username"
+                value={identifier}
+                onChange={(e) => setIdentifier(e.target.value)}
+                disabled={isLoading}
+                className="pl-9"
+              />
+            </div>
           </div>
 
           <div className="space-y-2">
-            <div className="flex items-center justify-between">
-              <Label htmlFor="password">Mot de passe</Label>
-              <span className="text-xs text-muted-foreground">
-                Défaut : password
-              </span>
+            <Label htmlFor="password">Mot de passe</Label>
+            <div className="relative">
+              <Lock className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
+              <Input
+                id="password"
+                name="password"
+                type={showPassword ? "text" : "password"}
+                placeholder="••••••••••"
+                required
+                autoComplete="current-password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                disabled={isLoading}
+                className="pl-9 pr-10"
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-3 top-2.5 text-muted-foreground hover:text-foreground transition-colors"
+                title={showPassword ? "Masquer le mot de passe" : "Afficher le mot de passe"}
+                tabIndex={-1}
+              >
+                {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+              </button>
             </div>
-            <Input
-              id="password"
-              name="password"
-              type="password"
-              placeholder="••••••••"
-              required
-              autoComplete="current-password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              disabled={isLoading}
-            />
           </div>
         </CardContent>
 
-        <CardFooter className="flex flex-col space-y-4">
+        <CardFooter className="flex flex-col space-y-3">
           <Button type="submit" className="w-full" disabled={isLoading}>
             {isLoading ? "Connexion en cours..." : "Se connecter"}
           </Button>
-
-          <div className="w-full pt-2 border-t border-border space-y-2">
-            <p className="text-xs font-medium text-muted-foreground">
-              Comptes de test (Seed) :
-            </p>
-            <div className="flex flex-wrap gap-2">
-              <Badge
-                variant="outline"
-                className="cursor-pointer hover:bg-secondary transition-colors"
-                onClick={() => handleQuickLogin("etienne@imt.fr")}
-              >
-                Etienne (Admin)
-              </Badge>
-              <Badge
-                variant="outline"
-                className="cursor-pointer hover:bg-secondary transition-colors"
-                onClick={() => handleQuickLogin("hugo@imt.fr")}
-              >
-                Hugo (Membre)
-              </Badge>
-            </div>
-          </div>
+          <p className="text-xs text-center text-muted-foreground">
+            Accès sécurisé réservé aux membres du groupe de projet
+          </p>
         </CardFooter>
       </form>
     </Card>

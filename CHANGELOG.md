@@ -1,5 +1,52 @@
 # Journal des Modifications (CHANGELOG)
 
+## [2.12.0] - 2026-10-05
+
+### Sécurité & Authentification
+- **Refonte Sécurisée de l'Écran de Connexion (`src/app/(auth)/login/page.tsx`)** :
+  - Suppression intégrale des boutons de test/seed révélateurs et du mot de passe par défaut textuel.
+  - Connexion simplifiée et moderne par prénom ou identifiant simple (ex: `etienne`, `hugo`, `solal`, `milane`, `peter`, `liam`), insensible à la casse.
+  - Maintien du support de l'adresse email complète officielle en identifiant alternatif.
+  - Ajout d'une bascule visuelle d'affichage/masquage du mot de passe (icône œil).
+  - Messages d'erreur génériques sécurisés pour empêcher l'énumération de comptes.
+
+### Gestion des Utilisateurs & Identifiants Officiels IMT
+- **Migration vers les Identités Officielles IMT Nord Europe** :
+  - Remplacement des adresses de test `...@imt.fr` par les comptes officiels des étudiants :
+    - Étienne PICARD (`etienne.picard@etu.imt-nord-europe.fr` — ADMIN)
+    - Liam BEAN (`liam.bean@etu.imt-nord-europe.fr` — ADMIN)
+    - Hugo RAMPAZZO (`hugo.rampazzo@etu.imt-nord-europe.fr` — MEMBER)
+    - Milane FARGUES (`milane.fargues@etu.imt-nord-europe.fr` — MEMBER)
+    - Solal BENQADI (`solal.benqadi@etu.imt-nord-europe.fr` — MEMBER)
+    - Peter BATLLO (`peter.batllo@etu.imt-nord-europe.fr` — MEMBER)
+  - Préservation intégrale des identifiants existants en base Neon et de toutes les liaisons (tâches, jalons, décisions, budget).
+
+### Espace Administrateur Réservé à Étienne & Distribution par Mailto
+- **Panneau de Distribution des Accès (`EtienneCredentialsPanel.tsx`)** :
+  - Intégration dans la page `/settings`, strictement restreint au compte d'Étienne.
+  - Consultation de la liste des membres avec leur pseudo de connexion et leur mot de passe temporaire dédié.
+  - Génération de mots de passe aléatoires robustes (10 caractères sans caractères ambigus).
+  - Route d'administration sécurisée `/api/admin/reset-password` permettant la régénération de mot de passe en 1 clic.
+  - Boutons d'envoi individuel par email (`mailto:`) avec destinataire, objet et message d'accueil pré-remplis incluant le lien de l'application et les identifiants.
+  - Champ de détection/personnalisation dynamique de l'URL de l'application et bouton de copie du récapitulatif complet dans le presse-papier.
+
+### Tests Unitaires & Intégration TDD
+- **Couverture TDD Complète** :
+  - `src/__tests__/05_auth_credentials_logic.test.ts` : Tests de génération de mots de passe, extraction de pseudo, matching d'identifiant et composition des liens mailto.
+  - `src/__tests__/06_auth_integration.test.ts` : Validation de l'authentification des 6 membres par prénom et mot de passe contre la base Neon.
+  - Validation de non-régression du test de seed général (`tests/01_tier1_feature_coverage/test-03-seed-users.mjs`).
+
+## [2.11.0] - 2026-10-05
+
+### Corrigé
+- **Alignement du Budget du Tableau de Bord avec la Trésorerie Réelle** :
+  - **Correction du dénominateur budgétaire** : Remplacement de l'ancien budget statique obsolète du projet (500,00 €) par le cumul dynamique des dotations et financements réels actifs (`FundingSource`: APICIL 2 997,00 €, BDE 116,00 €, Fablab 70,00 € = 3 183,00 €).
+  - **Module de Calculs Unifié (`src/lib/budget/budgetCalculations.ts`)** : Centralisation des fonctions `calculateEffectiveTotalBudget`, `calculateEffectiveSpentBudget` et `calculateBudgetSummary` pour garantir une source de vérité financière unique partagée entre le tableau de bord et la page Trésorerie.
+  - **Cohérence des Dépenses Réalisées et Engagées** : Prise en compte rigoureuse des dépenses `PAID` et `VALIDATED` (2 242,29 €) et exclusion des lignes annulées (`CANCELLED`), aboutissant à un taux de consommation exact de 70,4% (au lieu de la fausse alerte de dépassement à 448,5%).
+  - **Jauge Budgétaire Enrichie (`BudgetGauge.tsx`)** : Affichage du solde restant réel (+940,71 € en vert), mise à jour visuelle de la jauge (en progression normale et non plus en rouge erreur) et ajout d'un lien d'accès direct vers la page de trésorerie.
+  - **Synchronisation Automatique de la Base de Données Neon** : Mise à jour de `totalBudget` sur l'entité `Project` à 3 183,00 € et synchronisation automatique lors des opérations d'ajout/modification/suppression d'enveloppes de financement (`api/budget/funding`).
+  - **Tests Unitaires TDD (`src/__tests__/04_budget_logic.test.ts`)** : Ajout de cas de tests validant la cohérence exacte des calculs budgétaires globaux.
+
 ## [2.10.1] - 2026-10-05
 
 ### Corrigé

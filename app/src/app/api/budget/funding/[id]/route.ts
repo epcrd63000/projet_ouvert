@@ -66,6 +66,18 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
       },
     });
 
+    if (updated) {
+      const activeSources = await prisma.fundingSource.findMany({
+        where: { projectId: updated.projectId, status: { not: "CANCELLED" } },
+        select: { amount: true },
+      });
+      const newTotal = activeSources.reduce((acc, s) => acc + Number(s.amount), 0);
+      await prisma.project.update({
+        where: { id: updated.projectId },
+        data: { totalBudget: newTotal },
+      });
+    }
+
     return NextResponse.json(updated);
   } catch (error) {
     console.error("Erreur PATCH /api/budget/funding/[id]:", error);
@@ -89,9 +101,26 @@ export async function DELETE(_request: NextRequest, { params }: RouteParams) {
   const { id } = await params;
 
   try {
-    await prisma.fundingSource.delete({
+    const sourceToDelete = await prisma.fundingSource.findUnique({
       where: { id },
+      select: { projectId: true },
     });
+
+    if (sourceToDelete) {
+      await prisma.fundingSource.delete({
+        where: { id },
+      });
+
+      const activeSources = await prisma.fundingSource.findMany({
+        where: { projectId: sourceToDelete.projectId, status: { not: "CANCELLED" } },
+        select: { amount: true },
+      });
+      const newTotal = activeSources.reduce((acc, s) => acc + Number(s.amount), 0);
+      await prisma.project.update({
+        where: { id: sourceToDelete.projectId },
+        data: { totalBudget: newTotal },
+      });
+    }
 
     return NextResponse.json({ success: true });
   } catch (error) {

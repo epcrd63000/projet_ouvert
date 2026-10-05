@@ -23,6 +23,10 @@ import {
   calculateWorkload,
   calculatePersonalSummary,
 } from "@/lib/dashboard/dashboardMetrics";
+import {
+  calculateEffectiveTotalBudget,
+  calculateEffectiveSpentBudget,
+} from "@/lib/budget/budgetCalculations";
 import { formatDistanceToNow } from "date-fns";
 import { fr } from "date-fns/locale";
 
@@ -43,6 +47,7 @@ export default async function DashboardPage() {
     allUsers,
     milestones,
     budgetEntries,
+    fundingSources,
     project,
     nextMeeting
   ] = await Promise.all([
@@ -60,7 +65,11 @@ export default async function DashboardPage() {
     prisma.user.findMany({ select: { id: true, name: true, email: true } }),
     prisma.ganttMilestone.findMany({ select: { id: true, name: true, status: true } }),
     prisma.budgetEntry.findMany({
-      where: { status: "PAID" },
+      where: { status: { not: "CANCELLED" } },
+      select: { id: true, amount: true, status: true },
+    }),
+    prisma.fundingSource.findMany({
+      where: { status: { not: "CANCELLED" } },
       select: { id: true, amount: true, status: true },
     }),
     prisma.project.findFirst({ select: { id: true, totalBudget: true } }),
@@ -70,14 +79,24 @@ export default async function DashboardPage() {
     }),
   ]);
 
-  const totalBudget = Number(project?.totalBudget) || 0;
+  // Calcul du budget effectif basé sur les dotations réelles (APICIL, BDE, Fablab) avec repli projet
+  const fallbackBudget = Number(project?.totalBudget) || 0;
+  const effectiveTotalBudget = calculateEffectiveTotalBudget(
+    fundingSources as any,
+    fallbackBudget
+  );
+
+  // Seules les dépenses actives (payées et engagées) consomment le budget
+  const consumedEntries = budgetEntries.filter(
+    (e) => e.status === "PAID" || e.status === "VALIDATED"
+  );
 
   // Calculs via les modules utilitaires dédiés
   const globalMetrics = calculateGlobalMetrics(
     allTasks as any,
     milestones as any,
-    budgetEntries as any,
-    totalBudget
+    consumedEntries as any,
+    effectiveTotalBudget
   );
 
   const progressByMember = calculateMemberProgress(allUsers, allTasks as any);
@@ -177,7 +196,11 @@ export default async function DashboardPage() {
       </div>
 
       <div className="grid gap-4 md:grid-cols-1 lg:grid-cols-4">
-        <BudgetGauge total={globalMetrics.totalBudget} used={globalMetrics.usedBudget} />
+        <BudgetGauge
+          total={globalMetrics.totalBudget}
+          used={globalMetrics.usedBudget}
+          remaining={globalMetrics.remainingBudget}
+        />
       </div>
     </div>
   );

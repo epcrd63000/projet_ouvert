@@ -78,6 +78,7 @@ export async function POST(request: NextRequest) {
         email,
         name,
         passwordHash,
+        tempPassword: password,
         role,
         avatarUrl: avatarUrl || null,
       },

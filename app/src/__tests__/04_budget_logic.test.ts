@@ -7,6 +7,9 @@ import {
   validateExpenseUpdate,
   calculateExpenseTotal,
   formatDateForInput,
+  calculateEffectiveTotalBudget,
+  calculateEffectiveSpentBudget,
+  calculateBudgetSummary,
 } from "../lib/budget/budgetLogic";
 
 function runBudgetLogicTests() {
@@ -89,6 +92,55 @@ function runBudgetLogicTests() {
     deliveryCost: 0,
   });
   console.assert(zeroExpense.isValid === false, "Une dépense de montant 0 doit être rejetée");
+
+  // 5. Tests des calculs budgétaires unifiés (Tableau de bord & Trésorerie)
+  console.log("  5. Test calculateBudgetSummary & effective totals...");
+  const mockFundingSources = [
+    { id: "fs1", amount: 2997.00, status: "RECEIVED" }, // APICIL
+    { id: "fs2", amount: 116.00, status: "RECEIVED" },  // BDE
+    { id: "fs3", amount: 70.00, status: "RECEIVED" },   // Fablab
+    { id: "fs4", amount: 500.00, status: "CANCELLED" }, // Annulé
+  ];
+
+  const effectiveTotal = calculateEffectiveTotalBudget(mockFundingSources, 500);
+  console.assert(
+    effectiveTotal === 3183.00,
+    `Le total effectif doit être 3183.00 € (hors annulés), reçu: ${effectiveTotal}`
+  );
+
+  // Cas de repli si aucun financement
+  const fallbackTotal = calculateEffectiveTotalBudget([], 500);
+  console.assert(
+    fallbackTotal === 500,
+    `Doit utiliser le budget de repli (500 €) si aucune enveloppe n'est configurée, reçu: ${fallbackTotal}`
+  );
+
+  const mockExpenses = [
+    { id: "e1", amount: 2242.29, status: "PAID" },
+    { id: "e2", amount: 100.00, status: "CANCELLED" },
+    { id: "e3", amount: 0.00, status: "VALIDATED" },
+  ];
+
+  const spentMetrics = calculateEffectiveSpentBudget(mockExpenses);
+  console.assert(
+    spentMetrics.totalPaid === 2242.29,
+    `Total payé attendu 2242.29 €, reçu: ${spentMetrics.totalPaid}`
+  );
+  console.assert(
+    spentMetrics.totalCommitted === 0,
+    `Total engagé attendu 0 €, reçu: ${spentMetrics.totalCommitted}`
+  );
+  console.assert(
+    spentMetrics.totalSpent === 2242.29,
+    `Total consommé attendu 2242.29 €, reçu: ${spentMetrics.totalSpent}`
+  );
+
+  const summary = calculateBudgetSummary(mockFundingSources, mockExpenses, 500);
+  console.assert(summary.totalFunding === 3183.00, "Total dotation attendu 3183.00 €");
+  console.assert(summary.totalSpent === 2242.29, "Total consommé attendu 2242.29 €");
+  console.assert(summary.remaining === 940.71, `Solde restant attendu 940.71 €, reçu: ${summary.remaining}`);
+  console.assert(summary.percentage === 70.4, `Pourcentage attendu 70.4%, reçu: ${summary.percentage}`);
+  console.assert(summary.isOverbudget === false, "Ne doit pas être en dépassement budgétaire");
 
   console.log("🎉 Tous les tests unitaires Budget (04_budget_logic) sont passés avec succès !");
 }

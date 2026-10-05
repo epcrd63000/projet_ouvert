@@ -54,6 +54,7 @@ export interface GlobalDashboardMetrics {
   totalBudget: number;
   usedBudget: number;
   budgetPercentage: number;
+  remainingBudget: number;
 }
 
 export interface MemberProgressItem {
@@ -96,8 +97,10 @@ export function calculateGlobalMetrics(
   const achievedMilestones = milestones.filter((m) => m.status === "ACHIEVED").length;
   const remainingMilestones = milestones.length - achievedMilestones;
 
-  const usedBudget = paidBudgetEntries.reduce((sum, entry) => sum + Number(entry.amount), 0);
+  const rawUsed = paidBudgetEntries.reduce((sum, entry) => sum + Number(entry.amount), 0);
+  const usedBudget = Math.round(rawUsed * 100) / 100;
   const budgetPercentage = totalBudget > 0 ? Math.round((usedBudget / totalBudget) * 100) : 0;
+  const remainingBudget = Math.round((totalBudget - usedBudget) * 100) / 100;
 
   return {
     totalTasks,
@@ -109,6 +112,7 @@ export function calculateGlobalMetrics(
     totalBudget,
     usedBudget,
     budgetPercentage,
+    remainingBudget,
   };
 }
 

@@ -4,6 +4,7 @@ import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
 import { FundingSource, BudgetEntry } from "./types";
 import { Wallet, TrendingUp, PiggyBank, ArrowDownRight } from "lucide-react";
+import { calculateBudgetSummary } from "@/lib/budget/budgetCalculations";
 
 interface BudgetSummaryCardsProps {
   fundingSources: FundingSource[];
@@ -17,21 +18,11 @@ export default function BudgetSummaryCards({
   fundingSources,
   expenses,
 }: BudgetSummaryCardsProps) {
-  // Calculs sur les montants actifs (les lignes avec statut CANCELLED sont exclues)
-  const activeSources = fundingSources.filter((s) => s.status !== "CANCELLED");
-  const totalFunding = activeSources.reduce((sum, s) => sum + Number(s.amount), 0);
+  // Calcul unifié des montants actifs et KPIs financiers
+  const { totalFunding, totalPaid, totalCommitted, totalSpent, remaining, percentage } =
+    calculateBudgetSummary(fundingSources, expenses);
 
   const activeExpenses = expenses.filter((e) => e.status !== "CANCELLED");
-  const totalPaid = activeExpenses
-    .filter((e) => e.status === "PAID")
-    .reduce((sum, e) => sum + Number(e.amount), 0);
-  const totalCommitted = activeExpenses
-    .filter((e) => e.status === "VALIDATED")
-    .reduce((sum, e) => sum + Number(e.amount), 0);
-  const totalSpent = totalPaid + totalCommitted;
-
-  const remaining = totalFunding - totalSpent;
-  const percentage = totalFunding > 0 ? (totalSpent / totalFunding) * 100 : 0;
 
   return (
     <div className="space-y-4">

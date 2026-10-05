@@ -14,12 +14,12 @@ export const baseUrl = process.env.APP_URL || "http://localhost:3000";
 
 // Liste des 6 utilisateurs attendus d'après le cahier des charges et le seed
 export const expectedUsers = [
-  { email: "etienne@imt.fr", role: "ADMIN", name: "Etienne" },
-  { email: "liam@imt.fr", role: "ADMIN", name: "Liam" },
-  { email: "hugo@imt.fr", role: "MEMBER", name: "Hugo" },
-  { email: "milane@imt.fr", role: "MEMBER", name: "Milane" },
-  { email: "solal@imt.fr", role: "MEMBER", name: "Solal" },
-  { email: "peter@imt.fr", role: "MEMBER", name: "Peter" },
+  { email: "etienne.picard@etu.imt-nord-europe.fr", role: "ADMIN", name: "Etienne PICARD" },
+  { email: "liam.bean@etu.imt-nord-europe.fr", role: "ADMIN", name: "Liam BEAN" },
+  { email: "hugo.rampazzo@etu.imt-nord-europe.fr", role: "MEMBER", name: "Hugo RAMPAZZO" },
+  { email: "milane.fargues@etu.imt-nord-europe.fr", role: "MEMBER", name: "Milane FARGUES" },
+  { email: "solal.benqadi@etu.imt-nord-europe.fr", role: "MEMBER", name: "Solal BENQADI" },
+  { email: "peter.batllo@etu.imt-nord-europe.fr", role: "MEMBER", name: "Peter BATLLO" },
 ];
 
 // Mots de passe de test autorisés pour le seed

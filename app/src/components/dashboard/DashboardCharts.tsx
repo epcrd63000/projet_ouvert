@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import Link from "next/link";
 import {
   BarChart,
   Bar,
@@ -133,23 +134,55 @@ export function WorkloadChart({ data }: { data: { name: string; inProgress: numb
   );
 }
 
-export function BudgetGauge({ used, total }: { used: number; total: number }) {
+export function BudgetGauge({
+  used,
+  total,
+  remaining,
+}: {
+  used: number;
+  total: number;
+  remaining?: number;
+}) {
   const percentage = total > 0 ? (used / total) * 100 : 0;
   const isOverbudget = percentage > 100;
+  const remainingValue = remaining !== undefined ? remaining : Math.round((total - used) * 100) / 100;
+
   return (
-    <Card className="col-span-1 lg:col-span-1 flex flex-col justify-between">
-      <CardHeader>
-        <CardTitle>Budget</CardTitle>
+    <Card className="col-span-1 lg:col-span-2 flex flex-col justify-between">
+      <CardHeader className="flex flex-row items-center justify-between pb-2">
+        <CardTitle className="text-base font-semibold">Budget & Trésorerie</CardTitle>
+        <Link
+          href="/budget"
+          className="text-xs text-primary hover:underline flex items-center gap-1 font-medium transition-colors"
+        >
+          Voir détails →
+        </Link>
       </CardHeader>
       <CardContent className="flex flex-col gap-4">
         <div className="flex justify-between items-end">
-          <span className={`text-3xl font-bold ${isOverbudget ? "text-red-500" : ""}`}>{used.toFixed(2)} €</span>
-          <span className="text-muted-foreground text-sm">/ {total.toFixed(2)} €</span>
+          <span className={`text-3xl font-bold ${isOverbudget ? "text-red-500" : ""}`}>
+            {used.toFixed(2)} €
+          </span>
+          <span className="text-muted-foreground text-sm font-medium">/ {total.toFixed(2)} €</span>
         </div>
-        <Progress value={Math.min(percentage, 100)} className={`h-4 ${isOverbudget ? '[&>div]:bg-red-500' : ''}`} />
-        <p className={`text-xs ${isOverbudget ? "text-red-500 font-medium" : "text-muted-foreground"}`}>
-          {percentage.toFixed(1)}% consommé {isOverbudget && "(Dépassement)"}
-        </p>
+        <Progress
+          value={Math.min(percentage, 100)}
+          className={`h-3.5 ${isOverbudget ? "[&>div]:bg-red-500" : ""}`}
+        />
+        <div className="flex justify-between items-center text-xs">
+          <span className={isOverbudget ? "text-red-500 font-medium" : "text-muted-foreground"}>
+            {percentage.toFixed(1)}% consommé {isOverbudget && "(Dépassement)"}
+          </span>
+          <span
+            className={`font-semibold ${
+              remainingValue >= 0 ? "text-emerald-600" : "text-destructive"
+            }`}
+          >
+            {remainingValue >= 0
+              ? `Solde restant : ${remainingValue.toFixed(2)} €`
+              : `Déficit : ${Math.abs(remainingValue).toFixed(2)} €`}
+          </span>
+        </div>
       </CardContent>
     </Card>
   );

@@ -83,6 +83,17 @@ export async function POST(request: NextRequest) {
       },
     });
 
+    // Synchronisation automatique de project.totalBudget
+    const activeSources = await prisma.fundingSource.findMany({
+      where: { projectId: project.id, status: { not: "CANCELLED" } },
+      select: { amount: true },
+    });
+    const newTotal = activeSources.reduce((acc, s) => acc + Number(s.amount), 0);
+    await prisma.project.update({
+      where: { id: project.id },
+      data: { totalBudget: newTotal },
+    });
+
     const fullCreated = await prisma.fundingSource.findUnique({
       where: { id: created.id },
       include: {

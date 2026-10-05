@@ -204,7 +204,7 @@ export function UserManagement({
                     type="email"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    placeholder="sophie@imt.fr"
+                    placeholder="sophie.martin@etu.imt-nord-europe.fr"
                     required
                   />
                 </div>
