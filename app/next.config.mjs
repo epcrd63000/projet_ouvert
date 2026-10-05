@@ -22,6 +22,7 @@ const nextConfig = {
     serverComponentsExternalPackages: [
       "@neondatabase/serverless",
       "@prisma/adapter-neon",
+      "@prisma/client",
     ],
   },
   // Désactive le cache disque Webpack en développement sous Windows
