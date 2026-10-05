@@ -6,12 +6,17 @@ import { z } from "zod";
 const infoSchema = z.object({
   title: z.string().min(1).optional(),
   content: z.string().min(1).optional(),
+  category: z.string().optional(),
+  eventDate: z.string().nullable().optional(),
+  interlocutors: z.string().nullable().optional(),
+  isPinned: z.boolean().optional(),
+  order: z.number().int().optional(),
 });
 
 export async function PATCH(request: NextRequest, { params }: { params: { id: string } }) {
   try {
     const session = await requireAuth();
-    if (!session?.user || session.user.role !== "ADMIN") {
+    if (!session?.user) {
       return NextResponse.json({ error: "Non autorisé" }, { status: 401 });
     }
 
@@ -22,9 +27,15 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
       return NextResponse.json({ error: parsed.error.errors[0].message }, { status: 400 });
     }
 
+    const { eventDate, ...rest } = parsed.data;
+    const updateData: any = { ...rest };
+    if (eventDate !== undefined) {
+      updateData.eventDate = eventDate ? new Date(eventDate) : null;
+    }
+
     const info = await prisma.importantInfo.update({
       where: { id: params.id },
-      data: parsed.data,
+      data: updateData,
     });
 
     return NextResponse.json(info);
@@ -37,7 +48,7 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
 export async function DELETE(request: NextRequest, { params }: { params: { id: string } }) {
   try {
     const session = await requireAuth();
-    if (!session?.user || session.user.role !== "ADMIN") {
+    if (!session?.user) {
       return NextResponse.json({ error: "Non autorisé" }, { status: 401 });
     }
 

@@ -98,13 +98,17 @@ export async function POST(request: NextRequest) {
         projectId: project.id,
         createdById: session.user.id,
       },
+    });
+
+    const fullNewEntry = await prisma.budgetEntry.findUnique({
+      where: { id: newEntry.id },
       include: {
         createdBy: { select: { name: true, email: true } },
         fundingSource: { select: { id: true, name: true } },
       },
     });
 
-    return NextResponse.json(newEntry, { status: 201 });
+    return NextResponse.json(fullNewEntry, { status: 201 });
   } catch (error) {
     console.error("Erreur POST /api/budget:", error);
     return NextResponse.json({ error: "Erreur serveur" }, { status: 500 });

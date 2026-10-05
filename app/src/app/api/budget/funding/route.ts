@@ -81,12 +81,16 @@ export async function POST(request: NextRequest) {
         comment: parsed.data.comment || null,
         status: parsed.data.status,
       },
+    });
+
+    const fullCreated = await prisma.fundingSource.findUnique({
+      where: { id: created.id },
       include: {
         createdBy: { select: { name: true, email: true } },
       },
     });
 
-    return NextResponse.json(created, { status: 201 });
+    return NextResponse.json(fullCreated, { status: 201 });
   } catch (error) {
     console.error("Erreur POST /api/budget/funding:", error);
     return NextResponse.json({ error: "Erreur serveur" }, { status: 500 });

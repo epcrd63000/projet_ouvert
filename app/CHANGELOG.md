@@ -1,5 +1,40 @@
 # Changelog
 
+## [2.10.1] - 2026-10-05
+
+### Corrigé
+- **Résolution de l'incompatibilité des transactions Prisma sur l'adaptateur HTTP Neon** :
+  - **Erreur 500 (« Erreur serveur »)** : Survenue lors de la mise à jour d'une valeur dans les tableaux de budget (Financements et Dépenses) sur l'environnement de production Vercel.
+  - **Découplage `update`/`create` et `findUnique`** : Suppression de l'option `include:` imbriquée dans les mutations Prisma (`prisma.*.update` et `prisma.*.create`) qui déclenchait une transaction interactive implicite non supportée par `@prisma/adapter-neon` en mode HTTP.
+  - **Routes corrigées** :
+    - `api/budget/funding/[id]` (PATCH & DELETE)
+    - `api/budget/funding` (POST)
+    - `api/budget/[id]` (PATCH & DELETE)
+    - `api/budget` (POST)
+    - `api/tasks/[id]` (PATCH)
+  - **Validation Zod des dates tolérante** : Accepte les chaînes ISO et dates HTML standard sans rejet 400.
+
+## [2.10.0] - 2026-10-05
+
+### Ajouté
+- **Refonte Complète de l'Onglet « Infos Importantes » & Documentation MINIMOCA Uniforme** :
+  - **Moteur de Documentation Markdown Enrichi** : Rendu temps réel complet (`infoMarkdownRenderer.tsx`), export instantané de chaque fiche en fichier Markdown (`.md`) autonome avec frontmatter structuré (`infoExportUtils.ts`), et import direct par fichier `.md` avec parsing automatique des métadonnées.
+  - **Modèle de Données PostgreSQL Neon Enrichi (`ImportantInfo`)** : `category` (ORGANISATION, CALENDRIER, TECHNIQUE, GENERAL), `eventDate`, `interlocutors`, `isPinned`, `order`.
+  - **Collaboration Équipe Complète** : Création, modification et importation ouvertes à chaque membre de l'équipe avec réactivité immédiate et notifications toast.
+  - **Initialisation des 3 Fiches Documentaires Consolidées MINIMOCA** : 1. Organisation, Équipe & Réseau de Contacts ; 2. Calendrier Général, Jalons Critiques & Échéances 2026-2027 ; 3. Dossier Technique MINIMOCA, Fabrication FabLab & Retours d'Expérience.
+  - **Découpage Modulaire & TDD** : Composants tous `< 200 lignes`, suite de tests Tier 1 validée.
+
+## [2.9.0] - 2026-10-05
+
+### Ajouté
+- **Édition Complète des Lignes du Budget (« Ressources & Financements » et « Dépenses »)** :
+  - **Modale d'Édition des Financements (`EditFundingModal.tsx`)** : Modification directe de tous les champs d'une entrée de ressource/sponsor (Source/Partenaire, Montant alloué, Date, Statut, Commentaire & Conditions).
+  - **Bouton d'Action Modifier (`Pencil`)** : Intégré dans la colonne Actions du tableau des financements (`FundingSourcesTable.tsx`).
+  - **Modale d'Édition des Dépenses (`EditExpenseModal.tsx`)** : Modification complète des achats (Libellé, Quantité, Prix unitaire, Port, Recalcul automatique, Enveloppe, Statut, Commentaire).
+  - **Bouton d'Action Modifier (`Pencil`)** : Intégré dans la colonne Actions du tableau des dépenses (`ExpensesTable.tsx`).
+  - **Logique Métier & Calculs (`src/lib/budget/budgetLogic.ts`)** : Fonctions pures de calcul de total, validation Zod tolérante pour les formats de dates, normalisation et formatage.
+  - **Tests Unitaires TDD (`src/__tests__/04_budget_logic.test.ts`)** : Couverture complète des règles de calcul et de validation.
+
 ## [2.7.0] - 2026-10-05
 
 ### Ajouté

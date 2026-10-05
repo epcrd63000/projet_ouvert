@@ -16,7 +16,7 @@ const updateBudgetSchema = z.object({
   unitPrice: z.number().positive().optional(),
   deliveryCost: z.number().min(0).optional(),
   amount: z.number().positive().optional(),
-  date: z.string().datetime().or(z.date().transform((d) => d.toISOString())).optional(),
+  date: z.string().refine((val) => !isNaN(Date.parse(val)), "Date invalide").optional(),
   category: z.enum(["SUPPLIES", "SERVICES", "SOFTWARE", "OTHER"]).optional(),
   fundingSourceId: z.string().uuid().nullable().optional(),
   comment: z.string().nullable().optional(),
@@ -47,7 +47,7 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
       );
     }
 
-    const updated = await prisma.budgetEntry.update({
+    await prisma.budgetEntry.update({
       where: { id },
       data: {
         ...(parsed.data.label && { label: parsed.data.label }),
@@ -61,6 +61,10 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
         ...(parsed.data.comment !== undefined && { comment: parsed.data.comment }),
         ...(parsed.data.status && { status: parsed.data.status }),
       },
+    });
+
+    const updated = await prisma.budgetEntry.findUnique({
+      where: { id },
       include: {
         createdBy: { select: { name: true, email: true } },
         fundingSource: { select: { id: true, name: true } },

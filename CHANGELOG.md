@@ -1,5 +1,52 @@
 # Journal des Modifications (CHANGELOG)
 
+## [2.10.1] - 2026-10-05
+
+### Corrigé
+- **Résolution de l'incompatibilité des transactions Prisma sur l'adaptateur HTTP Neon** :
+  - **Erreur 500 (« Erreur serveur »)** : Survenue lors de la mise à jour d'une valeur dans les tableaux de budget (Financements et Dépenses) sur l'environnement de production Vercel.
+  - **Découplage `update`/`create` et `findUnique`** : Suppression de l'option `include:` imbriquée dans les mutations Prisma (`prisma.*.update` et `prisma.*.create`) qui déclenchait une transaction interactive implicite non supportée par `@prisma/adapter-neon` en mode HTTP.
+  - **Routes corrigées** :
+    - `api/budget/funding/[id]` (PATCH & DELETE)
+    - `api/budget/funding` (POST)
+    - `api/budget/[id]` (PATCH & DELETE)
+    - `api/budget` (POST)
+    - `api/tasks/[id]` (PATCH)
+  - **Validation Zod des dates tolérante** : Accepte les chaînes ISO et dates HTML standard sans rejet 400.
+
+## [2.9.0] - 2026-10-05
+
+### Ajouté
+- **Édition Complète des Lignes du Budget (« Ressources & Financements » et « Dépenses »)** :
+  - **Modale d'Édition des Financements (`EditFundingModal.tsx`)** : Modification directe de tous les champs d'une entrée de ressource/sponsor (Source/Partenaire, Montant alloué, Date, Statut, Commentaire & Conditions).
+  - **Bouton d'Action Modifier (`Pencil`)** : Intégré dans la colonne Actions du tableau des financements (`FundingSourcesTable.tsx`).
+  - **Modale d'Édition des Dépenses (`EditExpenseModal.tsx`)** : Modification complète des achats (Libellé, Quantité, Prix unitaire, Port, Recalcul automatique, Enveloppe, Statut, Commentaire).
+  - **Bouton d'Action Modifier (`Pencil`)** : Intégré dans la colonne Actions du tableau des dépenses (`ExpensesTable.tsx`).
+  - **Logique Métier & Calculs (`src/lib/budget/budgetLogic.ts`)** : Fonctions pures de calcul de total, validation Zod tolérante pour les formats de dates, normalisation et formatage.
+  - **Tests Unitaires TDD (`src/__tests__/04_budget_logic.test.ts`)** : Couverture complète des règles de calcul et de validation.
+
+## [2.8.0] - 2026-10-05
+
+### Ajouté
+- **Refonte Complète de l'Onglet « Infos Importantes » & Documentation MINIMOCA Uniforme** :
+  - **Moteur de Documentation Markdown Enrichi** :
+    - Rendu Markdown temps réel complet (`infoMarkdownRenderer.tsx`) avec support typographique soigné pour les tableaux bordés, les listes méthodologiques, les citations en cartouche et les blocs de code.
+    - Exportation instantanée de chaque fiche en fichier Markdown (`.md`) autonome avec frontmatter structuré (`infoExportUtils.ts`).
+    - Importation directe par sélection de fichier `.md` avec prévisualisation et parsing automatique des métadonnées (titre, dates, catégorie, interlocuteurs).
+  - **Architecture & Modèle de Données Enrichi (`ImportantInfo`)** :
+    - Schéma Prisma étendu avec typage complet : `category` (ORGANISATION, CALENDRIER, TECHNIQUE, GENERAL), `eventDate` (date clé de référence/jalon), `interlocutors` (contacts et tuteurs associés), `isPinned` (priorisation en tête), `order`.
+    - Migration PostgreSQL Neon appliquée avec succès.
+  - **Mode Collaboratif Universel ("Modifiables par chaque membre")** :
+    - Droits d'édition, de mise à jour, d'import et de création de fiches ouverts à tous les membres connectés de l'équipe pour un espace vivant et collaboratif.
+    - Épinglage prioritaire des fiches critiques en un clic.
+  - **3 Fiches Documentaires Maîtresses MINIMOCA Initialisées en Base** :
+    - *Fiche 1 (Organisation)* : Gouvernance, Association *Des Pieds et Des Mains*, Damien Seguin, rôles de l'équipe étudiante, tuteurs Patrice Hulot & Philippe Hassel, experts FabLab Jorge Piedra Dorado & Xavier Dorchies, passation Tristan Legrain, coordinatrice MOOC Marie Boufflers.
+    - *Fiche 2 (Calendrier)* : Chronologie officielle 2026-2027 complète, échéances critiques (Cahier des Charges le 27/11/2026 à 17h, Pecha Kucha le 04/12/2026, Audit le 11/01/2027, Soutenance Finale le 04/05/2027), consignes MLS et règles de pénalité.
+    - *Fiche 3 (Dossier Technique)* : Spécifications du voilier classe RG65/IMOCA 1:7, fabrication des puits de foils et pièces 3D avec inserts au FabLab, bulbe et stratification carbone sous vide, cloisons étanches, axe inox Lahure, servomoteurs et retours d'expérience.
+  - **Composants Découpés & Tests TDD (Tier 1)** :
+    - Découpage strict en composants modulaires tous `< 200 lignes` (`InfoClient`, `InfoCard`, `InfoToolbar`, `InfoEditorModal`, `infoMarkdownRenderer`, `infoExportUtils`, `infoTypes`).
+    - Suite de tests automatisée TDD Tier 1 (`tests/01_tier1_feature_coverage/test-16-important-infos-markdown.ts`) validant la persistance, le tri prioritaire et les modifications collaboratives.
+
 ## [2.7.0] - 2026-10-05
 
 ### Ajouté

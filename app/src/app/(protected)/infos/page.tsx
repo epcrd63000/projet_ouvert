@@ -16,19 +16,23 @@ export default async function InfosPage() {
   const isAdmin = session.user.role === "ADMIN";
 
   const infos = await prisma.importantInfo.findMany({
-    orderBy: { createdAt: "desc" },
+    orderBy: [
+      { isPinned: "desc" },
+      { order: "asc" },
+      { createdAt: "desc" },
+    ],
   });
 
   return (
     <div className="space-y-6">
       <div className="pb-4 border-b border-border">
-        <h1 className="text-3xl font-bold tracking-tight">Infos Importantes</h1>
-        <p className="text-muted-foreground">
-          Consultez les dernières informations et annonces importantes.
+        <h1 className="text-3xl font-bold tracking-tight">Infos Importantes & Documentation</h1>
+        <p className="text-muted-foreground text-sm">
+          Documentation centralisée du voilier MINIMOCA : gouvernance, calendrier des jalons, dossier technique et imports Markdown (.md).
         </p>
       </div>
 
-      <InfoClient initialInfos={infos} isAdmin={isAdmin} />
+      <InfoClient initialInfos={infos as any} isAdmin={isAdmin} />
     </div>
   );
 }

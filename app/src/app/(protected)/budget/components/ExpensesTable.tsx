@@ -5,9 +5,10 @@ import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Trash2, MessageSquare, Ban, CheckCircle2, Plus, Download } from "lucide-react";
+import { Trash2, MessageSquare, Ban, CheckCircle2, Plus, Download, Pencil } from "lucide-react";
 import { BudgetEntry, BudgetStatus, FundingSource } from "./types";
 import CommentDialog from "./CommentDialog";
+import EditExpenseModal from "./EditExpenseModal";
 
 interface ExpensesTableProps {
   entries: BudgetEntry[];
@@ -32,6 +33,7 @@ export default function ExpensesTable({
   onExportCsv,
 }: ExpensesTableProps) {
   const [commentTarget, setCommentTarget] = useState<BudgetEntry | null>(null);
+  const [editingEntry, setEditingEntry] = useState<BudgetEntry | null>(null);
 
   const handleToggleCancel = async (entry: BudgetEntry) => {
     const newStatus: BudgetStatus = entry.status === "CANCELLED" ? "PAID" : "CANCELLED";
@@ -170,6 +172,15 @@ export default function ExpensesTable({
                         <Button
                           variant="ghost"
                           size="sm"
+                          onClick={() => setEditingEntry(entry)}
+                          title="Modifier cette dépense"
+                          className="text-primary hover:bg-primary/10"
+                        >
+                          <Pencil className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
                           onClick={() => handleToggleCancel(entry)}
                           title={isCancelled ? "Réactiver cette dépense" : "Annuler cette dépense"}
                           className={
@@ -207,6 +218,18 @@ export default function ExpensesTable({
           onClose={() => setCommentTarget(null)}
           onSave={async (newComment) => {
             await onUpdateEntry(commentTarget.id, { comment: newComment });
+          }}
+        />
+      )}
+
+      {editingEntry && (
+        <EditExpenseModal
+          entry={editingEntry}
+          fundingSources={fundingSources}
+          isOpen={Boolean(editingEntry)}
+          onClose={() => setEditingEntry(null)}
+          onSaved={async (id, updates) => {
+            await onUpdateEntry(id, updates);
           }}
         />
       )}

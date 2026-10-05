@@ -5,9 +5,10 @@ import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Trash2, MessageSquare, Ban, CheckCircle2, Plus } from "lucide-react";
+import { Trash2, MessageSquare, Ban, CheckCircle2, Plus, Pencil } from "lucide-react";
 import { FundingSource, FundingStatus } from "./types";
 import CommentDialog from "./CommentDialog";
+import EditFundingModal from "./EditFundingModal";
 
 interface FundingSourcesTableProps {
   sources: FundingSource[];
@@ -28,6 +29,7 @@ export default function FundingSourcesTable({
   onOpenAddModal,
 }: FundingSourcesTableProps) {
   const [commentTarget, setCommentTarget] = useState<FundingSource | null>(null);
+  const [editingSource, setEditingSource] = useState<FundingSource | null>(null);
 
   const handleToggleCancel = async (source: FundingSource) => {
     const newStatus: FundingStatus = source.status === "CANCELLED" ? "RECEIVED" : "CANCELLED";
@@ -135,6 +137,15 @@ export default function FundingSourcesTable({
                           <Button
                             variant="ghost"
                             size="sm"
+                            onClick={() => setEditingSource(source)}
+                            title="Modifier ce financement"
+                            className="text-primary hover:bg-primary/10"
+                          >
+                            <Pencil className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
                             onClick={() => handleToggleCancel(source)}
                             title={isCancelled ? "Réactiver ce financement" : "Annuler ce financement"}
                             className={isCancelled ? "text-emerald-600 hover:text-emerald-700" : "text-amber-600 hover:text-amber-700"}
@@ -169,6 +180,17 @@ export default function FundingSourcesTable({
           onClose={() => setCommentTarget(null)}
           onSave={async (newComment) => {
             await onUpdateSource(commentTarget.id, { comment: newComment });
+          }}
+        />
+      )}
+
+      {editingSource && (
+        <EditFundingModal
+          source={editingSource}
+          isOpen={Boolean(editingSource)}
+          onClose={() => setEditingSource(null)}
+          onSaved={async (id, updates) => {
+            await onUpdateSource(id, updates);
           }}
         />
       )}

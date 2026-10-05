@@ -10,7 +10,7 @@ interface RouteParams {
 const updateFundingSchema = z.object({
   name: z.string().min(1).optional(),
   amount: z.number().positive().optional(),
-  date: z.string().datetime().or(z.date().transform((d) => d.toISOString())).optional(),
+  date: z.string().refine((val) => !isNaN(Date.parse(val)), "Date invalide").optional(),
   comment: z.string().nullable().optional(),
   status: z.enum(["RECEIVED", "PENDING", "CANCELLED"]).optional(),
 });
@@ -48,7 +48,7 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
       );
     }
 
-    const updated = await prisma.fundingSource.update({
+    await prisma.fundingSource.update({
       where: { id },
       data: {
         ...(parsed.data.name && { name: parsed.data.name }),
@@ -57,6 +57,10 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
         ...(parsed.data.comment !== undefined && { comment: parsed.data.comment }),
         ...(parsed.data.status && { status: parsed.data.status }),
       },
+    });
+
+    const updated = await prisma.fundingSource.findUnique({
+      where: { id },
       include: {
         createdBy: { select: { name: true, email: true } },
       },

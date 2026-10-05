@@ -354,9 +354,17 @@ enum AlertLevel {
 
 
 model ImportantInfo {
-  id        String   @id @default(uuid())
-  title     String
-  content   String
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id            String    @id @default(uuid())
+  title         String
+  content       String    @db.Text
+  category      String    @default("GENERAL") // ORGANISATION, CALENDRIER, TECHNIQUE, GENERAL
+  eventDate     DateTime?
+  interlocutors String?
+  isPinned      Boolean   @default(false)
+  order         Int       @default(0)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  @@index([category])
+  @@index([isPinned])
 }

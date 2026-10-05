@@ -109,7 +109,7 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
     const isCompletingTask =
       resolvedStatus === "DONE" && existingTask.status !== "DONE";
 
-    const task = await prisma.task.update({
+    await prisma.task.update({
       where: { id },
       data: {
         ...updateFields,
@@ -126,12 +126,20 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
         // Remplir completedAt automatiquement quand la tâche passe à DONE
         ...(isCompletingTask ? { completedAt: new Date() } : {}),
       },
+    });
+
+    const task = await prisma.task.findUnique({
+      where: { id },
       include: {
         assignments: {
           include: { user: { select: { id: true, name: true, email: true } } },
         },
       },
     });
+
+    if (!task) {
+      return NextResponse.json({ error: "Tâche introuvable" }, { status: 404 });
+    }
 
     // Notification TASK_COMPLETED aux assignés + créateur
     if (isCompletingTask) {
