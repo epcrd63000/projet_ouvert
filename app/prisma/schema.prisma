@@ -220,6 +220,7 @@ model MeetingDecision {
   createdById String?
   content     String
   assigneeId  String?
+  assigneeIds String[]  @default([])
   dueDate     DateTime?
   taskId      String?   @unique
   createdAt   DateTime  @default(now())

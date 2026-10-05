@@ -10,6 +10,7 @@ interface RouteParams {
 const createDecisionSchema = z.object({
   content: z.string().min(1, "Le libellé de la décision est obligatoire"),
   assigneeId: z.string().optional().nullable(),
+  assigneeIds: z.array(z.string()).optional(),
   dueDate: z.string().optional().nullable(),
 });
 
@@ -72,14 +73,23 @@ export async function POST(
       );
     }
 
-    const { content, assigneeId, dueDate } = parsed.data;
+    const { content, assigneeId, assigneeIds, dueDate } = parsed.data;
+
+    const finalAssigneeIds =
+      assigneeIds && assigneeIds.length > 0
+        ? assigneeIds
+        : assigneeId
+        ? [assigneeId]
+        : [];
+    const primaryAssigneeId = finalAssigneeIds[0] || null;
 
     const decision = await prisma.meetingDecision.create({
       data: {
         meetingId: id,
         content,
         createdById: session.user.id,
-        assigneeId: assigneeId || null,
+        assigneeId: primaryAssigneeId,
+        assigneeIds: finalAssigneeIds,
         dueDate: dueDate ? new Date(dueDate) : null,
       },
     });

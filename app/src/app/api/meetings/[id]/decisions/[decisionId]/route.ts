@@ -10,6 +10,7 @@ interface RouteParams {
 const updateDecisionSchema = z.object({
   content: z.string().min(1).optional(),
   assigneeId: z.string().optional().nullable(),
+  assigneeIds: z.array(z.string()).optional(),
   dueDate: z.string().optional().nullable(),
 });
 
@@ -68,7 +69,18 @@ export async function PATCH(
 
     const updateData: Record<string, unknown> = {};
     if (parsed.data.content !== undefined) updateData.content = parsed.data.content;
-    if (parsed.data.assigneeId !== undefined) updateData.assigneeId = parsed.data.assigneeId;
+    
+    let targetAssigneeIds: string[] | undefined = undefined;
+    if (parsed.data.assigneeIds !== undefined) {
+      targetAssigneeIds = parsed.data.assigneeIds;
+      updateData.assigneeIds = targetAssigneeIds;
+      updateData.assigneeId = targetAssigneeIds[0] || null;
+    } else if (parsed.data.assigneeId !== undefined) {
+      updateData.assigneeId = parsed.data.assigneeId;
+      targetAssigneeIds = parsed.data.assigneeId ? [parsed.data.assigneeId] : [];
+      updateData.assigneeIds = targetAssigneeIds;
+    }
+
     if (parsed.data.dueDate !== undefined) {
       updateData.dueDate = parsed.data.dueDate ? new Date(parsed.data.dueDate) : null;
     }
@@ -92,11 +104,11 @@ export async function PATCH(
         });
       }
 
-      if (parsed.data.assigneeId !== undefined) {
+      if (targetAssigneeIds !== undefined) {
         await prisma.taskAssignment.deleteMany({ where: { taskId: updated.taskId } });
-        if (parsed.data.assigneeId) {
+        for (const uid of Array.from(new Set(targetAssigneeIds))) {
           await prisma.taskAssignment.create({
-            data: { taskId: updated.taskId, userId: parsed.data.assigneeId },
+            data: { taskId: updated.taskId, userId: uid },
           });
         }
       }

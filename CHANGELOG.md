@@ -1,5 +1,42 @@
 # Journal des Modifications (CHANGELOG)
 
+## [2.12.3] - 2026-10-05
+
+### Communication & Expérience d'Accueil (Onboarding)
+- **Refonte Sobre du Mail d'Invitation (`src/lib/auth/credentialsLogic.ts`)** :
+  - Épuration drastique des émojis pour une présentation élégante, claire et professionnelle.
+  - Précision explicite que la tâche assignée sur le Kanban est une **tâche d'exemple** pour tester et appréhender le flux de travail.
+  - Invitation détaillée à explorer l'ensemble des onglets :
+    - Tâches (Kanban) : prise en main des statuts, détails et assignations.
+    - Réunions : découverte des premiers exemples créés, ordre du jour, feuilles de présence et génération automatique des comptes rendus / relevés de décisions.
+    - Agenda & Jalons officiels IMT.
+    - Budget & Trésorerie.
+    - Documentation & Cahier des charges.
+  - Section dédiée aux retours d'expérience pour recueillir les suggestions et affiner la plateforme avant de démarrer les réunions réelles.
+- **Ouverture du Mail en Nouvel Onglet & Copie Directe (`UserCredentialRow.tsx` & `EtienneCredentialsPanel.tsx`)** :
+  - Découpage modulaire du panneau d'identifiants (`UserCredentialRow.tsx`) sous la barre des 200 lignes.
+  - Ajout de `target="_blank" rel="noopener noreferrer"` sur le lien `mailto:` pour éviter tout rechargement ou perturbation de l'onglet actif.
+  - Ajout d'un bouton *Copier le texte* permettant de coller instantanément le message personnalisé dans WhatsApp, Discord ou un webmail.
+- **Tests Unitaires TDD Enrichis (`src/__tests__/05_auth_credentials_logic.test.ts`)** :
+  - Validation stricte du contenu de l'email (tâche d'exemple, réunions, retours, sobriété en émojis).
+
+## [2.12.2] - 2026-10-05
+
+### Travail Collaboratif & Multi-Assignation
+- **Multi-Assignation Déverrouillée sur le Kanban (`src/components/kanban/TaskModal.tsx`)** :
+  - Suppression de la restriction réservant les boutons de co-assignation aux seuls administrateurs.
+  - Tout membre peut désormais créer une tâche partagée en binôme ou trinôme (ex: Hugo + Étienne).
+- **Multi-Sélection des Responsables en Réunion (`src/components/meetings/DecisionAssigneeSelector.tsx` & `MeetingDecisionsCard.tsx`)** :
+  - Nouveau composant de sélection multiple sous forme de badges cliquables interactifs dans le formulaire de réunion.
+  - Prise en charge simultanée de plusieurs pilotes (ex: Liam, Hugo et Solal) lors de l'enregistrement ou de la modification d'une décision.
+  - Affichage de l'ensemble des responsables sur chaque ligne de décision.
+- **Conversion en Tâche avec Multi-Assignation Synchronisée (`src/lib/meetings/decisionService.ts`)** :
+  - Ajout du champ `assigneeIds String[]` sur `MeetingDecision` en base Neon.
+  - Création automatique des assignations (`TaskAssignment`) pour chaque responsable sélectionné lors du clic sur *Créer tâche*.
+  - Synchronisation bidirectionnelle continue et mise à jour dynamique des assignations si la décision est modifiée.
+- **Routes API Développées (`api/meetings/[id]/decisions`)** :
+  - Support de `assigneeIds` dans les méthodes `POST` et `PATCH`.
+
 ## [2.12.1] - 2026-10-05
 
 ### Initialisation & Déploiement Équipe

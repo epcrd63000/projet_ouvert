@@ -12,10 +12,13 @@ import {
 import { toast } from "sonner";
 import Link from "next/link";
 
+import { DecisionAssigneeSelector } from "./DecisionAssigneeSelector";
+
 export interface DecisionItem {
   id: string;
   content: string;
   assigneeId?: string | null;
+  assigneeIds?: string[];
   dueDate?: string | null;
   taskId?: string | null;
   assignee?: { id: string; name: string } | null;
@@ -31,8 +34,8 @@ interface MeetingDecisionsCardProps {
   meetingId: string;
   decisions: DecisionItem[];
   users: TeamMember[];
-  onAddDecision: (content: string, assigneeId: string | null, dueDate: string | null) => Promise<void>;
-  onUpdateDecision?: (decisionId: string, content: string, assigneeId: string | null, dueDate: string | null) => Promise<void>;
+  onAddDecision: (content: string, assigneeId: string | null, dueDate: string | null, assigneeIds?: string[]) => Promise<void>;
+  onUpdateDecision?: (decisionId: string, content: string, assigneeId: string | null, dueDate: string | null, assigneeIds?: string[]) => Promise<void>;
   onDeleteDecision: (decisionId: string) => Promise<void>;
   onConvertToTask: (decisionId: string) => Promise<void>;
   onConvertAllToTasks?: () => Promise<void>;
@@ -49,7 +52,7 @@ export function MeetingDecisionsCard({
   onConvertAllToTasks,
 }: MeetingDecisionsCardProps) {
   const [newContent, setNewContent] = useState("");
-  const [newAssigneeId, setNewAssigneeId] = useState("");
+  const [newAssigneeIds, setNewAssigneeIds] = useState<string[]>([]);
   const [newDueDate, setNewDueDate] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [convertingId, setConvertingId] = useState<string | null>(null);
@@ -58,7 +61,7 @@ export function MeetingDecisionsCard({
   // État d'édition inline
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editContent, setEditContent] = useState("");
-  const [editAssigneeId, setEditAssigneeId] = useState("");
+  const [editAssigneeIds, setEditAssigneeIds] = useState<string[]>([]);
   const [editDueDate, setEditDueDate] = useState("");
   const [isSavingEdit, setIsSavingEdit] = useState(false);
 
@@ -70,11 +73,12 @@ export function MeetingDecisionsCard({
       setIsSubmitting(true);
       await onAddDecision(
         newContent.trim(),
-        newAssigneeId || null,
-        newDueDate || null
+        newAssigneeIds[0] || null,
+        newDueDate || null,
+        newAssigneeIds
       );
       setNewContent("");
-      setNewAssigneeId("");
+      setNewAssigneeIds([]);
       setNewDueDate("");
       toast.success("Décision ajoutée avec succès");
     } catch (error) {
@@ -88,14 +92,20 @@ export function MeetingDecisionsCard({
   const handleStartEdit = (decision: DecisionItem) => {
     setEditingId(decision.id);
     setEditContent(decision.content);
-    setEditAssigneeId(decision.assigneeId || "");
+    setEditAssigneeIds(
+      decision.assigneeIds && decision.assigneeIds.length > 0
+        ? decision.assigneeIds
+        : decision.assigneeId
+        ? [decision.assigneeId]
+        : []
+    );
     setEditDueDate(decision.dueDate ? new Date(decision.dueDate).toISOString().split("T")[0] : "");
   };
 
   const handleCancelEdit = () => {
     setEditingId(null);
     setEditContent("");
-    setEditAssigneeId("");
+    setEditAssigneeIds([]);
     setEditDueDate("");
   };
 
@@ -110,11 +120,13 @@ export function MeetingDecisionsCard({
         await onUpdateDecision(
           decisionId,
           editContent.trim(),
-          editAssigneeId || null,
-          editDueDate || null
+          editAssigneeIds[0] || null,
+          editDueDate || null,
+          editAssigneeIds
         );
       }
       setEditingId(null);
+      toast.success("Décision modifiée avec succès");
     } catch {
       toast.error("Erreur lors de la modification");
     } finally {
@@ -191,43 +203,36 @@ export function MeetingDecisionsCard({
       </CardHeader>
       <CardContent className="pt-4 space-y-4">
         {/* Formulaire d'ajout rapide */}
-        <form onSubmit={handleCreate} className="grid grid-cols-1 md:grid-cols-12 gap-2 bg-muted/30 p-3 rounded-lg border">
-          <div className="md:col-span-6">
-            <Input
-              placeholder="Action / Décision à mener..."
-              value={newContent}
-              onChange={(e) => setNewContent(e.target.value)}
-              className="h-8 text-sm"
-              required
-            />
+        <form onSubmit={handleCreate} className="space-y-3 bg-muted/30 p-3 rounded-lg border">
+          <div className="grid grid-cols-1 md:grid-cols-12 gap-2">
+            <div className="md:col-span-8">
+              <Input
+                placeholder="Action / Décision à mener..."
+                value={newContent}
+                onChange={(e) => setNewContent(e.target.value)}
+                className="h-8 text-sm bg-background"
+                required
+              />
+            </div>
+            <div className="md:col-span-3">
+              <Input
+                type="date"
+                value={newDueDate}
+                onChange={(e) => setNewDueDate(e.target.value)}
+                className="h-8 text-xs px-2 bg-background"
+              />
+            </div>
+            <div className="md:col-span-1 flex justify-end">
+              <Button type="submit" size="sm" className="h-8 w-full px-2" disabled={isSubmitting}>
+                <Plus className="h-4 w-4" />
+              </Button>
+            </div>
           </div>
-          <div className="md:col-span-3">
-            <select
-              value={newAssigneeId}
-              onChange={(e) => setNewAssigneeId(e.target.value)}
-              className="h-8 w-full rounded-md border border-input bg-background px-2 text-xs focus:outline-none focus:ring-1 focus:ring-ring"
-            >
-              <option value="">Pilote désigné...</option>
-              {users.map((u) => (
-                <option key={u.id} value={u.id}>
-                  {u.name}
-                </option>
-              ))}
-            </select>
-          </div>
-          <div className="md:col-span-2">
-            <Input
-              type="date"
-              value={newDueDate}
-              onChange={(e) => setNewDueDate(e.target.value)}
-              className="h-8 text-xs px-2"
-            />
-          </div>
-          <div className="md:col-span-1 flex justify-end">
-            <Button type="submit" size="sm" className="h-8 w-full px-2" disabled={isSubmitting}>
-              <Plus className="h-4 w-4" />
-            </Button>
-          </div>
+          <DecisionAssigneeSelector
+            users={users}
+            selectedIds={newAssigneeIds}
+            onChange={setNewAssigneeIds}
+          />
         </form>
 
         {/* Liste des décisions */}
@@ -244,10 +249,10 @@ export function MeetingDecisionsCard({
                 return (
                   <div
                     key={decision.id}
-                    className="p-3 rounded-lg border-2 border-primary/50 bg-primary/5 space-y-2"
+                    className="p-3 rounded-lg border-2 border-primary/50 bg-primary/5 space-y-3"
                   >
                     <div className="grid grid-cols-1 md:grid-cols-12 gap-2">
-                      <div className="md:col-span-6">
+                      <div className="md:col-span-8">
                         <Input
                           value={editContent}
                           onChange={(e) => setEditContent(e.target.value)}
@@ -256,19 +261,7 @@ export function MeetingDecisionsCard({
                           autoFocus
                         />
                       </div>
-                      <div className="md:col-span-3">
-                        <select
-                          value={editAssigneeId}
-                          onChange={(e) => setEditAssigneeId(e.target.value)}
-                          className="h-8 w-full rounded-md border border-input bg-background px-2 text-xs"
-                        >
-                          <option value="">Non assigné</option>
-                          {users.map((u) => (
-                            <option key={u.id} value={u.id}>{u.name}</option>
-                          ))}
-                        </select>
-                      </div>
-                      <div className="md:col-span-3">
+                      <div className="md:col-span-4">
                         <Input
                           type="date"
                           value={editDueDate}
@@ -277,6 +270,11 @@ export function MeetingDecisionsCard({
                         />
                       </div>
                     </div>
+                    <DecisionAssigneeSelector
+                      users={users}
+                      selectedIds={editAssigneeIds}
+                      onChange={setEditAssigneeIds}
+                    />
                     <div className="flex justify-end gap-1.5 pt-1">
                       <Button
                         size="sm"
@@ -308,10 +306,17 @@ export function MeetingDecisionsCard({
                   <div className="flex-1 min-w-0">
                     <p className="font-medium text-sm text-foreground break-words">{decision.content}</p>
                     <div className="flex items-center gap-2 mt-1.5 flex-wrap text-xs text-muted-foreground">
-                      {decision.assignee && (
-                        <span className="flex items-center gap-1 bg-muted px-2 py-0.5 rounded">
-                          <UserIcon className="h-3 w-3" />
-                          {decision.assignee.name}
+                      {((decision.assigneeIds && decision.assigneeIds.length > 0) || decision.assignee) && (
+                        <span className="flex items-center gap-1.5 bg-muted px-2 py-0.5 rounded flex-wrap">
+                          <UserIcon className="h-3 w-3 text-primary shrink-0" />
+                          <span className="font-medium text-foreground">
+                            {decision.assigneeIds && decision.assigneeIds.length > 0
+                              ? decision.assigneeIds
+                                  .map((uid) => users.find((u) => u.id === uid)?.name)
+                                  .filter(Boolean)
+                                  .join(", ")
+                              : decision.assignee?.name}
+                          </span>
                         </span>
                       )}
                       {decision.dueDate && (

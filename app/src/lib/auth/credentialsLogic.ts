@@ -97,6 +97,82 @@ export function matchUserIdentifier(
 }
 
 /**
+ * Génère l'objet du message pour le mail d'invitation initial.
+ *
+ * @returns La chaîne de caractères du sujet
+ */
+export function buildInvitationEmailSubject(): string {
+  return "[Projet Ouvert IMT] Accès à notre plateforme d'équipe & prise en main";
+}
+
+/**
+ * Génère le corps de texte sobre et structuré pour l'invitation d'un membre.
+ * Présente les identifiants, la tâche d'exemple, le tour d'horizon des onglets et l'appel aux retours.
+ *
+ * @param user Informations de l'utilisateur (nom, pseudo, mot de passe temporaire)
+ * @param appUrl URL de l'application Web
+ * @returns Le texte brut complet de l'email
+ */
+export function buildInvitationEmailBody(
+  user: {
+    name: string;
+    pseudo: string;
+    tempPassword?: string;
+  },
+  appUrl: string
+): string {
+  const firstName = user.name.split(" ")[0] || user.name;
+  const passwordText = user.tempPassword
+    ? user.tempPassword
+    : "(Identifiant existant ou déjà configuré)";
+
+  return `Bonjour ${firstName},
+
+Pour organiser au mieux notre Projet Ouvert IMT et centraliser tout notre travail d'équipe, voici la plateforme collaborative que j'ai mise en place pour nous 6.
+
+Accès direct : ${appUrl}
+Identifiant : ${user.pseudo}
+Mot de passe temporaire : ${passwordText}
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+PREMIERS PAS & TOUR D'HORIZON :
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Je t'invite à te connecter et à explorer les différents onglets pour découvrir l'outil :
+
+- Tableau Kanban & Tâches :
+  Tu y trouveras une première tâche d'exemple qui t'est assignée pour tester le fonctionnement (statuts À faire / En cours / Terminé, priorités, détails).
+
+- Réunions & Comptes rendus :
+  Jette un œil aux premiers exemples de réunions préparées pour voir comment sont structurés l'ordre du jour, les présences et la génération automatique des relevés de décisions.
+
+- Agenda & Jalons :
+  Tous les jalons officiels IMT (TD, livrables, soutenances) et nos créneaux d'équipe sont répertoriés pour garder le cap.
+
+- Budget & Trésorerie :
+  Le suivi en temps réel de nos lignes de financement (APICIL, BDE, Fablab) et nos dépenses de matériel.
+
+- Documentation & Infos :
+  Le cahier des charges, les consignes officielles et les ressources techniques du projet.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+POUR DÉMARRER :
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+1. Ouvre le lien : ${appUrl}
+2. Connecte-toi avec ton identifiant ("${user.pseudo}") et ton mot de passe temporaire ci-dessus.
+3. Rends-toi dans les Paramètres si tu souhaites personnaliser ton mot de passe.
+4. Fais le tour des onglets et teste la tâche d'exemple !
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+TES RETOURS SONT LES BIENVENUS :
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+N'hésite surtout pas à me faire tes retours (ce qui te semble pratique, ce qu'on peut améliorer ou ajuster). L'idée est de peaufiner la plateforme ensemble avant d'attaquer nos premières vraies réunions et séances de travail !
+
+À très vite,
+Étienne`;
+}
+
+/**
  * Construit l'URL mailto pour envoyer à un utilisateur ses accès personnalisés par email.
  *
  * @param user Informations de l'utilisateur (nom, email, pseudo, mot de passe temporaire)
@@ -112,49 +188,8 @@ export function buildMailtoUrl(
   },
   appUrl: string
 ): string {
-  const firstName = user.name.split(" ")[0] || user.name;
-  const subject = `[Projet Ouvert IMT] Bienvenue sur notre espace projet — Tes accès & démarrage`;
-
-  const passwordText = user.tempPassword
-    ? user.tempPassword
-    : "(Identifiant existant ou déjà configuré)";
-
-  const body = `Bonjour ${firstName},
-
-Pour organiser au mieux notre Projet Ouvert IMT et centraliser tout notre travail d'équipe, voici la plateforme collaborative que j'ai mise en place pour nous 6 !
-
-🔗 Accès direct : ${appUrl}
-👤 Ton identifiant : ${user.pseudo}
-🔑 Ton mot de passe temporaire : ${passwordText}
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-🚀 CE QUE TU VAS RETROUVER SUR LE SITE :
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-📋 Kanban & Tâches :
-Un tableau interactif (À faire, En cours, Terminé) avec une première tâche de démarrage qui t'est déjà assignée pour la semaine prochaine !
-
-📅 Agenda & Jalons officiels :
-Tous les jalons IMT officiels (TD, livrables, soutenances) et les créneaux de réunions de notre équipe pour ne rien manquer.
-
-💰 Budget & Trésorerie :
-Le suivi en direct de nos financements (APICIL, BDE, Fablab) et la gestion de nos devis et achats de matériel.
-
-🤝 Réunions & Décisions :
-L'ordre du jour de nos points hebdos, les feuilles de présence et les décisions actées converties directement en actions.
-
-📚 Infos Importantes :
-Les consignes du module, le cahier des charges et la documentation technique de référence.
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-👉 POUR COMMENCER :
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-1. Clique sur le lien ci-dessus.
-2. Connecte-toi avec ton prénom ("${user.pseudo}") et ton mot de passe ci-dessus.
-3. Rends-toi dans l'onglet Paramètres pour personnaliser ton mot de passe si tu le souhaites.
-4. Va jeter un œil à ta première tâche sur le tableau Kanban !
-
-À très vite en séance pour qu'on avance ensemble !
-Étienne`;
+  const subject = buildInvitationEmailSubject();
+  const body = buildInvitationEmailBody(user, appUrl);
 
   return `mailto:${user.email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
 }

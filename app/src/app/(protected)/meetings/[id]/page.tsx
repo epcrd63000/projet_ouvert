@@ -42,6 +42,7 @@ interface MeetingDetail {
     id: string;
     content: string;
     assigneeId?: string | null;
+    assigneeIds?: string[];
     dueDate?: string | null;
     taskId?: string | null;
     assignee?: User | null;
@@ -188,11 +189,16 @@ export default function MeetingDetailPage() {
     }
   };
 
-  const handleAddDecision = async (content: string, assigneeId: string | null, dueDate: string | null) => {
+  const handleAddDecision = async (
+    content: string,
+    assigneeId: string | null,
+    dueDate: string | null,
+    assigneeIds?: string[]
+  ) => {
     const res = await fetch(`/api/meetings/${params.id}/decisions`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ content, assigneeId, dueDate }),
+      body: JSON.stringify({ content, assigneeId, dueDate, assigneeIds }),
     });
     if (res.ok) fetchMeeting();
   };
@@ -201,13 +207,14 @@ export default function MeetingDetailPage() {
     decisionId: string,
     content: string,
     assigneeId: string | null,
-    dueDate: string | null
+    dueDate: string | null,
+    assigneeIds?: string[]
   ) => {
     try {
       const res = await fetch(`/api/meetings/${params.id}/decisions/${decisionId}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ content, assigneeId, dueDate }),
+        body: JSON.stringify({ content, assigneeId, dueDate, assigneeIds }),
       });
       if (res.ok) {
         toast.success("Décision mise à jour");

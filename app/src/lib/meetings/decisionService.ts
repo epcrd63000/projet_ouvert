@@ -61,12 +61,20 @@ export async function convertDecisionToTask(
     },
   });
 
-  // 5. Création de l'assignation si un responsable est défini
-  if (decision.assigneeId) {
+  // 5. Création des assignations pour l'ensemble des membres sélectionnés
+  const targetUserIds: string[] = [];
+  if (decision.assigneeIds && decision.assigneeIds.length > 0) {
+    targetUserIds.push(...decision.assigneeIds);
+  } else if (decision.assigneeId) {
+    targetUserIds.push(decision.assigneeId);
+  }
+
+  // Évite les doublons et crée les assignations de manière séquentielle
+  for (const userId of Array.from(new Set(targetUserIds))) {
     await prisma.taskAssignment.create({
       data: {
         taskId: task.id,
-        userId: decision.assigneeId,
+        userId,
       },
     });
   }
