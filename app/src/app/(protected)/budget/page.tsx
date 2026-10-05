@@ -33,6 +33,24 @@ export default async function BudgetPage() {
     }),
   ]);
 
+  const serializedEntries = entries.map((entry) => ({
+    ...entry,
+    amount: Number(entry.amount),
+    unitPrice: entry.unitPrice !== null ? Number(entry.unitPrice) : null,
+    deliveryCost: entry.deliveryCost !== null ? Number(entry.deliveryCost) : null,
+    date: entry.date.toISOString(),
+    createdAt: entry.createdAt.toISOString(),
+    updatedAt: entry.updatedAt.toISOString(),
+  }));
+
+  const serializedFundingSources = fundingSources.map((source) => ({
+    ...source,
+    amount: Number(source.amount),
+    date: source.date.toISOString(),
+    createdAt: source.createdAt.toISOString(),
+    updatedAt: source.updatedAt.toISOString(),
+  }));
+
   return (
     <div className="space-y-6">
       <div className="pb-4 border-b border-border">
@@ -43,8 +61,8 @@ export default async function BudgetPage() {
       </div>
 
       <BudgetClient
-        initialEntries={entries}
-        initialFundingSources={fundingSources}
+        initialEntries={serializedEntries}
+        initialFundingSources={serializedFundingSources}
         totalBudget={totalBudget}
         isAdmin={session.user.role === "ADMIN"}
       />
