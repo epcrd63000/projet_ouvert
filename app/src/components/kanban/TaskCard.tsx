@@ -5,7 +5,7 @@ import { useDraggable } from "@dnd-kit/core";
 import { cn } from "@/lib/utils";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Trash2 } from "lucide-react";
+import { Trash2, Pencil } from "lucide-react";
 import type { KanbanTask } from "./KanbanBoard";
 
 /**
@@ -56,29 +56,44 @@ export function TaskCard({ task, isDragging, onClick, onDelete, canDelete = fals
     <div ref={setNodeRef} style={style} {...listeners} {...attributes}>
       <Card
         className={cn(
-          "group relative cursor-grab transition-all hover:shadow-md border bg-card",
-          isDragging && "opacity-50 shadow-lg rotate-2",
+          "group relative cursor-pointer transition-all hover:shadow-md hover:border-primary/50 border bg-card",
+          isDragging && "opacity-50 shadow-lg rotate-2 cursor-grabbing",
           isOverdue && "border-red-500/50"
         )}
         onClick={onClick}
       >
         <CardContent className="space-y-2.5 p-3">
-          {/* Titre et action de suppression */}
+          {/* Titre et actions */}
           <div className="flex items-start justify-between gap-2">
-            <p className="text-sm font-medium leading-snug flex-1">{task.title}</p>
-            {canDelete && onDelete && (
+            <p className="text-sm font-medium leading-snug flex-1 group-hover:text-primary transition-colors">
+              {task.title}
+            </p>
+            <div className="flex items-center gap-0.5 shrink-0">
               <button
                 type="button"
                 onClick={(e) => {
                   e.stopPropagation();
-                  onDelete();
+                  onClick?.();
                 }}
-                className="opacity-0 group-hover:opacity-100 transition-opacity p-1 text-muted-foreground hover:text-destructive rounded hover:bg-muted shrink-0"
-                title="Supprimer la tâche"
+                className="opacity-0 group-hover:opacity-100 transition-opacity p-1 text-muted-foreground hover:text-foreground rounded hover:bg-muted"
+                title="Modifier les détails de la tâche"
               >
-                <Trash2 className="h-3.5 w-3.5" />
+                <Pencil className="h-3.5 w-3.5" />
               </button>
-            )}
+              {canDelete && onDelete && (
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onDelete();
+                  }}
+                  className="opacity-0 group-hover:opacity-100 transition-opacity p-1 text-muted-foreground hover:text-destructive rounded hover:bg-muted"
+                  title="Supprimer la tâche"
+                >
+                  <Trash2 className="h-3.5 w-3.5" />
+                </button>
+              )}
+            </div>
           </div>
 
           {/* Description optionnelle */}

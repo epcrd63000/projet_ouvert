@@ -20,9 +20,10 @@ import type { TaskFormData } from "./TaskModal";
 interface TaskTableViewProps {
   tasks: KanbanTask[];
   users?: UserSummary[];
-  onUpdate: (taskId: string, data: Partial<KanbanTask>) => Promise<void>;
+  onUpdate: (taskId: string, data: Partial<KanbanTask>) => Promise<unknown>;
   onCreate?: (data: TaskFormData) => Promise<void>;
   onDelete?: (taskId: string) => void;
+  onTaskClick?: (task: KanbanTask) => void;
   currentUserId: string;
   isAdmin: boolean;
 }
@@ -37,6 +38,7 @@ export function TaskTableView({
   onUpdate,
   onCreate,
   onDelete,
+  onTaskClick,
   currentUserId,
   isAdmin,
 }: TaskTableViewProps) {
@@ -67,8 +69,8 @@ export function TaskTableView({
   }, [tasks, statusFilter, priorityFilter, pilotFilter, overdueOnly]);
 
   const columns = useMemo(
-    () => createTaskColumns({ onUpdate, onDelete, users, currentUserId, isAdmin }),
-    [onUpdate, onDelete, users, currentUserId, isAdmin]
+    () => createTaskColumns({ onUpdate, onDelete, onTaskClick, users, currentUserId, isAdmin }),
+    [onUpdate, onDelete, onTaskClick, users, currentUserId, isAdmin]
   );
 
   const table = useReactTable({

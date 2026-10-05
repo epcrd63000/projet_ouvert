@@ -8,33 +8,57 @@ export interface UserSummary {
   id: string;
   name: string;
   email: string;
+  avatarUrl?: string | null;
 }
+
+export type TaskUpdatePayload = Partial<KanbanTask> & {
+  assigneeIds?: string[];
+};
 
 /**
  * Hook personnalisé encapsulant la gestion de l'état et des opérations CRUD sur les tâches.
+ * Gère l'étanchéité stricte de 'Mes tâches' par rapport à la vue globale.
  */
-export function useTasks(showAll: boolean, isAdmin: boolean) {
+export function useTasks(
+  showAll: boolean,
+  isAdmin: boolean = false,
+  currentUserId?: string
+) {
   const [tasks, setTasks] = useState<KanbanTask[]>([]);
   const [users, setUsers] = useState<UserSummary[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   /**
-   * Récupère les tâches depuis l'API.
+   * Récupère les tâches depuis l'API avec filtrage par périmètre.
    */
   const fetchTasks = useCallback(async () => {
     try {
-      const url = showAll ? "/api/tasks?all=true" : "/api/tasks";
+      let url = "/api/tasks";
+      if (showAll) {
+        url = "/api/tasks?all=true";
+      } else if (currentUserId && currentUserId.trim() !== "") {
+        url = `/api/tasks?userId=${encodeURIComponent(currentUserId)}`;
+      }
+
       const res = await fetch(url);
       if (res.ok) {
-        const data = await res.json();
-        setTasks(data);
+        const data: KanbanTask[] = await res.json();
+        // Filtrage défensif côté client pour garantir l'étanchéité absolue de 'Mes tâches'
+        if (!showAll && currentUserId && currentUserId.trim() !== "") {
+          const filtered = data.filter((t) =>
+            t.assignments?.some((a) => a.user.id === currentUserId)
+          );
+          setTasks(filtered);
+        } else {
+          setTasks(data);
+        }
       }
     } catch (error) {
       console.error("Erreur chargement tâches:", error);
     } finally {
       setIsLoading(false);
     }
-  }, [showAll]);
+  }, [showAll, currentUserId]);
 
   /**
    * Récupère la liste des utilisateurs pour les assignations.
@@ -84,31 +108,33 @@ export function useTasks(showAll: boolean, isAdmin: boolean) {
   );
 
   /**
-   * Met à jour les champs d'une tâche (avancement, statut, cause de retard, etc.).
+   * Met à jour les champs d'une tâche (titre, avancement, assignés, cause de retard, etc.).
    */
   const handleTaskUpdate = useCallback(
-    async (taskId: string, data: Partial<KanbanTask>) => {
-      setTasks((prev) =>
-        prev.map((t) => (t.id === taskId ? { ...t, ...data } : t))
-      );
-
+    async (taskId: string, data: TaskUpdatePayload) => {
       try {
         const res = await fetch(`/api/tasks/${taskId}`, {
           method: "PATCH",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(data),
         });
+
         if (res.ok) {
-          const updated = await res.json();
+          const updated: KanbanTask = await res.json();
           setTasks((prev) =>
             prev.map((t) => (t.id === taskId ? { ...t, ...updated } : t))
           );
+          return updated;
         } else {
+          const errData = await res.json().catch(() => ({}));
+          console.error("Erreur mise à jour tâche:", errData);
           fetchTasks();
+          throw new Error(errData.error || "Erreur lors de la mise à jour");
         }
       } catch (error) {
         console.error("Erreur mise à jour tâche:", error);
         fetchTasks();
+        throw error;
       }
     },
     [fetchTasks]

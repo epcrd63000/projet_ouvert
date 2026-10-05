@@ -25,7 +25,23 @@ export async function GET(request: NextRequest) {
 
     // Si showAll n'est pas activé, restreindre strictement aux tâches assignées à l'utilisateur ciblé ou courant
     if (!showAll) {
-      const targetUserId = userId || session.user.id;
+      let targetUserId = userId || session.user.id;
+      // Résolution de secours par email si l'ID n'est pas présent dans le jeton de session
+      if (!targetUserId && session.user.email) {
+        const dbUser = await prisma.user.findUnique({
+          where: { email: session.user.email },
+          select: { id: true },
+        });
+        if (dbUser) {
+          targetUserId = dbUser.id;
+        }
+      }
+
+      // Sécurité critique : si aucun utilisateur n'est résolu, ne JAMAIS interroger { userId: undefined }
+      if (!targetUserId) {
+        return NextResponse.json([]);
+      }
+
       where.assignments = { some: { userId: targetUserId } };
     }
 

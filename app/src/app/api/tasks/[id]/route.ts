@@ -43,12 +43,24 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
       return NextResponse.json({ error: "Tâche introuvable" }, { status: 404 });
     }
 
-    // Les MEMBER ne peuvent modifier que le statut et la position de leurs propres tâches (assignées ou créées)
+    // Résolution robuste de l'identifiant utilisateur courant
+    let currentUserId = session.user.id;
+    if (!currentUserId && session.user.email) {
+      const dbUser = await prisma.user.findUnique({
+        where: { email: session.user.email },
+        select: { id: true },
+      });
+      if (dbUser) {
+        currentUserId = dbUser.id;
+      }
+    }
+
+    // Les MEMBER ne peuvent modifier que leurs propres tâches ou tâches en commun
     if (session.user.role !== "ADMIN") {
-      const isAssigned = existingTask.assignments.some(
-        (a) => a.userId === session.user.id
+      const isAssigned = Boolean(
+        currentUserId && existingTask.assignments.some((a) => a.userId === currentUserId)
       );
-      const isCreator = existingTask.createdById === session.user.id;
+      const isCreator = Boolean(currentUserId && existingTask.createdById === currentUserId);
       if (!isAssigned && !isCreator) {
         return NextResponse.json({ error: "Accès refusé" }, { status: 403 });
       }
@@ -68,6 +80,7 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
         "deliverables",
         "validationCriteria",
         "validator",
+        "assigneeIds",
       ];
       const requestedFields = Object.keys(parsed.data);
       const forbidden = requestedFields.filter((f) => !allowedFields.includes(f));
@@ -79,7 +92,7 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
       }
     }
 
-    const { dueDate, parentId, status, progress, ...updateFields } = parsed.data;
+    const { dueDate, parentId, status, progress, assigneeIds, ...updateFields } = parsed.data;
 
     let resolvedStatus = status;
     let resolvedProgress = progress;
@@ -128,11 +141,33 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
       },
     });
 
+    // Mise à jour des assignations si fourni
+    if (assigneeIds !== undefined) {
+      const validAssignees = Array.from(new Set(assigneeIds.filter(Boolean)));
+      await prisma.taskAssignment.deleteMany({
+        where: { taskId: id },
+      });
+      if (validAssignees.length > 0) {
+        await prisma.taskAssignment.createMany({
+          data: validAssignees.map((uId: string) => ({
+            taskId: id,
+            userId: uId,
+          })),
+          skipDuplicates: true,
+        });
+      }
+    }
+
     const task = await prisma.task.findUnique({
       where: { id },
       include: {
         assignments: {
-          include: { user: { select: { id: true, name: true, email: true } } },
+          include: {
+            user: { select: { id: true, name: true, email: true, avatarUrl: true } },
+          },
+        },
+        createdBy: {
+          select: { id: true, name: true, email: true, avatarUrl: true },
         },
       },
     });
@@ -155,7 +190,7 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
         `La tâche "${task.title}" a été marquée comme terminée.`,
         task.id,
         "Task",
-        session.user.id
+        currentUserId || session.user.id
       );
     }
 
@@ -168,9 +203,7 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
 
 /**
  * DELETE /api/tasks/[id] — Supprime une tâche.
- * Accessible aux ADMIN et aux membres assignés à la tâche.
- * Supprime en cascade les sous-tâches et les assignations.
- * Notifie tous les assignés de la suppression.
+ * Accessible aux ADMIN et aux membres assignés à la tâche ou créateurs.
  */
 export async function DELETE(_request: NextRequest, { params }: RouteParams) {
   const session = await requireAuth();
@@ -194,12 +227,23 @@ export async function DELETE(_request: NextRequest, { params }: RouteParams) {
       return NextResponse.json({ error: "Tâche introuvable" }, { status: 404 });
     }
 
+    let currentUserId = session.user.id;
+    if (!currentUserId && session.user.email) {
+      const dbUser = await prisma.user.findUnique({
+        where: { email: session.user.email },
+        select: { id: true },
+      });
+      if (dbUser) {
+        currentUserId = dbUser.id;
+      }
+    }
+
     // Vérifier les permissions : ADMIN, créateur ou membre assigné
     const isAdmin = session.user.role === "ADMIN";
-    const isAssigned = task.assignments.some(
-      (a) => a.userId === session.user.id
+    const isAssigned = Boolean(
+      currentUserId && task.assignments.some((a) => a.userId === currentUserId)
     );
-    const isCreator = task.createdById === session.user.id;
+    const isCreator = Boolean(currentUserId && task.createdById === currentUserId);
 
     if (!isAdmin && !isAssigned && !isCreator) {
       return NextResponse.json({ error: "Accès refusé" }, { status: 403 });

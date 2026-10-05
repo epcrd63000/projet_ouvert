@@ -1,5 +1,22 @@
 # Journal des Modifications (CHANGELOG)
 
+## [2.12.7] - 2026-10-05
+
+### Panneau de Modification des Tâches au Clic & Étanchéité de « Mes tâches »
+- **Panneau Complet de Modification au Clic (`TaskDetailModal.tsx` & `TaskDetailForm.tsx`)** :
+  - Tout membre peut désormais cliquer sur une carte Kanban ou sur l'icône d'une tâche dans le tableau M2V5 pour ouvrir un panneau complet de détails et d'édition.
+  - Champs modifiables : Titre, Description, Statut, Priorité, % Avancement (avec synchronisation bidirectionnelle automatique avec le statut), Échéance, Assignés (travail en binôme/équipe), Charge estimée, Livrables, Critères de validation et Cause du retard.
+  - Contrôle d'accès strict : La modification est active pour le membre assigné, pour les membres partageant la tâche en commun (binôme), le créateur ou l'administrateur. Pour un membre tiers n'ayant aucun lien avec la tâche, le panneau s'ouvre en mode « Consultation seule » sécurisé.
+- **Correction Critique de l'Écran « Mes tâches » pour l'Administrateur (`api/tasks/route.ts` & `useTasks.ts`)** :
+  - Résolution de la régression où l'administrateur voyait toutes les tâches de l'équipe quel que soit l'onglet : lors de requêtes sans `userId` explicite et si `session.user.id` n'était pas injecté par le jeton JWT, Prisma évaluait `{ userId: undefined }` comme une absence de filtre et renvoyait les 11 tâches.
+  - Ajout d'une résolution sécurisée avec repli par email en base de données côté API, et renvoi immédiat d'une liste vide si l'utilisateur n'est pas identifié.
+  - Transmission explicite de `userId` dans le hook `useTasks` et double filtrage défensif côté client pour garantir que « Mes tâches » affiche strictement les tâches assignées à l'administrateur (2 tâches) tandis que « Toutes les tâches » affiche bien l'ensemble (11 tâches).
+- **Mise à Jour de l'API de Mise à Jour (`api/tasks/[id]/route.ts` & `validations/task.ts`)** :
+  - Support de la réassignation des membres (`assigneeIds`) et des critères de validation dans `updateTaskSchema` et la route `PATCH`.
+  - Résolution robuste de l'utilisateur pour autoriser les membres légitimes à enregistrer leurs modifications sans blocage 403.
+- **Tests Unitaires TDD (`08_task_permissions_and_scope.test.ts`)** :
+  - Validation complète des permissions (solo, co-assignés binômes, membres tiers et admin) et vérification de l'étanchéité de la vue personnelle.
+
 ## [2.12.6] - 2026-10-05
 
 ### Préparation des Réunions, Ordre du Jour IA & Synchronisation Kanban

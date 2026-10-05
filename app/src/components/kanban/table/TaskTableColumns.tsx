@@ -4,7 +4,7 @@ import React from "react";
 import { createColumnHelper } from "@tanstack/react-table";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { ArrowUpDown } from "lucide-react";
+import { ArrowUpDown, Pencil } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { isTaskOverdue, canUserEditTask } from "@/lib/m2v5/m2v5Logic";
 import {
@@ -18,8 +18,9 @@ import type { KanbanTask } from "../KanbanBoard";
 import type { UserSummary } from "@/hooks/useTasks";
 
 interface ColumnOptions {
-  onUpdate: (taskId: string, data: Partial<KanbanTask>) => Promise<void>;
+  onUpdate: (taskId: string, data: Partial<KanbanTask>) => Promise<unknown>;
   onDelete?: (taskId: string) => void;
+  onTaskClick?: (task: KanbanTask) => void;
   users: UserSummary[];
   currentUserId: string;
   isAdmin: boolean;
@@ -33,6 +34,7 @@ const columnHelper = createColumnHelper<KanbanTask>();
 export function createTaskColumns({
   onUpdate,
   onDelete,
+  onTaskClick,
   currentUserId,
   isAdmin,
 }: ColumnOptions) {
@@ -48,15 +50,27 @@ export function createTaskColumns({
         const task = row.original;
         const canEdit = canUserEditTask(task, currentUserId, isAdmin);
         return (
-          <div className="min-w-[160px] max-w-[220px]">
-            <EditableTextCell
-              value={task.title}
-              canEdit={canEdit}
-              onSave={(val) => onUpdate(task.id, { title: val })}
-              className="font-semibold text-xs"
-            />
-            {task.description && (
-              <p className="text-[10px] text-muted-foreground truncate px-1.5">{task.description}</p>
+          <div className="min-w-[160px] max-w-[230px] flex items-center justify-between gap-1 group">
+            <div className="flex-1 min-w-0">
+              <EditableTextCell
+                value={task.title}
+                canEdit={canEdit}
+                onSave={(val) => onUpdate(task.id, { title: val })}
+                className="font-semibold text-xs"
+              />
+              {task.description && (
+                <p className="text-[10px] text-muted-foreground truncate px-1.5">{task.description}</p>
+              )}
+            </div>
+            {onTaskClick && (
+              <button
+                type="button"
+                onClick={() => onTaskClick(task)}
+                className="opacity-0 group-hover:opacity-100 transition-opacity p-1 text-muted-foreground hover:text-primary rounded hover:bg-muted shrink-0"
+                title="Modifier tous les éléments de la tâche"
+              >
+                <Pencil className="h-3 w-3" />
+              </button>
             )}
           </div>
         );

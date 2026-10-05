@@ -28,13 +28,16 @@ export const updateTaskSchema = z.object({
   status: z.enum(["TODO", "IN_PROGRESS", "DONE", "BLOCKED"]).optional(),
   priority: z.enum(["LOW", "NORMAL", "HIGH", "CRITICAL"]).optional(),
   position: z.number().int().min(0).optional(),
-  dueDate: z.string().datetime().optional().nullable(),
+  dueDate: z.string().optional().nullable(),
   workload: z.string().max(100).optional().nullable(),
   deliverables: z.string().max(1000).optional().nullable(),
   validationCriteria: z.string().max(1000).optional().nullable(),
+  validator: z.string().max(1000).optional().nullable(),
   progress: z.number().int().min(0).max(100).optional(),
   delayReason: z.string().max(1000).optional().nullable(),
   parentId: z.string().uuid().optional().nullable(),
+  assigneeIds: z.array(z.string()).optional(),
+  tags: z.array(z.string()).optional(),
 });
 
 /**
