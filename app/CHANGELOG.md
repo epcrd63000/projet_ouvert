@@ -1,5 +1,18 @@
 # Changelog
 
+## [2.7.0] - 2026-10-05
+
+### Ajouté
+- **Refonte Interactive du Tableau Opérationnel M2V5 (`TaskTableView.tsx`)** :
+  - **Expérience Tableur 100% Inline** : Saisie et modification directes en place pour chaque cellule (Titre, Échéance, Charge, Livrables, Priorité, Critères de validation, Cause de retard) avec sauvegarde automatique en arrière-plan (`auto-save` sur `onBlur`/`onChange`) sans obliger à ouvrir une modale.
+  - **Couplage Bidirectionnel Intelligent (% Avancement & Statut)** : Développé selon la démarche TDD (`m2v5Logic.ts`), synchronisation automatique (100% force `DONE`, 1-99% force `IN_PROGRESS`, 0% force `TODO`, et passer le statut à `DONE` force 100%).
+  - **Ligne d'Insertion Rapide Inline** : Nouveau composant `TaskTableQuickAddRow.tsx` en bas de grille pour créer une tâche instantanément sans quitter le tableau, avec préservation de la modale complète.
+  - **Transparence et Droits d'Accès Projet** : Toggle *"Vue globale / Mes tâches"* désormais accessible à tous les membres de l'équipe (non restreint aux admins), avec modification en écriture restreinte aux assignés, créateur et administrateurs.
+  - **Barre d'Outils & Filtres Enrichis (`TaskTableToolbar.tsx`)** : Recherche plein texte, filtres déroulants Statut/Priorité/Pilote, filtre d'alerte immédiat *"En retard uniquement"* avec badge de décompte visuel, et tri interactif par en-tête de colonne.
+  - **Double Export & Suppression Sécurisée** : Export CSV encodé UTF-8 BOM pour Excel français, bouton *"Copier"* au format TSV pour collage direct dans Excel/Teams/Word, et popover de confirmation de suppression (`TaskTableDeleteDialog.tsx`).
+  - **Architecture Modulaire (< 200 lignes)** : Découpage strict en composants spécialisés (`TaskTableView`, `TaskTableToolbar`, `TaskTableColumns`, `TaskTableCells`, `TaskTableQuickAddRow`, `TaskTableDeleteDialog`, `m2v5Logic`).
+  - **Tests Unitaires TDD** : Suite `src/__tests__/03_m2v5_table_logic.test.ts` validant à 100% les règles de gestion et d'automatisation.
+
 ## [2.6.0] - 2026-10-05
 
 ### Ajouté

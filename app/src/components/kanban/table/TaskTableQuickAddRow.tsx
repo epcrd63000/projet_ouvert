@@ -38,10 +38,8 @@ export function TaskTableQuickAddRow({
       await onCreate({
         title: title.trim(),
         description: "",
-        status: "TODO",
         priority,
-        dueDate: dueDate || undefined,
-        tags: [],
+        dueDate: dueDate || "",
         assigneeIds: assigneeId ? [assigneeId] : [],
       });
       setTitle("");
