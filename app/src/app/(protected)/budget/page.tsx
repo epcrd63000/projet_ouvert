@@ -16,24 +16,37 @@ export default async function BudgetPage() {
   const project = await prisma.project.findFirst();
   const totalBudget = Number(project?.totalBudget) || 0;
 
-  const entries = await prisma.budgetEntry.findMany({
-    orderBy: { date: "desc" },
-    include: { createdBy: { select: { name: true, email: true } } }
-  });
+  const [entries, fundingSources] = await Promise.all([
+    prisma.budgetEntry.findMany({
+      orderBy: { date: "desc" },
+      include: {
+        createdBy: { select: { name: true, email: true } },
+        fundingSource: { select: { id: true, name: true } },
+      },
+    }),
+    prisma.fundingSource.findMany({
+      where: project ? { projectId: project.id } : undefined,
+      orderBy: { date: "asc" },
+      include: {
+        createdBy: { select: { name: true, email: true } },
+      },
+    }),
+  ]);
 
   return (
     <div className="space-y-6">
       <div className="pb-4 border-b border-border">
-        <h1 className="text-3xl font-bold tracking-tight">Suivi Budgétaire</h1>
+        <h1 className="text-3xl font-bold tracking-tight">Suivi Budgétaire & Trésorerie</h1>
         <p className="text-muted-foreground">
-          Gérez et suivez les dépenses du projet.
+          Pilotez les dotations financières (APICIL, BDE, Fablab), les dépenses et la balance du voilier MINIMOCA.
         </p>
       </div>
 
-      <BudgetClient 
-        initialEntries={entries} 
-        totalBudget={totalBudget} 
-        isAdmin={session.user.role === "ADMIN"} 
+      <BudgetClient
+        initialEntries={entries}
+        initialFundingSources={fundingSources}
+        totalBudget={totalBudget}
+        isAdmin={session.user.role === "ADMIN"}
       />
     </div>
   );

@@ -4,7 +4,7 @@ import { requireAuth } from "@/lib/permissions";
 import { z } from "zod";
 
 /**
- * Schéma de validation pour la création d'une entrée budget.
+ * Schéma de validation pour la création d'une entrée budget (dépense).
  */
 const budgetSchema = z.object({
   label: z.string().min(1, "Le libellé est obligatoire"),
@@ -14,31 +14,13 @@ const budgetSchema = z.object({
   amount: z.number().positive("Le montant doit être positif"),
   date: z.string().datetime().or(z.date().transform((d) => d.toISOString())),
   category: z.enum(["SUPPLIES", "SERVICES", "SOFTWARE", "OTHER"]),
+  fundingSourceId: z.string().uuid().nullable().optional(),
   comment: z.string().optional(),
-  status: z.enum(["PLANNED", "VALIDATED", "PAID"]).default("PLANNED"),
+  status: z.enum(["PLANNED", "VALIDATED", "PAID", "CANCELLED"]).default("PLANNED"),
 });
 
 /**
- * Recalcule le totalBudget du projet singleton à partir de toutes les entrées.
- */
-async function recalculateProjectBudget() {
-  const project = await prisma.project.findFirst();
-  if (!project) return;
-
-  const result = await prisma.budgetEntry.aggregate({
-    where: { projectId: project.id },
-    _sum: { amount: true },
-  });
-
-  await prisma.project.update({
-    where: { id: project.id },
-    data: { totalBudget: result._sum.amount ?? 0 },
-  });
-}
-
-/**
- * GET /api/budget — Récupère toutes les entrées budget avec pagination.
- * Paramètres query : page (défaut 1), limit (défaut 50).
+ * GET /api/budget — Récupère toutes les entrées budget avec pagination et source de financement.
  */
 export async function GET(request: NextRequest) {
   const session = await requireAuth();
@@ -55,7 +37,10 @@ export async function GET(request: NextRequest) {
     const [entries, total] = await Promise.all([
       prisma.budgetEntry.findMany({
         orderBy: { date: "desc" },
-        include: { createdBy: { select: { name: true, email: true } } },
+        include: {
+          createdBy: { select: { name: true, email: true } },
+          fundingSource: { select: { id: true, name: true } },
+        },
         skip,
         take: limit,
       }),
@@ -73,9 +58,8 @@ export async function GET(request: NextRequest) {
 }
 
 /**
- * POST /api/budget — Crée une nouvelle entrée budget.
+ * POST /api/budget — Crée une nouvelle dépense.
  * Accessible à tous les utilisateurs authentifiés.
- * Recalcule automatiquement le totalBudget du projet.
  */
 export async function POST(request: NextRequest) {
   const session = await requireAuth();
@@ -108,15 +92,17 @@ export async function POST(request: NextRequest) {
         amount: parsed.data.amount,
         date: new Date(parsed.data.date),
         category: parsed.data.category,
+        fundingSourceId: parsed.data.fundingSourceId || null,
         comment: parsed.data.comment,
         status: parsed.data.status,
         projectId: project.id,
         createdById: session.user.id,
       },
+      include: {
+        createdBy: { select: { name: true, email: true } },
+        fundingSource: { select: { id: true, name: true } },
+      },
     });
-
-    // Recalculer le totalBudget du projet
-    await recalculateProjectBudget();
 
     return NextResponse.json(newEntry, { status: 201 });
   } catch (error) {

@@ -1,5 +1,32 @@
 # Journal des Modifications (CHANGELOG)
 
+## [2.7.0] - 2026-10-05
+
+### Ajouté
+- **Gestion Complète de la Trésorerie, Financements Multi-Sources & Annulations ("L'argent qu'on a, qui s'annule et qui se rajoute")** :
+  - **Conformité au Rapport MINIMOCA (APICIL, BDE, Fablab)** : Alignement strict avec le bilan financier officiel du projet voilier MINIMOCA (pages 23-24 et Annexe 2 du rapport final).
+  - **Modèle de Données & Schéma Prisma (`FundingSource`)** :
+    - Nouveau modèle PostgreSQL `FundingSource` pour enregistrer et piloter chaque enveloppe de trésorerie (nom, montant, date, statut `RECEIVED`/`PENDING`/`CANCELLED`, commentaire, créateur).
+    - Extension de `BudgetEntry` avec la relation `fundingSourceId` pour rattacher chaque achat à son enveloppe budgétaire dédiée.
+    - Extension de l'enum `BudgetStatus` avec la valeur `CANCELLED` (Annulé).
+  - **Mécanisme d'Annulation Non-Destructif ("Qui s'annule")** :
+    - Basculement instantané d'une dépense ou d'un financement vers l'état *Annulé* en 1 clic.
+    - Conservation intégrale de la ligne dans le tableau (style visuel grisé, barré et badge dédié) avec préservation du commentaire explicatif (ex: cause d'annulation, rupture fournisseur, remboursement).
+    - Neutralisation comptable automatique : les montants des lignes annulées sont exclus des totaux consommés et des calculs de solde.
+    - Réactivation possible à tout moment.
+  - **Ajout Dynamique de Financements ("Qui se rajoute")** :
+    - Modale dédiée `AddFundingModal.tsx` permettant aux administrateurs d'ajouter de nouvelles dotations, subventions ou sponsors qui s'additionnent en temps réel au budget disponible.
+  - **Système de Commentaires Universel & Édition Rapide ("Que on peut commenter")** :
+    - Nouveau composant `CommentDialog.tsx` permettant à tous les membres de consulter et d'éditer facilement le commentaire sur n'importe quelle ligne de dépense ou de financement.
+  - **KPIs & Balances par Enveloppe (`BudgetSummaryCards.tsx`)** :
+    - Carte globale de trésorerie (fonds disponibles, dépenses payées, dépenses engagées, solde réel, jauge de consommation).
+    - Cartes individuelles de suivi pour chaque enveloppe (APICIL, BDE IMT, Fablab IMT, etc.) affichant la dotation, le montant consommé et le solde net restant.
+  - **Export CSV Enrichi (`/api/budget/export`)** :
+    - Inclusion de la source de financement rattachée, du statut et du commentaire complet, encodé en UTF-8 BOM pour ouverture directe sous Excel.
+  - **Architecture & Bonnes Pratiques Senior** :
+    - Découpage strict en composants modulaires (`BudgetSummaryCards`, `FundingSourcesTable`, `ExpensesTable`, `AddFundingModal`, `AddExpenseModal`, `CommentDialog`, `types`), tous `< 200 lignes`.
+    - Suite de tests automatisée TDD Tier 1 (`tests/01_tier1_feature_coverage/test-15-budget-funding-and-cancellation.ts`) validant le modèle de financement, les calculs de balance et la neutralisation des annulations.
+
 ## [2.6.0] - 2026-10-05
 
 ### Ajouté

@@ -59,6 +59,7 @@ enum BudgetStatus {
   PLANNED
   VALIDATED
   PAID
+  CANCELLED
 }
 
 enum NotificationType {
@@ -113,21 +114,23 @@ model User {
   budgetEntries       BudgetEntry[]
   notifications       Notification[]
   createdEvents       Event[]           @relation("EventCreator")
+  fundingSources      FundingSource[]   @relation("FundingCreator")
 }
 
 model Project {
-  id          String           @id @default(uuid())
-  name        String
-  description String?
-  totalBudget Decimal          @default(0) // Budget total en Decimal
-  startDate   DateTime
-  endDate     DateTime
-  createdAt   DateTime         @default(now())
-  tasks       Task[]
-  meetings    Meeting[]
-  milestones  GanttMilestone[]
-  budgets     BudgetEntry[]
-  events      Event[]
+  id             String           @id @default(uuid())
+  name           String
+  description    String?
+  totalBudget    Decimal          @default(0) // Budget total en Decimal
+  startDate      DateTime
+  endDate        DateTime
+  createdAt      DateTime         @default(now())
+  tasks          Task[]
+  meetings       Meeting[]
+  milestones     GanttMilestone[]
+  budgets        BudgetEntry[]
+  fundingSources FundingSource[]
+  events         Event[]
 }
 
 model Task {
@@ -247,22 +250,50 @@ model GanttMilestone {
 }
 
 model BudgetEntry {
-  id           String         @id @default(uuid())
-  projectId    String
-  createdById  String?
-  label        String
-  quantity     Int?           @default(1)
-  unitPrice    Decimal?       // Remplacement de Float par Decimal
-  deliveryCost Decimal?       // Remplacement de Float par Decimal
-  amount       Decimal        // Remplacement de Float par Decimal, agit comme Montant Total
-  date         DateTime
-  category     BudgetCategory
-  comment      String?
-  status       BudgetStatus   @default(PLANNED)
-  createdAt    DateTime       @default(now())
-  updatedAt    DateTime       @updatedAt // Ajout de updatedAt
-  project      Project        @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  createdBy    User?          @relation(fields: [createdById], references: [id], onDelete: SetNull)
+  id              String          @id @default(uuid())
+  projectId       String
+  createdById     String?
+  fundingSourceId String?
+  label           String
+  quantity        Int?            @default(1)
+  unitPrice       Decimal?        // Remplacement de Float par Decimal
+  deliveryCost    Decimal?        // Remplacement de Float par Decimal
+  amount          Decimal         // Remplacement de Float par Decimal, agit comme Montant Total
+  date            DateTime
+  category        BudgetCategory
+  comment         String?
+  status          BudgetStatus    @default(PLANNED)
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt // Ajout de updatedAt
+  project         Project         @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  createdBy       User?           @relation(fields: [createdById], references: [id], onDelete: SetNull)
+  fundingSource   FundingSource?  @relation(fields: [fundingSourceId], references: [id], onDelete: SetNull)
+
+  @@index([fundingSourceId])
+}
+
+model FundingSource {
+  id          String        @id @default(uuid())
+  projectId   String
+  createdById String?
+  name        String
+  amount      Decimal       @default(0)
+  date        DateTime      @default(now())
+  comment     String?
+  status      FundingStatus @default(RECEIVED)
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+  project     Project       @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  createdBy   User?         @relation("FundingCreator", fields: [createdById], references: [id], onDelete: SetNull)
+  expenses    BudgetEntry[]
+
+  @@index([projectId])
+}
+
+enum FundingStatus {
+  RECEIVED
+  PENDING
+  CANCELLED
 }
 
 model Notification {

@@ -7,26 +7,16 @@ interface RouteParams {
   params: Promise<{ id: string }>;
 }
 
-/**
- * Schéma de validation pour la mise à jour d'une entrée budget.
- */
-const updateBudgetSchema = z.object({
-  label: z.string().min(1).optional(),
-  quantity: z.number().int().positive().optional(),
-  unitPrice: z.number().positive().optional(),
-  deliveryCost: z.number().min(0).optional(),
+const updateFundingSchema = z.object({
+  name: z.string().min(1).optional(),
   amount: z.number().positive().optional(),
   date: z.string().datetime().or(z.date().transform((d) => d.toISOString())).optional(),
-  category: z.enum(["SUPPLIES", "SERVICES", "SOFTWARE", "OTHER"]).optional(),
-  fundingSourceId: z.string().uuid().nullable().optional(),
   comment: z.string().nullable().optional(),
-  status: z.enum(["PLANNED", "VALIDATED", "PAID", "CANCELLED"]).optional(),
+  status: z.enum(["RECEIVED", "PENDING", "CANCELLED"]).optional(),
 });
 
 /**
- * PATCH /api/budget/[id] — Met à jour une entrée budget (statut "qui s'annule", source, commentaire).
- * Accessible à tous les utilisateurs authentifiés pour les commentaires.
- * Statut/Montant restreint aux Admins si nécessaire, ou ouvert selon les besoins.
+ * PATCH /api/budget/funding/[id] — Modifie une source de financement ou son statut ("qui s'annule", commentaires).
  */
 export async function PATCH(request: NextRequest, { params }: RouteParams) {
   const session = await requireAuth();
@@ -38,7 +28,7 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
 
   try {
     const body = await request.json();
-    const parsed = updateBudgetSchema.safeParse(body);
+    const parsed = updateFundingSchema.safeParse(body);
 
     if (!parsed.success) {
       return NextResponse.json(
@@ -47,36 +37,40 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
       );
     }
 
-    const updated = await prisma.budgetEntry.update({
+    // Seul un admin peut changer montant/statut/nom, mais les membres peuvent modifier ou ajouter un commentaire
+    const isOnlyCommentUpdate =
+      Object.keys(body).length === 1 && parsed.data.comment !== undefined;
+
+    if (!isOnlyCommentUpdate && session.user.role !== "ADMIN") {
+      return NextResponse.json(
+        { error: "Accès réservé aux administrateurs" },
+        { status: 403 }
+      );
+    }
+
+    const updated = await prisma.fundingSource.update({
       where: { id },
       data: {
-        ...(parsed.data.label && { label: parsed.data.label }),
-        ...(parsed.data.quantity !== undefined && { quantity: parsed.data.quantity }),
-        ...(parsed.data.unitPrice !== undefined && { unitPrice: parsed.data.unitPrice }),
-        ...(parsed.data.deliveryCost !== undefined && { deliveryCost: parsed.data.deliveryCost }),
+        ...(parsed.data.name && { name: parsed.data.name }),
         ...(parsed.data.amount !== undefined && { amount: parsed.data.amount }),
         ...(parsed.data.date && { date: new Date(parsed.data.date) }),
-        ...(parsed.data.category && { category: parsed.data.category }),
-        ...(parsed.data.fundingSourceId !== undefined && { fundingSourceId: parsed.data.fundingSourceId }),
         ...(parsed.data.comment !== undefined && { comment: parsed.data.comment }),
         ...(parsed.data.status && { status: parsed.data.status }),
       },
       include: {
         createdBy: { select: { name: true, email: true } },
-        fundingSource: { select: { id: true, name: true } },
       },
     });
 
     return NextResponse.json(updated);
   } catch (error) {
-    console.error("Erreur PATCH /api/budget/[id]:", error);
+    console.error("Erreur PATCH /api/budget/funding/[id]:", error);
     return NextResponse.json({ error: "Erreur serveur" }, { status: 500 });
   }
 }
 
 /**
- * DELETE /api/budget/[id] — Supprime une entrée budget.
- * Accessible à tous les utilisateurs authentifiés.
+ * DELETE /api/budget/funding/[id] — Supprime définitivement une source de financement.
  */
 export async function DELETE(_request: NextRequest, { params }: RouteParams) {
   const session = await requireAuth();
@@ -84,13 +78,20 @@ export async function DELETE(_request: NextRequest, { params }: RouteParams) {
     return NextResponse.json({ error: "Non autorisé" }, { status: 401 });
   }
 
+  if (session.user.role !== "ADMIN") {
+    return NextResponse.json({ error: "Accès réservé aux administrateurs" }, { status: 403 });
+  }
+
   const { id } = await params;
 
   try {
-    await prisma.budgetEntry.delete({ where: { id } });
+    await prisma.fundingSource.delete({
+      where: { id },
+    });
+
     return NextResponse.json({ success: true });
   } catch (error) {
-    console.error("Erreur DELETE /api/budget/[id]:", error);
+    console.error("Erreur DELETE /api/budget/funding/[id]:", error);
     return NextResponse.json({ error: "Erreur serveur" }, { status: 500 });
   }
 }

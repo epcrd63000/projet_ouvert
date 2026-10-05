@@ -23,7 +23,7 @@ export function useTasks(showAll: boolean, isAdmin: boolean) {
    */
   const fetchTasks = useCallback(async () => {
     try {
-      const url = showAll && isAdmin ? "/api/tasks?all=true" : "/api/tasks";
+      const url = showAll ? "/api/tasks?all=true" : "/api/tasks";
       const res = await fetch(url);
       if (res.ok) {
         const data = await res.json();
@@ -34,7 +34,7 @@ export function useTasks(showAll: boolean, isAdmin: boolean) {
     } finally {
       setIsLoading(false);
     }
-  }, [showAll, isAdmin]);
+  }, [showAll]);
 
   /**
    * Récupère la liste des utilisateurs pour les assignations.

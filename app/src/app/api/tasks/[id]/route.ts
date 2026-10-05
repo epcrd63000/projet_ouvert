@@ -55,6 +55,11 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
 
       // Restreindre les champs modifiables pour les MEMBER
       const allowedFields = [
+        "title",
+        "description",
+        "dueDate",
+        "priority",
+        "tags",
         "status",
         "position",
         "progress",
@@ -62,6 +67,7 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
         "workload",
         "deliverables",
         "validationCriteria",
+        "validator",
       ];
       const requestedFields = Object.keys(parsed.data);
       const forbidden = requestedFields.filter((f) => !allowedFields.includes(f));

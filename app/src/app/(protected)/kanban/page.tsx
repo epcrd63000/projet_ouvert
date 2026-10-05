@@ -81,18 +81,16 @@ export default function KanbanPage() {
             </Button>
           </div>
 
-          {/* Toggle vue globale (Admin) */}
-          {isAdmin && (
-            <Button
-              variant={showAll ? "default" : "outline"}
-              size="sm"
-              onClick={() => setShowAll(!showAll)}
-              className="gap-1.5 h-8 text-xs"
-            >
-              {showAll ? <Eye className="h-3.5 w-3.5" /> : <UserIcon className="h-3.5 w-3.5" />}
-              {showAll ? "Vue globale" : "Mes tâches"}
-            </Button>
-          )}
+          {/* Toggle vue globale / mes tâches (Accessible à tous les membres) */}
+          <Button
+            variant={showAll ? "default" : "outline"}
+            size="sm"
+            onClick={() => setShowAll(!showAll)}
+            className="gap-1.5 h-8 text-xs"
+          >
+            {showAll ? <Eye className="h-3.5 w-3.5" /> : <UserIcon className="h-3.5 w-3.5" />}
+            {showAll ? "Vue globale" : "Mes tâches"}
+          </Button>
 
           {/* Bouton création (Tous) */}
           <Button onClick={() => setIsModalOpen(true)} size="sm" className="gap-1.5 h-8 text-xs">
@@ -114,7 +112,9 @@ export default function KanbanPage() {
       ) : (
         <TaskTableView
           tasks={tasks}
+          users={users}
           onUpdate={handleTaskUpdate}
+          onCreate={handleCreateTask}
           onDelete={handleDeleteTask}
           currentUserId={currentUserId}
           isAdmin={isAdmin}
