@@ -23,6 +23,7 @@
     - Cartes individuelles de suivi pour chaque enveloppe (APICIL, BDE IMT, Fablab IMT, etc.) affichant la dotation, le montant consommé et le solde net restant.
   - **Export CSV Enrichi (`/api/budget/export`)** :
     - Inclusion de la source de financement rattachée, du statut et du commentaire complet, encodé en UTF-8 BOM pour ouverture directe sous Excel.
+  - **Sérialisation RSC pour Client Components** : Conversion des types Prisma Decimal et Date en primitives pour éliminer les warnings de transfert RSC entre composants serveur et client.
   - **Architecture & Bonnes Pratiques Senior** :
     - Découpage strict en composants modulaires (`BudgetSummaryCards`, `FundingSourcesTable`, `ExpensesTable`, `AddFundingModal`, `AddExpenseModal`, `CommentDialog`, `types`), tous `< 200 lignes`.
     - Suite de tests automatisée TDD Tier 1 (`tests/01_tier1_feature_coverage/test-15-budget-funding-and-cancellation.ts`) validant le modèle de financement, les calculs de balance et la neutralisation des annulations.
