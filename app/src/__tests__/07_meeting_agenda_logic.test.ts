@@ -13,6 +13,8 @@ import {
   formatDiscordAnnouncement,
   buildMeetingTaskMetadata,
   extractAgendaSummary,
+  isUserMentionedInAgenda,
+  extractUserSpecificPreparation,
 } from "../lib/meetings/agendaService";
 
 function assertTrue(condition: boolean, message: string) {
@@ -87,6 +89,24 @@ function runAgendaLogicTests() {
   const summary = extractAgendaSummary(sampleAgendaMarkdown);
   assertTrue(summary.length > 10 && summary.length <= 250, "Le résumé doit être concis");
   console.log("     ✓ Résumé extrait :", summary);
+
+  // 5. Test de détection de mention d'un membre dans les préparatifs
+  console.log("  5. Test isUserMentionedInAgenda...");
+  assertTrue(isUserMentionedInAgenda(sampleAgendaMarkdown, "Hugo RAMPAZZO"), "Hugo doit être détecté");
+  assertTrue(isUserMentionedInAgenda(sampleAgendaMarkdown, "Solal"), "Solal doit être détecté par son prénom");
+  assertTrue(!isUserMentionedInAgenda(sampleAgendaMarkdown, "Milane FARGUES"), "Milane n'est pas mentionnée dans cet extrait");
+  assertTrue(!isUserMentionedInAgenda("", "Hugo"), "Chaîne vide doit renvoyer false");
+  console.log("     ✓ Détection des membres mentionnés validée.");
+
+  // 6. Test d'extraction de la consigne personnalisée pour un membre
+  console.log("  6. Test extractUserSpecificPreparation...");
+  const hugoPrep = extractUserSpecificPreparation(sampleAgendaMarkdown, "Hugo RAMPAZZO");
+  assertTrue(hugoPrep?.includes("Exporter les fichiers STEP") ?? false, "Livrable de Hugo extrait avec succès");
+  const solalPrep = extractUserSpecificPreparation(sampleAgendaMarkdown, "Solal BENQADI");
+  assertTrue(solalPrep?.includes("échantillons de toile") ?? false, "Livrable de Solal extrait avec succès");
+  const milanePrep = extractUserSpecificPreparation(sampleAgendaMarkdown, "Milane");
+  assertTrue(milanePrep === null, "Doit être null si le membre n'a pas de livrable spécifique");
+  console.log("     ✓ Extraction de la consigne personnalisée validée.");
 
   console.log("✅ Tous les tests TDD pour l'Ordre du Jour ont réussi !");
 }

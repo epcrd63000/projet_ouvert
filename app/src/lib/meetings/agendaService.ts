@@ -117,6 +117,45 @@ export function extractAgendaSummary(markdown: string): string {
 }
 
 /**
+ * Vérifie si le nom ou prénom d'un membre apparaît dans le texte de l'ordre du jour.
+ */
+export function isUserMentionedInAgenda(
+  agendaContent: string,
+  userName?: string | null
+): boolean {
+  if (!agendaContent || !userName) return false;
+  const firstName = userName.trim().split(" ")[0].toLowerCase();
+  const lowerAgenda = agendaContent.toLowerCase();
+  return lowerAgenda.includes(firstName) || lowerAgenda.includes(userName.toLowerCase());
+}
+
+/**
+ * Extrait la consigne ou le livrable spécifique assigné à un membre dans l'ordre du jour.
+ */
+export function extractUserSpecificPreparation(
+  agendaContent: string,
+  userName?: string | null
+): string | null {
+  if (!agendaContent || !userName) return null;
+  const firstName = userName.trim().split(" ")[0].toLowerCase();
+  const lines = agendaContent.split(/\r?\n/);
+
+  for (const line of lines) {
+    const lowerLine = line.toLowerCase();
+    if (lowerLine.includes(firstName)) {
+      const cleaned = line
+        .replace(/^[\s*\-•\d\.\)]+/, "")
+        .replace(new RegExp(`\\*\\*.*?${firstName}.*?\\*\\*\\s*[:\\-]?`, "i"), "")
+        .replace(new RegExp(`${firstName}\\s*[:\\-]`, "i"), "")
+        .trim();
+      if (cleaned.length > 2) return cleaned;
+    }
+  }
+
+  return null;
+}
+
+/**
  * Crée ou met à jour la tâche Kanban unique partagée pour la préparation d'une réunion.
  */
 export async function syncMeetingPreparationTask(params: {

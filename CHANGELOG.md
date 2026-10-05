@@ -1,6 +1,20 @@
 # Journal des Modifications (CHANGELOG)
 
-## [2.12.7] - 2026-10-05
+## [2.12.8] - 2026-10-05
+
+### Visualisation Immédiate de l'Ordre du Jour & Préparatifs pour Chaque Membre
+- **Encadré Ordre du Jour & Détection Personnalisée sur les Cartes (`MeetingCard.tsx`)** :
+  - Chaque carte de réunion sur la page `/meetings` intègre désormais un encadré dédié « Ordre du Jour & Préparation ».
+  - Détection automatique et ciblée pour l'utilisateur connecté : si un membre (ex: Hugo, Solal, Liam, Milane, Peter, Étienne) est cité dans la section des livrables de l'ordre du jour, un bandeau en surbrillance affiche directement : `🎯 Vos préparatifs : [Consigne/Livrable]`.
+  - Aperçu concis du résumé de l'ordre du jour pour toute l'équipe sans avoir à ouvrir la fiche complète de la réunion.
+- **Modale d'Aperçu Rapide 1-Clic (`MeetingQuickAgendaModal.tsx`)** :
+  - Bouton « Aperçu » sur chaque carte permettant d'afficher l'intégralité de l'ordre du jour en Markdown stylisé dans une fenêtre légère.
+  - Rappel du lieu, de la date, des participants et bouton de copie instantanée de l'annonce pour Discord/WhatsApp/Webmail.
+- **Refactorisation Modulaire de la Page des Réunions (`meetings/page.tsx`)** :
+  - Allègement strict de la page principale sous la barre des 180 lignes en extrayant les sous-composants `MeetingCard` et `MeetingQuickAgendaModal`.
+  - Boutons d'action adaptés au statut : « Préparer la réunion » pour les réunions à venir et « Voir le compte rendu » pour les réunions archivées.
+- **Tests Unitaires TDD Enrichis (`07_meeting_agenda_logic.test.ts`)** :
+  - Validation de `isUserMentionedInAgenda` et `extractUserSpecificPreparation` avec couverture de tous les cas (nom complet, prénom seul, absence de livrable).
 
 ### Panneau de Modification des Tâches au Clic & Étanchéité de « Mes tâches »
 - **Panneau Complet de Modification au Clic (`TaskDetailModal.tsx` & `TaskDetailForm.tsx`)** :
