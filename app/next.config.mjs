@@ -24,6 +24,14 @@ const nextConfig = {
       "@prisma/adapter-neon",
     ],
   },
+  // Désactive le cache disque Webpack en développement sous Windows
+  // pour éliminer les erreurs ENOENT et les corruptions de modules ./vendor-chunks
+  webpack: (config, { dev }) => {
+    if (dev) {
+      config.cache = false;
+    }
+    return config;
+  },
   // En-têtes de sécurité HTTP
   async headers() {
     return [

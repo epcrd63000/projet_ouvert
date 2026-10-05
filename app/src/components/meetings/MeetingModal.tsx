@@ -7,6 +7,7 @@ export interface MeetingFormData {
   title: string;
   scheduledAt: string;
   location?: string;
+  objectives?: string;
   status: "PLANNED" | "IN_PROGRESS" | "DONE";
   attendeeIds: string[];
 }
@@ -22,6 +23,7 @@ export function MeetingModal({ isOpen, onClose, onSubmit, users }: MeetingModalP
   const [title, setTitle] = useState("");
   const [scheduledAt, setScheduledAt] = useState("");
   const [location, setLocation] = useState("");
+  const [objectives, setObjectives] = useState("");
   const [status, setStatus] = useState<"PLANNED" | "IN_PROGRESS" | "DONE">("PLANNED");
   const [attendeeIds, setAttendeeIds] = useState<string[]>([]);
 
@@ -30,6 +32,7 @@ export function MeetingModal({ isOpen, onClose, onSubmit, users }: MeetingModalP
       setTitle("");
       setScheduledAt("");
       setLocation("");
+      setObjectives("");
       setStatus("PLANNED");
       setAttendeeIds([]);
     }
@@ -39,7 +42,7 @@ export function MeetingModal({ isOpen, onClose, onSubmit, users }: MeetingModalP
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    onSubmit({ title, scheduledAt, location, status, attendeeIds });
+    onSubmit({ title, scheduledAt, location, objectives, status, attendeeIds });
     onClose();
   };
 
@@ -81,6 +84,17 @@ export function MeetingModal({ isOpen, onClose, onSubmit, users }: MeetingModalP
               value={location}
               onChange={(e) => setLocation(e.target.value)}
               placeholder="Ex: Salle 301, Visioconférence..."
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium">Objectifs</label>
+            <textarea
+              className="w-full rounded-md border p-2"
+              rows={3}
+              value={objectives}
+              onChange={(e) => setObjectives(e.target.value)}
+              placeholder="Ex: Validation du sprint, points bloquants..."
             />
           </div>
 

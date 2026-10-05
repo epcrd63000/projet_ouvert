@@ -8,6 +8,7 @@ import {
   YAxis,
   CartesianGrid,
   Tooltip as RechartsTooltip,
+  Legend,
   ResponsiveContainer,
   RadarChart,
   PolarGrid,
@@ -21,9 +22,13 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 
-export function MemberProgressChart({ data }: { data: { name: string; done: number; total: number }[] }) {
-  const maxTotal = Math.max(1, ...data.map(d => Math.max(d.done, d.total)));
-  
+export function MemberProgressChart({
+  data,
+}: {
+  data: { name: string; done: number; total: number; completionRate?: number }[];
+}) {
+  const maxTotal = Math.max(1, ...data.map((d) => Math.max(d.done, d.total)));
+
   return (
     <Card className="col-span-1 lg:col-span-2">
       <CardHeader>
@@ -32,16 +37,66 @@ export function MemberProgressChart({ data }: { data: { name: string; done: numb
       <CardContent>
         <div className="h-[250px]">
           <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={data} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+            <BarChart
+              data={data}
+              margin={{ top: 10, right: 10, left: -20, bottom: 0 }}
+              barGap={4}
+            >
               <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(var(--border))" />
-              <XAxis dataKey="name" fontSize={12} tickLine={false} axisLine={false} tick={{ fill: "hsl(var(--foreground))" }} />
-              <YAxis fontSize={12} tickLine={false} axisLine={false} tick={{ fill: "hsl(var(--foreground))" }} allowDecimals={false} domain={[0, maxTotal]} />
-              <RechartsTooltip 
-                cursor={{ fill: "hsl(var(--muted))" }} 
-                contentStyle={{ backgroundColor: "hsl(var(--background))", borderColor: "hsl(var(--border))", color: "hsl(var(--foreground))", borderRadius: "8px" }}
-                itemStyle={{ color: "hsl(var(--foreground))" }}
+              <XAxis
+                dataKey="name"
+                fontSize={12}
+                tickLine={false}
+                axisLine={false}
+                tick={{ fill: "hsl(var(--foreground))" }}
               />
-              <Bar dataKey="done" name="Tâches terminées" fill="#4f46e5" radius={[4, 4, 0, 0]} />
+              <YAxis
+                fontSize={12}
+                tickLine={false}
+                axisLine={false}
+                tick={{ fill: "hsl(var(--foreground))" }}
+                allowDecimals={false}
+                domain={[0, maxTotal + 1]}
+              />
+              <RechartsTooltip
+                cursor={{ fill: "hsl(var(--muted))", opacity: 0.2 }}
+                contentStyle={{
+                  backgroundColor: "hsl(var(--background))",
+                  borderColor: "hsl(var(--border))",
+                  color: "hsl(var(--foreground))",
+                  borderRadius: "8px",
+                  boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
+                }}
+                formatter={(value: any, name: string, item: any) => {
+                  const payload = item?.payload;
+                  const rate =
+                    payload?.total > 0
+                      ? Math.round((payload.done / payload.total) * 100)
+                      : 0;
+                  if (name === "Tâches terminées") {
+                    return [`${value} (${rate}% complété)`, name];
+                  }
+                  return [value, name];
+                }}
+              />
+              <Legend
+                verticalAlign="top"
+                align="right"
+                iconType="circle"
+                wrapperStyle={{ fontSize: "12px", paddingBottom: "8px" }}
+              />
+              <Bar
+                dataKey="done"
+                name="Tâches terminées"
+                fill="#10b981"
+                radius={[4, 4, 0, 0]}
+              />
+              <Bar
+                dataKey="total"
+                name="Total assigné"
+                fill="#6366f1"
+                radius={[4, 4, 0, 0]}
+              />
             </BarChart>
           </ResponsiveContainer>
         </div>

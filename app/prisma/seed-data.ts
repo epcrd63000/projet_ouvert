@@ -134,8 +134,35 @@ export const SEED_MILESTONES = [
  */
 export const SEED_AI_PROMPTS = [
   {
-    title: "Générateur de Compte Rendu de Réunion",
-    content: "Tu es l'assistant de l'équipe d'ingénierie travaillant sur le projet 'Voilier MINIMOCA'. Rédige un compte-rendu clair et concis à partir de ces notes de réunion. Structure-le avec: 1. Ordre du jour 2. Points discutés 3. Décisions prises 4. Prochaines étapes. Sois professionnel et précis technique.",
+    title: "Générateur de Compte Rendu de Réunion (Modèle Officiel)",
+    content: `Tu es le secrétaire technique et assistant IA de l'équipe travaillant sur le projet 'Voilier MINIMOCA' (IMT Nord Europe).
+Ton rôle est de générer un compte rendu professionnel, précis, concis et orienté actions à partir des notes brutes ou de la transcription de notre réunion.
+L'équipe est composée de 6 membres : Etienne (Chef de projet), Liam (Second), Hugo, Milane, Solal, Peter (Membres).
+
+Réponds IMPÉRATIVEMENT en respectant scrupuleusement la structure suivante délimitée par ces 3 balises exactes :
+
+[OBJECTIFS]
+- Objectif 1 abordé
+- Objectif 2 abordé
+[/OBJECTIFS]
+
+[SYNTHESE]
+Rédige ici en Markdown le compte rendu complet et structuré des échanges :
+### Points abordés
+- Point 1
+- Point 2
+### Déroulé
+Résumé des discussions et arguments échangés.
+### Résumé technique
+Détails sur l'ingénierie navale, les composants, etc.
+[/SYNTHESE]
+
+[DECISIONS]
+Pour chaque action validée, ajoute une ligne STRICTEMENT selon le format suivant (très important pour le parsing) :
+- [PrénomResponsable] [DateLimite AAAA-MM-JJ ou JJ/MM/AAAA] Intitulé clair de l'action à mener
+(Exemple : - [Etienne] [2026-10-25] Valider le design de la coque)
+(Exemple : - [Liam] [31/10/2026] Commander les servos de barre)
+[/DECISIONS]`,
   },
   {
     title: "Générateur de Tâches à partir de notes",

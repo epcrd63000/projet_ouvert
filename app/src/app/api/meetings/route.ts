@@ -71,22 +71,31 @@ export async function POST(request: NextRequest) {
         scheduledAt: new Date(scheduledAt),
         projectId: project.id,
         createdById: session.user.id,
-        attendees: {
-          create: attendeeIds.map((userId) => ({ userId })),
-        },
-        // Création automatique de l'Event calendrier associé
-        events: {
-          create: {
-            projectId: project.id,
-            createdById: session.user.id,
-            title: meetingData.title,
-            description: meetingData.notes || undefined,
-            startAt: new Date(scheduledAt),
-            endAt: new Date(new Date(scheduledAt).getTime() + 60 * 60 * 1000),
-            type: "MEETING",
-          },
-        },
       },
+    });
+
+    for (const userId of attendeeIds) {
+      await prisma.meetingAttendee.create({
+        data: { meetingId: meeting.id, userId, status: "PRESENT" },
+      });
+    }
+
+    // Création automatique de l'Event calendrier associé
+    await prisma.event.create({
+      data: {
+        projectId: project.id,
+        createdById: session.user.id,
+        relatedMeetingId: meeting.id,
+        title: meetingData.title,
+        description: meetingData.notes || undefined,
+        startAt: new Date(scheduledAt),
+        endAt: new Date(new Date(scheduledAt).getTime() + 60 * 60 * 1000),
+        type: "MEETING",
+      },
+    });
+
+    const fullMeeting = await prisma.meeting.findUnique({
+      where: { id: meeting.id },
       include: {
         attendees: {
           include: { user: { select: { id: true, name: true, email: true, avatarUrl: true } } },
@@ -109,7 +118,7 @@ export async function POST(request: NextRequest) {
 
     revalidatePath("/meetings");
 
-    return NextResponse.json(meeting, { status: 201 });
+    return NextResponse.json(fullMeeting, { status: 201 });
   } catch (error) {
     console.error("Erreur POST /api/meetings:", error);
     return NextResponse.json({ error: "Erreur serveur" }, { status: 500 });

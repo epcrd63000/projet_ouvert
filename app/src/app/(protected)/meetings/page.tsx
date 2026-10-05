@@ -137,8 +137,12 @@ export default function MeetingsPage() {
 
       const meetingsToExport = meetings.filter(m => selectedMeetings.has(m.id));
 
+      let skippedCount = 0;
       for (const meeting of meetingsToExport) {
-        if (!meeting.reportContent) continue;
+        if (!meeting.reportContent) {
+          skippedCount++;
+          continue;
+        }
 
         // Convert markdown to HTML using marked
         const htmlContent = await marked.parse(meeting.reportContent);
@@ -174,7 +178,12 @@ export default function MeetingsPage() {
       
       const content = await zip.generateAsync({ type: "blob" });
       saveAs(content, "Comptes_Rendus_Reunions.zip");
-      toast.success("Archive ZIP téléchargée avec succès");
+      
+      if (skippedCount > 0) {
+        toast.warning(`Archive ZIP téléchargée. ${skippedCount} réunion(s) ignorée(s) car sans compte rendu.`);
+      } else {
+        toast.success("Archive ZIP téléchargée avec succès");
+      }
       
       // Clear selection and refresh
       setSelectedMeetings(new Set());
@@ -196,10 +205,10 @@ export default function MeetingsPage() {
     switch (status) {
       case "PLANNED":
         return <Badge variant="outline" className="bg-blue-500/10 text-blue-500 hover:bg-blue-500/20">Planifiée</Badge>;
-      case "COMPLETED":
+      case "IN_PROGRESS":
+        return <Badge variant="outline" className="bg-amber-500/10 text-amber-500 hover:bg-amber-500/20">En cours</Badge>;
+      case "DONE":
         return <Badge variant="outline" className="bg-green-500/10 text-green-500 hover:bg-green-500/20">Terminée</Badge>;
-      case "CANCELLED":
-        return <Badge variant="outline" className="bg-red-500/10 text-red-500 hover:bg-red-500/20">Annulée</Badge>;
       default:
         return <Badge variant="secondary">{status}</Badge>;
     }
@@ -212,7 +221,7 @@ export default function MeetingsPage() {
           <UsersIcon className="h-8 w-8 text-primary" />
           <div>
             <h1 className="text-3xl font-bold tracking-tight">Réunions</h1>
-            <p className="text-muted-foreground">Planification et comptes rendus</p>
+            <p className="text-muted-foreground">Planification, émargement et comptes rendus</p>
           </div>
         </div>
         <div className="flex gap-2 items-center flex-wrap">
@@ -222,11 +231,9 @@ export default function MeetingsPage() {
               {isExporting ? "Création ZIP..." : `Exporter ${selectedMeetings.size} compte(s) rendu(s)`}
             </Button>
           )}
-          {isAdmin && (
-            <Button onClick={() => setIsModalOpen(true)} className="gap-2">
-              <Plus className="h-4 w-4" /> Nouvelle réunion
-            </Button>
-          )}
+          <Button onClick={() => setIsModalOpen(true)} className="gap-2">
+            <Plus className="h-4 w-4" /> Nouvelle réunion
+          </Button>
         </div>
       </div>
 

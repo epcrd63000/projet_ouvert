@@ -84,6 +84,12 @@ enum EventType {
   MILESTONE
 }
 
+enum AttendanceStatus {
+  PRESENT
+  EXCUSED
+  ABSENT
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 // 2. MODÈLES DE DONNÉES (11 MODÈLES)
 // ─────────────────────────────────────────────────────────────────────────────
@@ -102,7 +108,8 @@ model User {
   taskAssignments     TaskAssignment[]
   createdMeetings     Meeting[]         @relation("MeetingCreator")
   meetingAttendees    MeetingAttendee[]
-  meetingDecisions    MeetingDecision[]
+  createdDecisions    MeetingDecision[] @relation("DecisionCreator")
+  assignedDecisions   MeetingDecision[] @relation("DecisionAssignee")
   budgetEntries       BudgetEntry[]
   notifications       Notification[]
   createdEvents       Event[]           @relation("EventCreator")
@@ -150,6 +157,7 @@ model Task {
   parent      Task?            @relation("SubTasks", fields: [parentId], references: [id], onDelete: Cascade) // Suppression en cascade des sous-tâches
   subTasks    Task[]           @relation("SubTasks")
   assignments TaskAssignment[]
+  meetingDecision MeetingDecision?
 
   @@index([projectId, status])
 }
@@ -174,6 +182,7 @@ model Meeting {
   title       String
   scheduledAt DateTime
   location           String?
+  objectives         String?
   notes              String?
   reportContent      String?
   isReportDownloaded Boolean           @default(false)
@@ -190,24 +199,33 @@ model Meeting {
 }
 
 model MeetingAttendee {
-  id        String   @id @default(uuid())
+  id        String           @id @default(uuid())
   meetingId String
   userId    String
-  updatedAt DateTime @updatedAt // Ajout de updatedAt
-  meeting   Meeting  @relation(fields: [meetingId], references: [id], onDelete: Cascade)
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  status    AttendanceStatus @default(PRESENT)
+  updatedAt DateTime         @updatedAt // Ajout de updatedAt
+  meeting   Meeting          @relation(fields: [meetingId], references: [id], onDelete: Cascade)
+  user      User             @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([meetingId, userId])
 }
 
 model MeetingDecision {
-  id          String   @id @default(uuid())
+  id          String    @id @default(uuid())
   meetingId   String
   createdById String?
   content     String
-  createdAt   DateTime @default(now())
-  meeting     Meeting  @relation(fields: [meetingId], references: [id], onDelete: Cascade)
-  createdBy   User?    @relation(fields: [createdById], references: [id], onDelete: SetNull)
+  assigneeId  String?
+  dueDate     DateTime?
+  taskId      String?   @unique
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  meeting     Meeting   @relation(fields: [meetingId], references: [id], onDelete: Cascade)
+  createdBy   User?     @relation("DecisionCreator", fields: [createdById], references: [id], onDelete: SetNull)
+  assignee    User?     @relation("DecisionAssignee", fields: [assigneeId], references: [id], onDelete: SetNull)
+  task        Task?     @relation(fields: [taskId], references: [id], onDelete: SetNull)
+
+  @@index([meetingId])
 }
 
 model GanttMilestone {

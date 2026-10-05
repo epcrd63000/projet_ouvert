@@ -28,10 +28,15 @@ export async function GET(
       include: {
         attendees: {
           include: { user: { select: { id: true, name: true, email: true, avatarUrl: true } } },
+          orderBy: { user: { name: "asc" } },
         },
         createdBy: { select: { id: true, name: true, email: true } },
         decisions: {
-          include: { createdBy: { select: { id: true, name: true } } },
+          include: {
+            createdBy: { select: { id: true, name: true } },
+            assignee: { select: { id: true, name: true, email: true, avatarUrl: true } },
+            task: { select: { id: true, title: true, status: true, progress: true } },
+          },
           orderBy: { createdAt: "asc" },
         },
       },
@@ -50,8 +55,8 @@ export async function GET(
 
 /**
  * PATCH /api/meetings/[id] — Met à jour une réunion.
- * Les MEMBER ne peuvent modifier que le compte-rendu (notes).
- * Les ADMIN et le créateur peuvent tout modifier.
+ * Accès collaboratif ouvert : tous les membres de l'équipe peuvent éditer
+ * les objectifs, le compte rendu, le statut et les notes.
  */
 export async function PATCH(
   request: NextRequest,
@@ -76,23 +81,6 @@ export async function PATCH(
     }
 
     const { attendeeIds, scheduledAt, ...meetingData } = parsed.data;
-    const isAdmin = session.user.role === "ADMIN";
-
-    // Si on n'est pas Admin, on ne peut modifier que "notes" ou "reportContent" ou "isReportDownloaded"
-    if (!isAdmin) {
-      if (
-        attendeeIds !== undefined ||
-        scheduledAt !== undefined ||
-        meetingData.title !== undefined ||
-        meetingData.status !== undefined ||
-        meetingData.location !== undefined
-      ) {
-        return NextResponse.json(
-          { error: "Les membres ne peuvent modifier que le compte rendu." },
-          { status: 403 }
-        );
-      }
-    }
 
     const updateData: Record<string, unknown> = { ...meetingData };
     if (scheduledAt) {
@@ -100,16 +88,35 @@ export async function PATCH(
     }
 
     if (attendeeIds) {
-      // Remplacer complètement les participants
-      updateData.attendees = {
-        deleteMany: {},
-        create: attendeeIds.map((userId: string) => ({ userId })),
-      };
+      // Fetch existing attendees to preserve their statuses
+      const existingAttendees = await prisma.meetingAttendee.findMany({
+        where: { meetingId: id }
+      });
+      
+      const existingUserIds = existingAttendees.map(a => a.userId);
+      const toDelete = existingUserIds.filter(userId => !attendeeIds.includes(userId));
+      const toAdd = attendeeIds.filter(userId => !existingUserIds.includes(userId));
+
+      if (toDelete.length > 0) {
+        await prisma.meetingAttendee.deleteMany({
+          where: { meetingId: id, userId: { in: toDelete } }
+        });
+      }
+
+      for (const userId of toAdd) {
+        await prisma.meetingAttendee.create({
+          data: { meetingId: id, userId, status: "PRESENT" },
+        });
+      }
     }
 
-    const updatedMeeting = await prisma.meeting.update({
+    await prisma.meeting.update({
       where: { id },
       data: updateData,
+    });
+
+    const updatedMeeting = await prisma.meeting.findUnique({
+      where: { id },
       include: {
         attendees: {
           include: { user: { select: { id: true, name: true, email: true, avatarUrl: true } } },

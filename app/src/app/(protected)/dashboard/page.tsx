@@ -17,6 +17,12 @@ import {
   BudgetGauge,
   MilestoneProgress,
 } from "@/components/dashboard/DashboardCharts";
+import {
+  calculateGlobalMetrics,
+  calculateMemberProgress,
+  calculateWorkload,
+  calculatePersonalSummary,
+} from "@/lib/dashboard/dashboardMetrics";
 import { formatDistanceToNow } from "date-fns";
 import { fr } from "date-fns/locale";
 
@@ -30,9 +36,8 @@ export default async function DashboardPage() {
   }
 
   const { user } = session;
-  const isAdmin = user.role === "ADMIN";
 
-  // Fetch real data from Prisma
+  // Récupération des données réelles depuis PostgreSQL Neon
   const [
     allTasks,
     allUsers,
@@ -41,59 +46,70 @@ export default async function DashboardPage() {
     project,
     nextMeeting
   ] = await Promise.all([
-    prisma.task.findMany({ include: { assignments: { include: { user: true } } } }),
-    prisma.user.findMany(),
-    prisma.ganttMilestone.findMany(),
-    prisma.budgetEntry.findMany({ where: { status: "PAID" } }),
-    prisma.project.findFirst(),
+    prisma.task.findMany({
+      include: {
+        assignments: {
+          include: {
+            user: {
+              select: { id: true, name: true, email: true },
+            },
+          },
+        },
+      },
+    }),
+    prisma.user.findMany({ select: { id: true, name: true, email: true } }),
+    prisma.ganttMilestone.findMany({ select: { id: true, name: true, status: true } }),
+    prisma.budgetEntry.findMany({
+      where: { status: "PAID" },
+      select: { id: true, amount: true, status: true },
+    }),
+    prisma.project.findFirst({ select: { id: true, totalBudget: true } }),
     prisma.meeting.findFirst({
       where: { scheduledAt: { gt: new Date() } },
-      orderBy: { scheduledAt: 'asc' }
-    })
+      orderBy: { scheduledAt: "asc" },
+    }),
   ]);
 
-  const totalTasks = allTasks.length;
-  const doneTasks = allTasks.filter(t => t.status === "DONE").length;
-  const completionRate = totalTasks > 0 ? Math.round((doneTasks / totalTasks) * 100) : 0;
-
-  const lateTasks = allTasks.filter(t => t.status !== "DONE" && t.dueDate && t.dueDate < new Date()).length;
-
-  const achievedMilestones = milestones.filter(m => m.status === "ACHIEVED").length;
-  const remainingMilestones = milestones.length - achievedMilestones;
-
   const totalBudget = Number(project?.totalBudget) || 0;
-  const usedBudget = budgetEntries.reduce((sum, entry) => sum + Number(entry.amount), 0);
 
-  // Group data by user
-  const progressByMember = allUsers.map(u => {
-    const userTasks = allTasks.filter(t => t.assignments.some(a => a.userId === u.id));
-    return {
-      name: u.name,
-      done: userTasks.filter(t => t.status === "DONE").length,
-      total: userTasks.length
-    };
-  });
+  // Calculs via les modules utilitaires dédiés
+  const globalMetrics = calculateGlobalMetrics(
+    allTasks as any,
+    milestones as any,
+    budgetEntries as any,
+    totalBudget
+  );
 
-  const workloadByMember = allUsers.map(u => {
-    const userTasks = allTasks.filter(t => t.assignments.some(a => a.userId === u.id));
-    return {
-      name: u.name,
-      inProgress: userTasks.filter(t => t.status === "IN_PROGRESS").length
-    };
-  });
+  const progressByMember = calculateMemberProgress(allUsers, allTasks as any);
+  const workloadByMember = calculateWorkload(allUsers, allTasks as any);
+  const personalSummary = calculatePersonalSummary(user.id, allTasks as any);
 
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-4 border-b border-border">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Tableau de bord</h1>
-          <p className="text-muted-foreground">
-            Bienvenue sur l&apos;espace de suivi du Projet Ouvert IMT CI1 (2026-2027).
+          <h1 className="text-3xl font-bold tracking-tight">
+            Bonjour {user.name} 👋
+          </h1>
+          <p className="text-muted-foreground text-sm mt-1">
+            Suivi opérationnel du Projet Ouvert IMT CI1 (2026-2027) — Voilier MINIMOCA.
           </p>
-        </div>
-
-        <div className="flex items-center gap-3">
-          {/* L'avatar, le badge de rôle et la déconnexion sont désormais gérés globalement dans le Header */}
+          <div className="flex flex-wrap items-center gap-2 mt-2.5">
+            <Badge variant="outline" className="bg-primary/10 text-primary border-primary/20 text-xs">
+              🎯 {personalSummary.totalAssigned} tâche{personalSummary.totalAssigned > 1 ? "s" : ""} assignée{personalSummary.totalAssigned > 1 ? "s" : ""}
+            </Badge>
+            <Badge variant="outline" className="bg-amber-500/10 text-amber-500 border-amber-500/20 text-xs">
+              ⏳ {personalSummary.inProgress} en cours
+            </Badge>
+            <Badge variant="outline" className="bg-emerald-500/10 text-emerald-500 border-emerald-500/20 text-xs">
+              ✅ {personalSummary.done} terminée{personalSummary.done > 1 ? "s" : ""}
+            </Badge>
+            {personalSummary.late > 0 && (
+              <Badge variant="destructive" className="text-xs">
+                ⚠️ {personalSummary.late} en retard
+              </Badge>
+            )}
+          </div>
         </div>
       </div>
 
@@ -104,9 +120,9 @@ export default async function DashboardPage() {
             <PieChartIcon className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{completionRate}%</div>
+            <div className="text-2xl font-bold">{globalMetrics.completionRate}%</div>
             <p className="text-xs text-muted-foreground">
-              {doneTasks} / {totalTasks} tâches terminées
+              {globalMetrics.doneTasks} / {globalMetrics.totalTasks} tâches terminées
             </p>
           </CardContent>
         </Card>
@@ -117,11 +133,11 @@ export default async function DashboardPage() {
             <AlertTriangle className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className={`text-2xl font-bold ${lateTasks > 0 ? "text-red-500" : "text-green-500"}`}>
-              {lateTasks}
+            <div className={`text-2xl font-bold ${globalMetrics.lateTasks > 0 ? "text-red-500" : "text-green-500"}`}>
+              {globalMetrics.lateTasks}
             </div>
             <p className="text-xs text-muted-foreground">
-              {lateTasks === 0 ? "Tout est dans les temps" : "À traiter en priorité"}
+              {globalMetrics.lateTasks === 0 ? "Tout est dans les temps" : "À traiter en priorité"}
             </p>
           </CardContent>
         </Card>
@@ -153,12 +169,15 @@ export default async function DashboardPage() {
 
       <div className="grid gap-4 md:grid-cols-1 lg:grid-cols-4">
         <MemberProgressChart data={progressByMember} />
-        <MilestoneProgress achieved={achievedMilestones} remaining={remainingMilestones} />
+        <MilestoneProgress
+          achieved={globalMetrics.achievedMilestones}
+          remaining={globalMetrics.remainingMilestones}
+        />
         <WorkloadChart data={workloadByMember} />
       </div>
-      
+
       <div className="grid gap-4 md:grid-cols-1 lg:grid-cols-4">
-        <BudgetGauge total={totalBudget} used={usedBudget} />
+        <BudgetGauge total={globalMetrics.totalBudget} used={globalMetrics.usedBudget} />
       </div>
     </div>
   );

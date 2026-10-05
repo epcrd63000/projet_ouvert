@@ -1,8 +1,6 @@
-import { PrismaClient } from "@prisma/client";
+import prisma from "../src/lib/prisma";
 import bcrypt from "bcryptjs";
 import { SEED_PROJECT, SEED_USERS, SEED_MILESTONES, SEED_AI_PROMPTS } from "./seed-data";
-
-const prisma = new PrismaClient();
 
 /**
  * Script d'initialisation et de peuplement idempotent de la base Neon PostgreSQL.
