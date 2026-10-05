@@ -89,8 +89,13 @@ function runDashboardMetricsTests() {
   const workload = calculateWorkload(mockUsers, mockTasks);
   const etienneWorkload = workload.find((w) => w.name === "Etienne");
   const liamWorkload = workload.find((w) => w.name === "Liam");
+  console.assert(etienneWorkload?.totalAssigned === 2, "Etienne totalAssigned attendu: 2");
+  console.assert(liamWorkload?.totalAssigned === 1, "Liam totalAssigned attendu: 1");
   console.assert(etienneWorkload?.inProgress === 1, "Etienne inProgress attendu: 1");
   console.assert(liamWorkload?.inProgress === 0, "Liam inProgress attendu: 0");
+  console.assert(etienneWorkload?.active === 1, "Etienne active attendu: 1");
+  console.assert(liamWorkload?.active === 1, "Liam active attendu: 1");
+  console.assert(liamWorkload?.todo === 1, "Liam todo attendu: 1");
   console.log("  ✅ calculateWorkload validé");
 
   // 4. Test du résumé personnel
@@ -99,10 +104,12 @@ function runDashboardMetricsTests() {
   console.assert(personalEtienne.inProgress === 1, "Etienne personnel inProgress: 1");
   console.assert(personalEtienne.done === 1, "Etienne personnel done: 1");
   console.assert(personalEtienne.late === 0, "Etienne personnel late: 0");
+  console.assert(personalEtienne.completionRate === 50, "Etienne personnel completionRate: 50%");
 
   const personalLiam = calculatePersonalSummary("u2", mockTasks, now);
   console.assert(personalLiam.totalAssigned === 1, "Liam personnel total: 1");
   console.assert(personalLiam.late === 1, "Liam personnel late: 1");
+  console.assert(personalLiam.completionRate === 0, "Liam personnel completionRate: 0%");
   console.log("  ✅ calculatePersonalSummary validé");
 
   console.log("🎉 Tous les tests unitaires des métriques sont passés avec succès !\n");

@@ -10,6 +10,8 @@ import { MeetingReportEditor } from "@/components/meetings/MeetingReportEditor";
 import { MeetingAttendanceCard, AttendanceStatus } from "@/components/meetings/MeetingAttendanceCard";
 import { MeetingDecisionsCard } from "@/components/meetings/MeetingDecisionsCard";
 import { MeetingAiAssistantDrawer } from "@/components/meetings/MeetingAiAssistantDrawer";
+import { MeetingAgendaCard } from "@/components/meetings/MeetingAgendaCard";
+import { MeetingAgendaAssistantDrawer } from "@/components/meetings/MeetingAgendaAssistantDrawer";
 import { generateAndDownloadMeetingPdf } from "@/lib/meetings/meetingPdfGenerator";
 import { ParsedMeetingReport } from "@/lib/meetings/aiReportParser";
 import { Bot, Download, ArrowLeft, Trash2, Save, Calendar, MapPin, CheckCircle } from "lucide-react";
@@ -62,6 +64,7 @@ export default function MeetingDetailPage() {
   const [currentReportContent, setCurrentReportContent] = useState("");
   const [externalContentKey, setExternalContentKey] = useState(0);
   const [isAiDrawerOpen, setIsAiDrawerOpen] = useState(false);
+  const [isAgendaDrawerOpen, setIsAgendaDrawerOpen] = useState(false);
   const [isExportingPdf, setIsExportingPdf] = useState(false);
 
   const isAdmin = session?.user?.role === "ADMIN";
@@ -129,16 +132,21 @@ export default function MeetingDetailPage() {
     }
   };
 
-  const handleSaveObjectives = async () => {
+  const handleSaveObjectives = async (newObjectives?: string) => {
+    const val = typeof newObjectives === "string" ? newObjectives : objectives;
+    setObjectives(val);
     try {
       const res = await fetch(`/api/meetings/${params.id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ objectives }),
+        body: JSON.stringify({ objectives: val }),
       });
-      if (res.ok) toast.success("Objectifs enregistrés");
+      if (res.ok) {
+        toast.success("Ordre du jour enregistré");
+        fetchMeeting();
+      }
     } catch {
-      toast.error("Erreur enregistrement objectifs");
+      toast.error("Erreur enregistrement ordre du jour");
     }
   };
 
@@ -376,7 +384,7 @@ export default function MeetingDetailPage() {
           </select>
 
           <Button variant="outline" onClick={() => setIsAiDrawerOpen(true)} className="gap-2 text-primary border-primary/30 hover:bg-primary/5">
-            <Bot className="h-4 w-4" /> Assistant IA
+            <Bot className="h-4 w-4" /> Assistant Compte Rendu
           </Button>
 
           <Button onClick={handleExportPdf} disabled={isExportingPdf} className="gap-2">
@@ -401,23 +409,15 @@ export default function MeetingDetailPage() {
           />
         </div>
 
-        {/* Colonne centrale : Objectifs, Synthèse TipTap et Décisions */}
+        {/* Colonne centrale : Ordre du jour, Synthèse TipTap et Décisions */}
         <div className="md:col-span-8 space-y-6">
-          {/* Objectifs / Ordre du jour */}
-          <div className="rounded-xl border bg-card p-4 shadow-sm space-y-2">
-            <div className="flex items-center justify-between">
-              <h2 className="text-sm font-semibold uppercase text-muted-foreground">1. Objectifs &amp; Ordre du Jour</h2>
-              <Button variant="ghost" size="sm" onClick={handleSaveObjectives} className="h-7 text-xs gap-1">
-                <Save className="h-3.5 w-3.5" /> Enregistrer
-              </Button>
-            </div>
-            <Textarea
-              placeholder="Listez les objectifs ou l'ordre du jour convenu..."
-              value={objectives}
-              onChange={(e) => setObjectives(e.target.value)}
-              className="text-sm min-h-[70px]"
-            />
-          </div>
+          {/* Ordre du Jour & Préparation */}
+          <MeetingAgendaCard
+            meeting={meeting}
+            agendaContent={objectives}
+            onSaveAgenda={handleSaveObjectives}
+            onOpenAiAssistant={() => setIsAgendaDrawerOpen(true)}
+          />
 
           {/* Éditeur de Synthèse Markdown */}
           <div className="rounded-xl border bg-card p-4 shadow-sm space-y-3">
@@ -445,7 +445,17 @@ export default function MeetingDetailPage() {
         </div>
       </div>
 
-      {/* Assistant IA Modal / Drawer */}
+      {/* Assistant IA Modal / Drawer pour l'Ordre du Jour */}
+      <MeetingAgendaAssistantDrawer
+        isOpen={isAgendaDrawerOpen}
+        onClose={() => setIsAgendaDrawerOpen(false)}
+        meeting={meeting}
+        onApplyAgenda={async (agendaMarkdown) => {
+          await handleSaveObjectives(agendaMarkdown);
+        }}
+      />
+
+      {/* Assistant IA Modal / Drawer pour le Compte Rendu */}
       <MeetingAiAssistantDrawer
         isOpen={isAiDrawerOpen}
         onClose={() => setIsAiDrawerOpen(false)}

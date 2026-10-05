@@ -23,13 +23,10 @@ export async function GET(request: NextRequest) {
     // Requête de base avec relations
     const where: Record<string, unknown> = {};
 
-    // Si showAll n'est pas activé, restreindre à l'utilisateur ciblé ou courant
+    // Si showAll n'est pas activé, restreindre strictement aux tâches assignées à l'utilisateur ciblé ou courant
     if (!showAll) {
       const targetUserId = userId || session.user.id;
-      where.OR = [
-        { assignments: { some: { userId: targetUserId } } },
-        { createdById: targetUserId },
-      ];
+      where.assignments = { some: { userId: targetUserId } };
     }
 
     const tasks = await prisma.task.findMany({

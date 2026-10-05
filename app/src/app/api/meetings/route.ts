@@ -5,6 +5,7 @@ import { prisma } from "@/lib/prisma";
 import { requireAuth } from "@/lib/permissions";
 import { createMeetingSchema } from "@/lib/validations/meeting";
 import { notifyUsers } from "@/lib/notifications";
+import { syncMeetingPreparationTask } from "@/lib/meetings/agendaService";
 
 /**
  * GET /api/meetings — Récupère les réunions.
@@ -79,6 +80,16 @@ export async function POST(request: NextRequest) {
         data: { meetingId: meeting.id, userId, status: "PRESENT" },
       });
     }
+
+    // Création automatique de la tâche collective de préparation sur le Kanban
+    await syncMeetingPreparationTask({
+      meetingId: meeting.id,
+      projectId: project.id,
+      title: meeting.title,
+      scheduledAt: meeting.scheduledAt,
+      attendeeIds,
+      createdById: session.user.id,
+    });
 
     // Création automatique de l'Event calendrier associé
     await prisma.event.create({

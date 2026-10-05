@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { requireAuth } from "@/lib/permissions";
 import { updateMeetingSchema } from "@/lib/validations/meeting";
 import { notifyUsers } from "@/lib/notifications";
+import { syncMeetingPreparationTask, deleteMeetingPreparationTask } from "@/lib/meetings/agendaService";
 
 interface RouteParams {
   params: Promise<{ id: string }>;
@@ -135,6 +136,22 @@ export async function PATCH(
       });
     }
 
+    // Gestion du cycle de vie de la tâche Kanban collective
+    if (updatedMeeting) {
+      if (updatedMeeting.status === "DONE") {
+        await deleteMeetingPreparationTask(id);
+      } else {
+        const attendeeUserIds = updatedMeeting.attendees.map((a) => a.userId);
+        await syncMeetingPreparationTask({
+          meetingId: id,
+          projectId: updatedMeeting.projectId,
+          title: updatedMeeting.title,
+          scheduledAt: updatedMeeting.scheduledAt,
+          attendeeIds: attendeeUserIds,
+        });
+      }
+    }
+
     return NextResponse.json(updatedMeeting);
   } catch (error: unknown) {
     console.error("Erreur PATCH /api/meetings/[id]:", error);
@@ -191,6 +208,9 @@ export async function DELETE(
     await prisma.event.deleteMany({
       where: { relatedMeetingId: id },
     });
+
+    // Supprimer la tâche Kanban de préparation associée
+    await deleteMeetingPreparationTask(id);
 
     // Supprimer la réunion (cascade : participants, décisions)
     await prisma.meeting.delete({ where: { id } });

@@ -66,7 +66,10 @@ export interface MemberProgressItem {
 
 export interface WorkloadItem {
   name: string;
+  totalAssigned: number;
   inProgress: number;
+  todo: number;
+  active: number;
 }
 
 export interface PersonalSummary {
@@ -74,6 +77,7 @@ export interface PersonalSummary {
   inProgress: number;
   done: number;
   late: number;
+  completionRate: number;
 }
 
 /**
@@ -138,18 +142,24 @@ export function calculateMemberProgress(users: UserItem[], tasks: TaskItem[]): M
 }
 
 /**
- * Calcule la charge de travail actuelle (tâches EN COURS) pour chaque membre.
+ * Calcule la charge de travail actuelle (tâches actives : À FAIRE et EN COURS) pour chaque membre.
  */
 export function calculateWorkload(users: UserItem[], tasks: TaskItem[]): WorkloadItem[] {
   return users.map((user) => {
     const userTasks = tasks.filter((task) =>
       task.assignments.some((a) => a.userId === user.id)
     );
+    const totalAssigned = userTasks.length;
     const inProgress = userTasks.filter((task) => task.status === "IN_PROGRESS").length;
+    const todo = userTasks.filter((task) => task.status === "TODO").length;
+    const active = inProgress + todo;
 
     return {
       name: user.name,
+      totalAssigned,
       inProgress,
+      todo,
+      active,
     };
   });
 }
@@ -172,11 +182,13 @@ export function calculatePersonalSummary(
   const late = myTasks.filter(
     (task) => task.status !== "DONE" && task.dueDate && new Date(task.dueDate) < now
   ).length;
+  const completionRate = totalAssigned > 0 ? Math.round((done / totalAssigned) * 100) : 0;
 
   return {
     totalAssigned,
     inProgress,
     done,
     late,
+    completionRate,
   };
 }

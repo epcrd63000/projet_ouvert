@@ -1,5 +1,38 @@
 # Journal des Modifications (CHANGELOG)
 
+## [2.12.6] - 2026-10-05
+
+### Préparation des Réunions, Ordre du Jour IA & Synchronisation Kanban
+- **Générateur IA d'Ordre du Jour Zéro Clé (`MeetingAgendaAssistantDrawer.tsx` & `agendaService.ts`)** :
+  - Assistant IA modulaire calibré pour le projet Voilier MINIMOCA (IMT Nord Europe).
+  - Traitement des notes et dictées vocales brutes pour produire un ordre du jour Markdown structuré en 3 volets (Objectifs & Enjeux, Ordre du jour minuté/thématique, Préparatifs & Livrables attendus par membre).
+  - Modèle de consigne modifiable avec copie en 1 clic prête pour ChatGPT / Gemini et injection directe du résultat dans la fiche réunion.
+- **Affichage Épuré & Diffusion d'Équipe (`MeetingAgendaCard.tsx`)** :
+  - Remplacement de la simple zone de texte brute par une carte dédiée avec rendu Markdown élégant, bascule en mode édition directe et sauvegarde en temps réel.
+  - Bouton « Copier l'annonce (Discord / WhatsApp) » générant instantanément le message de convocation officiel avec date, lieu, participants et sujets prêts à coller.
+- **Tâche Collective Kanban & Cycle de Vie Automatique (`api/meetings` & `api/meetings/[id]`)** :
+  - Création automatique dès la planification de la réunion d'une tâche collective unique « 📅 Préparer la réunion : [Titre] » multi-assignée à tous les participants.
+  - Synchronisation dynamique de la date d'échéance de la tâche si la réunion est reportée ou modifiée.
+  - Suppression automatique et propre de la tâche de préparation dès que la réunion est terminée (`DONE`) ou supprimée.
+- **Tests Unitaires & Intégration TDD (`07_meeting_agenda_logic.test.ts` & `test-17-meeting-agenda-and-task-sync.ts`)** :
+  - Validation complète de la compilation du prompt, de l'annonce formatée, des métadonnées de tâche et du cycle de vie en base Neon.
+
+### Filtrage des Tâches & Synchronisation du Tableau de Bord (Workload & Avancement)
+- **Correction du Filtre « Mes tâches » (`api/tasks/route.ts` & `TaskTableView.tsx`)** :
+  - Suppression de la clause `createdById` dans le filtrage restreint `/api/tasks` : les tâches créées par un administrateur pour d'autres membres ne polluent plus son panneau personnel.
+  - Le filtre « Mes tâches » affiche désormais strictement les tâches assignées à l'utilisateur courant.
+  - Remplacement du bouton toggle unique ambigu par un sélecteur segmenté binaire `[ Toutes les tâches ] [ Mes tâches ]` avec compteur dynamique de tâches.
+  - Correction du filtre par pilote dans le tableau M2V5 pour cibler exclusivement les membres assignés (pilotes opérationnels).
+- **Synchronisation du Diagramme Radar Workload (`dashboardMetrics.ts` & `DashboardCharts.tsx`)** :
+  - Intégration de l'ensemble des tâches assignées (`totalAssigned`) comme métrique principale du radar : « Si tu as une tâche assignée, c'est un workload ».
+  - Double tracé dans le radar : Tâches assignées (charge globale de chaque membre) et Tâches en cours d'exécution (focus temps réel).
+- **Distinction Visuelle Nette : Avancement Individuel vs Avancement Global (`dashboard/page.tsx`)** :
+  - Clarification du bandeau utilisateur : affichage explicite du décompte personnel et du taux d'avancement individuel (`% de vos tâches`).
+  - Précision sur la carte KPI *Avancement Global* : sous-titre explicite « Toute l'équipe (Projet) » et libellé « X / 11 tâches de l'équipe terminées ».
+- **Assignations Base de Données & Tests TDD** :
+  - Co-assignation d'Étienne PICARD sur la signature de la convention tuteur.
+  - Enrichissement des tests unitaires `02_dashboard_metrics.test.ts` (TDD) pour valider la charge active et le taux de complétion individuel.
+
 ## [2.12.4] - 2026-10-05
 
 ### Allègement du Mail d'Invitation & Compatibilité Webmail (Zimbra / HTTP 431)

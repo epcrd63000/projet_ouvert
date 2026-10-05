@@ -114,8 +114,9 @@ export default async function DashboardPage() {
             Suivi opérationnel du Projet Ouvert IMT CI1 (2026-2027) — Voilier MINIMOCA.
           </p>
           <div className="flex flex-wrap items-center gap-2 mt-2.5">
+            <span className="text-xs font-semibold text-muted-foreground mr-0.5">Mes tâches assignées :</span>
             <Badge variant="outline" className="bg-primary/10 text-primary border-primary/20 text-xs">
-              🎯 {personalSummary.totalAssigned} tâche{personalSummary.totalAssigned > 1 ? "s" : ""} assignée{personalSummary.totalAssigned > 1 ? "s" : ""}
+              🎯 {personalSummary.totalAssigned} assignée{personalSummary.totalAssigned > 1 ? "s" : ""}
             </Badge>
             <Badge variant="outline" className="bg-amber-500/10 text-amber-500 border-amber-500/20 text-xs">
               ⏳ {personalSummary.inProgress} en cours
@@ -123,6 +124,11 @@ export default async function DashboardPage() {
             <Badge variant="outline" className="bg-emerald-500/10 text-emerald-500 border-emerald-500/20 text-xs">
               ✅ {personalSummary.done} terminée{personalSummary.done > 1 ? "s" : ""}
             </Badge>
+            {personalSummary.totalAssigned > 0 && (
+              <Badge variant="secondary" className="text-xs font-medium">
+                📊 {personalSummary.completionRate}% de vos tâches
+              </Badge>
+            )}
             {personalSummary.late > 0 && (
               <Badge variant="destructive" className="text-xs">
                 ⚠️ {personalSummary.late} en retard
@@ -135,13 +141,16 @@ export default async function DashboardPage() {
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium">Avancement Global</CardTitle>
+            <div>
+              <CardTitle className="text-sm font-medium">Avancement Global</CardTitle>
+              <p className="text-[11px] text-muted-foreground">Toute l&apos;équipe (Projet)</p>
+            </div>
             <PieChartIcon className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{globalMetrics.completionRate}%</div>
             <p className="text-xs text-muted-foreground">
-              {globalMetrics.doneTasks} / {globalMetrics.totalTasks} tâches terminées
+              {globalMetrics.doneTasks} / {globalMetrics.totalTasks} tâches de l&apos;équipe terminées
             </p>
           </CardContent>
         </Card>

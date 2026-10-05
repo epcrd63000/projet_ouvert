@@ -58,7 +58,7 @@ export function TaskTableView({
       if (statusFilter !== "ALL" && task.status !== statusFilter) return false;
       if (priorityFilter !== "ALL" && task.priority !== priorityFilter) return false;
       if (pilotFilter !== "ALL") {
-        const hasUser = task.assignments?.some((a) => a.user.id === pilotFilter) || task.createdById === pilotFilter;
+        const hasUser = task.assignments?.some((a) => a.user.id === pilotFilter);
         if (!hasUser) return false;
       }
       if (overdueOnly && !isTaskOverdue(task)) return false;

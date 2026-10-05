@@ -52,8 +52,10 @@ export default function KanbanPage() {
           <CheckSquare className="h-8 w-8 text-primary" />
           <div>
             <h1 className="text-3xl font-bold tracking-tight">Tâches & Suivi</h1>
-            <p className="text-muted-foreground">
-              {showAll ? "Vue globale de toutes les tâches de l'équipe" : "Vos tâches assignées et créées"}
+            <p className="text-muted-foreground text-sm">
+              {showAll
+                ? `Vue globale de toute l'équipe (${tasks.length} tâche${tasks.length > 1 ? "s" : ""})`
+                : `Vos tâches assignées (${tasks.length} tâche${tasks.length > 1 ? "s" : ""})`}
             </p>
           </div>
         </div>
@@ -81,16 +83,27 @@ export default function KanbanPage() {
             </Button>
           </div>
 
-          {/* Toggle vue globale / mes tâches (Accessible à tous les membres) */}
-          <Button
-            variant={showAll ? "default" : "outline"}
-            size="sm"
-            onClick={() => setShowAll(!showAll)}
-            className="gap-1.5 h-8 text-xs"
-          >
-            {showAll ? <Eye className="h-3.5 w-3.5" /> : <UserIcon className="h-3.5 w-3.5" />}
-            {showAll ? "Vue globale" : "Mes tâches"}
-          </Button>
+          {/* Sélecteur de périmètre (Toutes les tâches vs Mes tâches) */}
+          <div className="flex items-center border rounded-lg p-0.5 bg-muted/40">
+            <Button
+              variant={showAll ? "default" : "ghost"}
+              size="sm"
+              onClick={() => setShowAll(true)}
+              className="gap-1.5 h-8 text-xs"
+            >
+              <Eye className="h-3.5 w-3.5" />
+              Toutes les tâches
+            </Button>
+            <Button
+              variant={!showAll ? "default" : "ghost"}
+              size="sm"
+              onClick={() => setShowAll(false)}
+              className="gap-1.5 h-8 text-xs"
+            >
+              <UserIcon className="h-3.5 w-3.5" />
+              Mes tâches
+            </Button>
+          </div>
 
           {/* Bouton création (Tous) */}
           <Button onClick={() => setIsModalOpen(true)} size="sm" className="gap-1.5 h-8 text-xs">

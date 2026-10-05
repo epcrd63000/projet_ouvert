@@ -106,25 +106,50 @@ export function MemberProgressChart({
   );
 }
 
-export function WorkloadChart({ data }: { data: { name: string; inProgress: number }[] }) {
-  const maxInProgress = Math.max(1, ...data.map(d => d.inProgress));
+export function WorkloadChart({
+  data,
+}: {
+  data: { name: string; totalAssigned?: number; inProgress: number; todo?: number; active?: number }[];
+}) {
+  const maxVal = Math.max(1, ...data.map((d) => d.totalAssigned ?? d.active ?? d.inProgress));
 
   return (
     <Card className="col-span-1 lg:col-span-1">
-      <CardHeader>
-        <CardTitle>Workload (En cours)</CardTitle>
+      <CardHeader className="pb-2">
+        <div className="flex items-center justify-between">
+          <CardTitle className="text-base font-semibold">Workload (Tâches assignées)</CardTitle>
+          <span className="text-[11px] text-muted-foreground">Charge par membre</span>
+        </div>
       </CardHeader>
       <CardContent>
         <div className="h-[250px]">
           <ResponsiveContainer width="100%" height="100%">
             <RadarChart cx="50%" cy="50%" outerRadius="55%" data={data} margin={{ top: 10, right: 10, bottom: 10, left: 10 }}>
               <PolarGrid stroke="hsl(var(--border))" />
-              <PolarAngleAxis dataKey="name" fontSize={12} tick={{ fill: "hsl(var(--foreground))" }} />
-              <PolarRadiusAxis angle={30} domain={[0, maxInProgress]} tick={false} axisLine={false} />
-              <Radar name="Tâches" dataKey="inProgress" stroke="#4f46e5" fill="#4f46e5" fillOpacity={0.5} />
+              <PolarAngleAxis dataKey="name" fontSize={11} tick={{ fill: "hsl(var(--foreground))" }} />
+              <PolarRadiusAxis angle={30} domain={[0, maxVal]} tick={false} axisLine={false} />
+              <Radar
+                name="Tâches assignées"
+                dataKey="totalAssigned"
+                stroke="#6366f1"
+                fill="#6366f1"
+                fillOpacity={0.45}
+              />
+              <Radar
+                name="En cours"
+                dataKey="inProgress"
+                stroke="#f59e0b"
+                fill="#f59e0b"
+                fillOpacity={0.6}
+              />
               <RechartsTooltip 
                 contentStyle={{ backgroundColor: "hsl(var(--background))", borderColor: "hsl(var(--border))", color: "hsl(var(--foreground))", borderRadius: "8px" }}
                 itemStyle={{ color: "hsl(var(--foreground))" }}
+                formatter={(value: any, name: string) => [`${value} tâche(s)`, name]}
+              />
+              <Legend
+                verticalAlign="bottom"
+                wrapperStyle={{ fontSize: "11px", paddingTop: "4px" }}
               />
             </RadarChart>
           </ResponsiveContainer>
