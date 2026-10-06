@@ -120,6 +120,12 @@ export default async function DashboardPage() {
     }));
 
     const allMeetings = await prisma.meeting.findMany({
+      where: {
+        createdAt: {
+          gte: currentWeekRange.startOfWeek,
+          lte: currentWeekRange.endOfWeek,
+        },
+      },
       select: {
         id: true,
         createdById: true,

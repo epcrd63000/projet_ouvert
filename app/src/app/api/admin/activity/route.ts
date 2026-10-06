@@ -11,7 +11,7 @@ export const dynamic = "force-dynamic";
 
 /**
  * Endpoint réservé aux administrateurs pour récupérer l'activité hebdomadaire de l'équipe.
- * Accepte le paramètre d'URL `weekOffset` (ex: 0 pour la semaine courante, -1 pour la précédente).
+ * Requêtes ciblées par plage temporelle pour une vitesse d'exécution maximale.
  */
 export async function GET(request: NextRequest) {
   try {
@@ -30,8 +30,8 @@ export async function GET(request: NextRequest) {
 
     const weekRange = getWeekDateRange(new Date(), weekOffset);
 
-    // Récupération concurrente des utilisateurs et des traces d'activité
-    const [allUsers, activityLogs, recentTasks, recentMeetings] = await Promise.all([
+    // Requêtes parallèles hautement ciblées sur la semaine demandée
+    const [allUsers, activityLogs, weeklyTasks, weeklyMeetings] = await Promise.all([
       prisma.user.findMany({
         select: { id: true, name: true, email: true, avatarUrl: true },
         orderBy: { name: "asc" },
@@ -51,6 +51,13 @@ export async function GET(request: NextRequest) {
         },
       }),
       prisma.task.findMany({
+        where: {
+          OR: [
+            { lastUpdate: { gte: weekRange.startOfWeek, lte: weekRange.endOfWeek } },
+            { updatedAt: { gte: weekRange.startOfWeek, lte: weekRange.endOfWeek } },
+            { createdAt: { gte: weekRange.startOfWeek, lte: weekRange.endOfWeek } },
+          ],
+        },
         select: {
           id: true,
           createdById: true,
@@ -60,6 +67,12 @@ export async function GET(request: NextRequest) {
         },
       }),
       prisma.meeting.findMany({
+        where: {
+          createdAt: {
+            gte: weekRange.startOfWeek,
+            lte: weekRange.endOfWeek,
+          },
+        },
         select: {
           id: true,
           createdById: true,
@@ -70,14 +83,14 @@ export async function GET(request: NextRequest) {
     ]);
 
     // Adaptation des formats pour le module métier pur
-    const adaptedTasks = recentTasks.map((t) => ({
+    const adaptedTasks = weeklyTasks.map((t) => ({
       id: t.id,
       createdById: t.createdById,
       lastUpdate: t.lastUpdate || t.updatedAt,
       assignments: t.assignments.map((a) => a.userId),
     }));
 
-    const adaptedMeetings = recentMeetings.map((m) => ({
+    const adaptedMeetings = weeklyMeetings.map((m) => ({
       id: m.id,
       createdById: m.createdById,
       createdAt: m.createdAt,
@@ -94,11 +107,18 @@ export async function GET(request: NextRequest) {
 
     const summary = calculateActivitySummary(membersActivity);
 
-    return NextResponse.json({
-      weekRange,
-      members: membersActivity,
-      summary,
-    });
+    return NextResponse.json(
+      {
+        weekRange,
+        members: membersActivity,
+        summary,
+      },
+      {
+        headers: {
+          "Cache-Control": "private, no-cache, no-store, must-revalidate",
+        },
+      }
+    );
   } catch (error: any) {
     console.error("[api/admin/activity] Erreur serveur :", error);
     return NextResponse.json(

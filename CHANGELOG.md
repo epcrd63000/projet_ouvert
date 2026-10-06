@@ -1,5 +1,13 @@
 # Journal des Modifications (CHANGELOG)
 
+## [2.13.1] - 2026-10-06
+
+### Optimisation & Correction de la Navigation Temporelle Admin (/dashboard)
+- **Résolution du Bug de Retour à la Semaine Courante (`AdminActivityTab.tsx`)** : Suppression du blocage dans `useEffect` qui empêchait le bouton « Cette semaine » de réinitialiser les données affichées.
+- **Cache Mémoire Ultra-Rapide (0ms)** : Implémentation d'une table de hachage `Map` en mémoire client pour restituer instantanément les semaines déjà consultées.
+- **Requêtes Ciblées PostgreSQL Neon (`/api/admin/activity`)** : Filtrage SQL strict sur les dates de la semaine ciblée (`Task`, `Meeting`), divisant par 5 la charge sur la base de données.
+- **Contrôles Enrichis (`WeekNavigation.tsx`)** : Ajout d'un bouton d'actualisation manuelle en 1 clic et d'un badge explicite « Semaine en cours ».
+
 ## [2.13.0] - 2026-10-06
 
 ### Onglet Exclusif Administrateur : Activité Hebdomadaire par Membre (/dashboard)

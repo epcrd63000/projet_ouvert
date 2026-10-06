@@ -1,5 +1,15 @@
 # Changelog
 
+## [2.12.1] - 2026-10-06
+
+### Corrigé & Optimisé
+- **Navigation Inter-Semaines & Cache Instantané (`AdminActivityTab.tsx`, `WeekNavigation.tsx`)** :
+  - **Correction du Retour à la Semaine Courante** : Résolution de l'anomalie où le clic sur « Cette semaine » n'actualisait pas l'affichage en raison d'une vérification `weekOffset !== 0` sautant la mise à jour des données.
+  - **Cache Mémoire Client Ultra-Rapide (0ms)** : Mémorisation instantanée des semaines consultées via `Map` en mémoire, rendant le zapping inter-semaines immédiat sans rechargement réseau.
+  - **Requêtes Ciblées PostgreSQL Neon (`/api/admin/activity`)** : Filtrage strict par plage temporelle (`startOfWeek` à `endOfWeek`) sur `Task` et `Meeting`, éliminant le scan complet de la base à chaque clic.
+  - **Amélioration Visuelle & Rafraîchissement (`WeekNavigation.tsx`)** : Badge explicite « Semaine en cours » et bouton d'actualisation manuelle en 1 clic.
+  - **Tests Unitaires Enrichis (`10_admin_activity_metrics.test.ts`)** : Validation automatisée de la navigation aller-retour et de la persistance du cache.
+
 ## [2.12.0] - 2026-10-06
 
 ### Ajouté

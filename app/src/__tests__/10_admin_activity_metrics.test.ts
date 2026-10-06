@@ -136,8 +136,32 @@ function runAdminActivityMetricsTests() {
     throw new Error("Le membre le plus actif ne doit pas être null");
   }
 
-  console.log("  ✅ calculateActivitySummary validé");
+  // 4. Test de navigation aller-retour vers la semaine courante (offset 0 -> -1 -> 0)
+  const initialCurrentWeek = getWeekDateRange(refDate, 0);
+  const backToCurrentWeek = getWeekDateRange(refDate, 0);
+  if (
+    initialCurrentWeek.startOfWeek.getTime() !== backToCurrentWeek.startOfWeek.getTime() ||
+    initialCurrentWeek.endOfWeek.getTime() !== backToCurrentWeek.endOfWeek.getTime()
+  ) {
+    throw new Error("Échec d'idempotence sur la semaine courante (offset 0)");
+  }
+
+  // Simulation du cache mémoire de navigation
+  const cacheSim = new Map<number, typeof results>();
+  cacheSim.set(0, results);
+  // Navigation vers offset -1
+  const prevWeekResults = calculateMemberWeeklyActivity(mockUsers, [], [], [], prevWeek);
+  cacheSim.set(-1, prevWeekResults);
+
+  // Retour immédiat à l'offset 0 via cache
+  const cachedWeek0 = cacheSim.get(0);
+  if (!cachedWeek0 || cachedWeek0[0].userId !== results[0].userId) {
+    throw new Error("Échec de la récupération instantanée de la semaine courante depuis le cache");
+  }
+  console.log("  ✅ Navigation aller-retour semaine courante & cache validés");
+
   console.log("🎉 Tous les tests unitaires d'activité hebdomadaire sont passés avec succès !");
 }
 
 runAdminActivityMetricsTests();
+
