@@ -1,6 +1,17 @@
 # Changelog
 
-## [2.11.0] - 2026-10-06
+## [2.12.0] - 2026-10-06
+
+### Ajouté
+- **Onglet Exclusif Administrateur : Activité Hebdomadaire par Membre (`/dashboard`)** :
+  - **Système d'Onglets Radix UI (`Tabs.tsx`)** : Intégration sur le tableau de bord avec séparation entre la « Vue Générale » (accessible à tous) et l'onglet « Activité Équipe (Admin) » (restreint strictement au rôle ADMIN).
+  - **Graphique en Barres Ordonné (`WeeklyActivityChart.tsx`)** : Histogramme Recharts classant les étudiants du plus actif à gauche au moins actif à droite, avec distinction entre visites actives (bleu) et actions concrètes (vert).
+  - **Navigation Temporelle Inter-Semaines (`WeekNavigation.tsx`)** : Sélecteur semaine précédente, semaine suivante et raccourci « Cette semaine » avec libellé des dates de la période (lundi au dimanche).
+  - **Cartes KPI d'Équipe (`ActivitySummaryCards.tsx`)** : Indicateurs de synthèse du top contributeur, total d'interactions, moyenne par membre et alerte visuelle pour les membres inactifs.
+  - **Tableau Détaillé d'Audit (`MemberActivityTable.tsx`)** : Tableau récapitulatif avec podium (🥇, 🥈, 🥉), avatar, statut d'activité (Actif / Modéré / Inactif), décompte précis des visites/actions et date de dernière activité.
+  - **Modèle de Persistance Prisma & Neon (`UserActivityLog`)** : Table PostgreSQL pour consigner les visites actives de session et actions en temps réel.
+  - **Collecteur Discret de Visite Quotidienne (`ActivityHeartbeat.tsx` & `/api/activity/heartbeat`)** : Enregistrement d'une visite active par jour et par utilisateur connecté avec mise en cache locale de session.
+  - **Suite de Tests Unitaires TDD (`10_admin_activity_metrics.test.ts`)** : 100% de couverture sur le calcul de plages de semaines, l'ordonnancement décroissant et les indicateurs d'équipe.
 
 ### Ajouté & Amélioré
 - **Accessibilité & Navigation Mobile Intégrale (Smartphone & Réseau Local)** :

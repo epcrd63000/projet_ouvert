@@ -116,6 +116,7 @@ model User {
   notifications       Notification[]
   createdEvents       Event[]           @relation("EventCreator")
   fundingSources      FundingSource[]   @relation("FundingCreator")
+  activityLogs        UserActivityLog[]
 }
 
 model Project {
@@ -369,4 +370,16 @@ model ImportantInfo {
 
   @@index([category])
   @@index([isPinned])
+}
+
+model UserActivityLog {
+  id         String   @id @default(uuid())
+  userId     String
+  actionType String   // "VISIT", "TASK_CREATE", "TASK_UPDATE", "MEETING_CREATE", etc.
+  details    String?
+  createdAt  DateTime @default(now())
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt])
+  @@index([createdAt])
 }

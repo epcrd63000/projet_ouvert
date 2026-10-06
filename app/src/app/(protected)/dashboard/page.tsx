@@ -1,22 +1,13 @@
 import React from "react";
-import { auth, signOut } from "@/lib/auth";
+import { auth } from "@/lib/auth";
 import { redirect } from "next/navigation";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { PieChartIcon, AlertTriangle, Hourglass } from "lucide-react";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { ShieldCheck } from "lucide-react";
 import prisma from "@/lib/prisma";
-import {
-  MemberProgressChart,
-  WorkloadChart,
-  BudgetGauge,
-  MilestoneProgress,
-} from "@/components/dashboard/DashboardCharts";
+import { GeneralDashboardView } from "@/components/dashboard/GeneralDashboardView";
+import { AdminActivityTab } from "@/components/dashboard/admin-activity/AdminActivityTab";
+import { ActivityHeartbeat } from "@/components/dashboard/ActivityHeartbeat";
 import {
   calculateGlobalMetrics,
   calculateMemberProgress,
@@ -24,11 +15,11 @@ import {
   calculatePersonalSummary,
 } from "@/lib/dashboard/dashboardMetrics";
 import {
-  calculateEffectiveTotalBudget,
-  calculateEffectiveSpentBudget,
-} from "@/lib/budget/budgetCalculations";
-import { formatDistanceToNow } from "date-fns";
-import { fr } from "date-fns/locale";
+  getWeekDateRange,
+  calculateMemberWeeklyActivity,
+  calculateActivitySummary,
+} from "@/lib/dashboard/adminActivityMetrics";
+import { calculateEffectiveTotalBudget } from "@/lib/budget/budgetCalculations";
 
 export const dynamic = "force-dynamic";
 
@@ -40,8 +31,12 @@ export default async function DashboardPage() {
   }
 
   const { user } = session;
+  const isAdmin = user.role === "ADMIN";
 
-  // Récupération des données réelles depuis PostgreSQL Neon
+  // Plage de dates de la semaine courante pour l'activité admin
+  const currentWeekRange = getWeekDateRange(new Date(), 0);
+
+  // Requêtes concurrentes pour alimenter les métriques du dashboard
   const [
     allTasks,
     allUsers,
@@ -49,20 +44,22 @@ export default async function DashboardPage() {
     budgetEntries,
     fundingSources,
     project,
-    nextMeeting
+    nextMeeting,
+    adminActivityLogs,
   ] = await Promise.all([
     prisma.task.findMany({
       include: {
         assignments: {
           include: {
-            user: {
-              select: { id: true, name: true, email: true },
-            },
+            user: { select: { id: true, name: true, email: true } },
           },
         },
       },
     }),
-    prisma.user.findMany({ select: { id: true, name: true, email: true } }),
+    prisma.user.findMany({
+      select: { id: true, name: true, email: true, avatarUrl: true },
+      orderBy: { name: "asc" },
+    }),
     prisma.ganttMilestone.findMany({ select: { id: true, name: true, status: true } }),
     prisma.budgetEntry.findMany({
       where: { status: { not: "CANCELLED" } },
@@ -77,21 +74,30 @@ export default async function DashboardPage() {
       where: { scheduledAt: { gt: new Date() } },
       orderBy: { scheduledAt: "asc" },
     }),
+    isAdmin
+      ? prisma.userActivityLog.findMany({
+          where: {
+            createdAt: {
+              gte: currentWeekRange.startOfWeek,
+              lte: currentWeekRange.endOfWeek,
+            },
+          },
+          select: { id: true, userId: true, actionType: true, createdAt: true },
+        })
+      : Promise.resolve([]),
   ]);
 
-  // Calcul du budget effectif basé sur les dotations réelles (APICIL, BDE, Fablab) avec repli projet
+  // Calcul du budget effectif basé sur les dotations avec repli projet
   const fallbackBudget = Number(project?.totalBudget) || 0;
   const effectiveTotalBudget = calculateEffectiveTotalBudget(
     fundingSources as any,
     fallbackBudget
   );
 
-  // Seules les dépenses actives (payées et engagées) consomment le budget
   const consumedEntries = budgetEntries.filter(
     (e) => e.status === "PAID" || e.status === "VALIDATED"
   );
 
-  // Calculs via les modules utilitaires dédiés
   const globalMetrics = calculateGlobalMetrics(
     allTasks as any,
     milestones as any,
@@ -103,8 +109,54 @@ export default async function DashboardPage() {
   const workloadByMember = calculateWorkload(allUsers, allTasks as any);
   const personalSummary = calculatePersonalSummary(user.id, allTasks as any);
 
+  // Pré-calcul serveur de l'activité hebdomadaire pour les administrateurs
+  let initialAdminActivity = null;
+  if (isAdmin) {
+    const adaptedTasks = allTasks.map((t) => ({
+      id: t.id,
+      createdById: t.createdById,
+      lastUpdate: t.lastUpdate || t.updatedAt,
+      assignments: t.assignments.map((a) => a.userId),
+    }));
+
+    const allMeetings = await prisma.meeting.findMany({
+      select: {
+        id: true,
+        createdById: true,
+        createdAt: true,
+        attendees: { select: { userId: true } },
+      },
+    });
+
+    const adaptedMeetings = allMeetings.map((m) => ({
+      id: m.id,
+      createdById: m.createdById,
+      createdAt: m.createdAt,
+      attendees: m.attendees.map((a) => a.userId),
+    }));
+
+    const membersActivity = calculateMemberWeeklyActivity(
+      allUsers,
+      adminActivityLogs,
+      adaptedTasks,
+      adaptedMeetings,
+      currentWeekRange
+    );
+
+    const summary = calculateActivitySummary(membersActivity);
+
+    initialAdminActivity = {
+      weekRange: currentWeekRange,
+      members: membersActivity,
+      summary,
+    };
+  }
+
   return (
     <div className="space-y-6">
+      {/* Enregistre la visite active quotidienne sans bloquer le rendu */}
+      <ActivityHeartbeat />
+
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-4 border-b border-border">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">
@@ -114,7 +166,9 @@ export default async function DashboardPage() {
             Suivi opérationnel du Projet Ouvert IMT CI1 (2026-2027) — Voilier MINIMOCA.
           </p>
           <div className="flex flex-wrap items-center gap-2 mt-2.5">
-            <span className="text-xs font-semibold text-muted-foreground mr-0.5">Mes tâches assignées :</span>
+            <span className="text-xs font-semibold text-muted-foreground mr-0.5">
+              Mes tâches assignées :
+            </span>
             <Badge variant="outline" className="bg-primary/10 text-primary border-primary/20 text-xs">
               🎯 {personalSummary.totalAssigned} assignée{personalSummary.totalAssigned > 1 ? "s" : ""}
             </Badge>
@@ -138,79 +192,39 @@ export default async function DashboardPage() {
         </div>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <div>
-              <CardTitle className="text-sm font-medium">Avancement Global</CardTitle>
-              <p className="text-[11px] text-muted-foreground">Toute l&apos;équipe (Projet)</p>
-            </div>
-            <PieChartIcon className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{globalMetrics.completionRate}%</div>
-            <p className="text-xs text-muted-foreground">
-              {globalMetrics.doneTasks} / {globalMetrics.totalTasks} tâches de l&apos;équipe terminées
-            </p>
-          </CardContent>
-        </Card>
+      {isAdmin ? (
+        <Tabs defaultValue="general" className="w-full space-y-6">
+          <div className="flex items-center justify-between">
+            <TabsList className="grid w-full max-w-md grid-cols-2">
+              <TabsTrigger value="general">Vue Générale</TabsTrigger>
+              <TabsTrigger value="admin-activity" className="gap-2 font-medium">
+                <ShieldCheck className="h-4 w-4 text-primary" />
+                Activité Équipe (Admin)
+              </TabsTrigger>
+            </TabsList>
+          </div>
 
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium">Tâches en retard</CardTitle>
-            <AlertTriangle className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className={`text-2xl font-bold ${globalMetrics.lateTasks > 0 ? "text-red-500" : "text-green-500"}`}>
-              {globalMetrics.lateTasks}
-            </div>
-            <p className="text-xs text-muted-foreground">
-              {globalMetrics.lateTasks === 0 ? "Tout est dans les temps" : "À traiter en priorité"}
-            </p>
-          </CardContent>
-        </Card>
+          <TabsContent value="general" className="space-y-6 mt-0">
+            <GeneralDashboardView
+              globalMetrics={globalMetrics}
+              progressByMember={progressByMember}
+              workloadByMember={workloadByMember}
+              nextMeeting={nextMeeting}
+            />
+          </TabsContent>
 
-        <Card className="col-span-1 lg:col-span-2">
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium">Prochaine réunion</CardTitle>
-            <Hourglass className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            {nextMeeting ? (
-              <>
-                <div className="text-2xl font-bold">
-                  {formatDistanceToNow(new Date(nextMeeting.scheduledAt), { addSuffix: true, locale: fr })}
-                </div>
-                <p className="text-xs text-muted-foreground">
-                  {nextMeeting.title}
-                </p>
-              </>
-            ) : (
-              <>
-                <div className="text-2xl font-bold text-muted-foreground">Aucune</div>
-                <p className="text-xs text-muted-foreground">Pas de réunion planifiée</p>
-              </>
-            )}
-          </CardContent>
-        </Card>
-      </div>
-
-      <div className="grid gap-4 md:grid-cols-1 lg:grid-cols-4">
-        <MemberProgressChart data={progressByMember} />
-        <MilestoneProgress
-          achieved={globalMetrics.achievedMilestones}
-          remaining={globalMetrics.remainingMilestones}
+          <TabsContent value="admin-activity" className="space-y-6 mt-0">
+            <AdminActivityTab initialData={initialAdminActivity} />
+          </TabsContent>
+        </Tabs>
+      ) : (
+        <GeneralDashboardView
+          globalMetrics={globalMetrics}
+          progressByMember={progressByMember}
+          workloadByMember={workloadByMember}
+          nextMeeting={nextMeeting}
         />
-        <WorkloadChart data={workloadByMember} />
-      </div>
-
-      <div className="grid gap-4 md:grid-cols-1 lg:grid-cols-4">
-        <BudgetGauge
-          total={globalMetrics.totalBudget}
-          used={globalMetrics.usedBudget}
-          remaining={globalMetrics.remainingBudget}
-        />
-      </div>
+      )}
     </div>
   );
 }

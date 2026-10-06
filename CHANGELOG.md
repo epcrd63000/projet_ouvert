@@ -1,6 +1,15 @@
 # Journal des Modifications (CHANGELOG)
 
-## [2.12.8] - 2026-10-05
+## [2.13.0] - 2026-10-06
+
+### Onglet Exclusif Administrateur : Activité Hebdomadaire par Membre (/dashboard)
+- **Système d'Onglets Radix UI (`Tabs.tsx`)** : Séparation claire sur la page `/dashboard` entre la « Vue Générale » ouverte à tous et l'onglet « Activité Équipe (Admin) » restreint au rôle `ADMIN`.
+- **Histogramme Ordonné Recharts (`WeeklyActivityChart.tsx`)** : Affichage graphique trié du plus actif (à gauche) au moins actif (à droite), avec double barre empilée (visites actives vs actions concrètes).
+- **Navigation Temporelle Complète (`WeekNavigation.tsx`)** : Déplacement entre les semaines (`[< Précédente]`, `[Cette semaine]`, `[Suivante >]`) avec libellé des dates de début et de fin.
+- **Cartes KPI d'Équipe (`ActivitySummaryCards.tsx`)** : Suivi du top contributeur, total d'interactions, moyenne par étudiant et alerte rouge/orange sur les membres inactifs.
+- **Tableau Récapitulatif Détaillé (`MemberActivityTable.tsx`)** : Détail complet par étudiant avec rang (podium 🥇🥈🥉), badges d'activité, statut, nombre de visites, nombre d'actions et date de dernière connexion.
+- **Base de Données & Heartbeat (`UserActivityLog`)** : Modèle PostgreSQL déployé sur Neon avec table dédiée et battement discret (`/api/activity/heartbeat`) consignant une présence active quotidienne.
+- **Tests Unitaires TDD (`10_admin_activity_metrics.test.ts`)** : 100% des tests validés sur la logique métier, les calculs de plages temporelles et l'ordonnancement.
 
 ### Visualisation Immédiate de l'Ordre du Jour & Préparatifs pour Chaque Membre
 - **Encadré Ordre du Jour & Détection Personnalisée sur les Cartes (`MeetingCard.tsx`)** :
