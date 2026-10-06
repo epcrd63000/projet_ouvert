@@ -1,5 +1,17 @@
 # Changelog
 
+## [2.11.0] - 2026-10-06
+
+### Ajouté & Amélioré
+- **Accessibilité & Navigation Mobile Intégrale (Smartphone & Réseau Local)** :
+  - **Menu Burger & Volet Coulissant Mobile (`MobileNavDrawer.tsx`)** : Tiroir latéral tactile avec fond flouté, navigation complète adaptée au rôle utilisateur (ADMIN / MEMBER), informations de profil et déconnexion.
+  - **Barre de Navigation Inférieure Permanente (`BottomNavBar.tsx`)** : Accès rapide en 1 toucher aux rubriques essentielles (Accueil, Tâches, Agenda, Réunions) et raccourci vers le menu étendu.
+  - **En-tête & Shell Adaptatifs (`Header.tsx`, `ProtectedShell.tsx`)** : Bouton d'ouverture burger, paddings optimisés pour écrans étroits (`p-3.5 sm:p-5 md:p-6`) et marge inférieure (`pb-20 md:pb-6`) empêchant le masquage de contenu.
+  - **Support Tactile Kanban (`KanbanBoard.tsx`)** : Détection séparée de la souris (`MouseSensor`) et du toucher (`TouchSensor` avec délai de maintien de 250ms), assurant un défilement vertical fluide sur smartphone sans conflit de glisser-déposer.
+  - **Écoute Réseau Multi-Interfaces (0.0.0.0)** : Script `"dev": "next dev -H 0.0.0.0"` permettant la connexion directe depuis un smartphone sur le même réseau Wi-Fi.
+  - **Viewport Mobile (`layout.tsx`)** : Prise en charge des zones de sécurité (`viewportFit: "cover"`).
+  - **Tests Unitaires TDD (`09_mobile_navigation_logic.test.ts`)** : Suite validant la configuration centralisée des routes et les permissions de navigation.
+
 ## [2.10.2] - 2026-10-05
 
 ### Corrigé & Amélioré

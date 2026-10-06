@@ -76,8 +76,9 @@ npm run db:seed
 # Vérification de l'intégrité de la base de données
 npm run db:verify
 
-# Lancement du serveur de développement (http://localhost:3000)
+# Lancement du serveur de développement (accessible sur PC et smartphone via le Wi-Fi local)
 npm run dev
+# Accès mobile réseau local : http://<IP_LOCALE>:3000 (ex: http://10.112.1.118:3000)
 
 # Compilation de production
 npm run build
