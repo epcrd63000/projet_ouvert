@@ -11,7 +11,7 @@ import { Sun, Moon, Menu } from "lucide-react";
 interface HeaderProps {
   userName: string;
   userEmail: string;
-  userRole: "ADMIN" | "MEMBER";
+  userRole?: "ADMIN" | "MEMBER";
   onOpenMobileNav?: () => void;
 }
 
@@ -21,7 +21,6 @@ interface HeaderProps {
 export function Header({
   userName,
   userEmail,
-  userRole, // eslint-disable-line @typescript-eslint/no-unused-vars
   onOpenMobileNav,
 }: HeaderProps) {
   const { theme, setTheme } = useTheme();

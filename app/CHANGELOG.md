@@ -11,6 +11,7 @@
   - **Écoute Réseau Multi-Interfaces (0.0.0.0)** : Script `"dev": "next dev -H 0.0.0.0"` permettant la connexion directe depuis un smartphone sur le même réseau Wi-Fi.
   - **Viewport Mobile (`layout.tsx`)** : Prise en charge des zones de sécurité (`viewportFit: "cover"`).
   - **Tests Unitaires TDD (`09_mobile_navigation_logic.test.ts`)** : Suite validant la configuration centralisée des routes et les permissions de navigation.
+  - **Correction Lint Build Vercel (`Header.tsx`)** : Suppression de la directive de règle ESLint non reconnue et épuration des arguments non destructurés.
 
 ## [2.10.2] - 2026-10-05
 
