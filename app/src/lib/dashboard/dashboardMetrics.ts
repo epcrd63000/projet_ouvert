@@ -5,6 +5,7 @@
 
 export interface TaskAssignmentSummary {
   userId: string;
+  status?: "TODO" | "IN_PROGRESS" | "DONE" | "BLOCKED";
   user: {
     id: string;
     name: string;
@@ -122,13 +123,17 @@ export function calculateGlobalMetrics(
 
 /**
  * Calcule l'avancement individuel de chaque membre pour le graphique en double barre.
+ * Prend en compte le statut individuel d'assignation s'il est disponible.
  */
 export function calculateMemberProgress(users: UserItem[], tasks: TaskItem[]): MemberProgressItem[] {
   return users.map((user) => {
     const userTasks = tasks.filter((task) =>
       task.assignments.some((a) => a.userId === user.id)
     );
-    const done = userTasks.filter((task) => task.status === "DONE").length;
+    const done = userTasks.filter((task) => {
+      const assignment = task.assignments.find((a) => a.userId === user.id);
+      return (assignment?.status || task.status) === "DONE";
+    }).length;
     const total = userTasks.length;
     const completionRate = total > 0 ? Math.round((done / total) * 100) : 0;
 
@@ -143,6 +148,7 @@ export function calculateMemberProgress(users: UserItem[], tasks: TaskItem[]): M
 
 /**
  * Calcule la charge de travail actuelle (tâches actives : À FAIRE et EN COURS) pour chaque membre.
+ * Prend en compte le statut individuel d'assignation s'il est disponible.
  */
 export function calculateWorkload(users: UserItem[], tasks: TaskItem[]): WorkloadItem[] {
   return users.map((user) => {
@@ -150,8 +156,14 @@ export function calculateWorkload(users: UserItem[], tasks: TaskItem[]): Workloa
       task.assignments.some((a) => a.userId === user.id)
     );
     const totalAssigned = userTasks.length;
-    const inProgress = userTasks.filter((task) => task.status === "IN_PROGRESS").length;
-    const todo = userTasks.filter((task) => task.status === "TODO").length;
+    const inProgress = userTasks.filter((task) => {
+      const assignment = task.assignments.find((a) => a.userId === user.id);
+      return (assignment?.status || task.status) === "IN_PROGRESS";
+    }).length;
+    const todo = userTasks.filter((task) => {
+      const assignment = task.assignments.find((a) => a.userId === user.id);
+      return (assignment?.status || task.status) === "TODO";
+    }).length;
     const active = inProgress + todo;
 
     return {
@@ -166,6 +178,7 @@ export function calculateWorkload(users: UserItem[], tasks: TaskItem[]): Workloa
 
 /**
  * Calcule le résumé personnalisé pour l'utilisateur actuellement connecté.
+ * Utilise en priorité son statut individuel sur les tâches collectives.
  */
 export function calculatePersonalSummary(
   userId: string,
@@ -177,11 +190,19 @@ export function calculatePersonalSummary(
   );
 
   const totalAssigned = myTasks.length;
-  const inProgress = myTasks.filter((task) => task.status === "IN_PROGRESS").length;
-  const done = myTasks.filter((task) => task.status === "DONE").length;
-  const late = myTasks.filter(
-    (task) => task.status !== "DONE" && task.dueDate && new Date(task.dueDate) < now
-  ).length;
+  const inProgress = myTasks.filter((task) => {
+    const assignment = task.assignments.find((a) => a.userId === userId);
+    return (assignment?.status || task.status) === "IN_PROGRESS";
+  }).length;
+  const done = myTasks.filter((task) => {
+    const assignment = task.assignments.find((a) => a.userId === userId);
+    return (assignment?.status || task.status) === "DONE";
+  }).length;
+  const late = myTasks.filter((task) => {
+    const assignment = task.assignments.find((a) => a.userId === userId);
+    const effStatus = assignment?.status || task.status;
+    return effStatus !== "DONE" && task.dueDate && new Date(task.dueDate) < now;
+  }).length;
   const completionRate = totalAssigned > 0 ? Math.round((done / totalAssigned) * 100) : 0;
 
   return {

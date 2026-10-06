@@ -49,11 +49,13 @@ export function TaskDetailForm({
   onCancel,
 }: TaskDetailFormProps) {
   const canEdit = canUserEditTask(task, currentUserId, isAdmin);
-  const canDelete = Boolean(isAdmin || (currentUserId && task.createdById === currentUserId));
+  const isAssigned = Boolean(currentUserId && task.assignments?.some((a) => a.user.id === currentUserId));
+  const canDelete = Boolean(isAdmin || (currentUserId && task.createdById === currentUserId) || isAssigned);
 
+  const myInitialAssignment = task.assignments?.find((a) => a.user.id === currentUserId);
   const [title, setTitle] = useState(task.title);
   const [description, setDescription] = useState(task.description || "");
-  const [status, setStatus] = useState<KanbanTask["status"]>(task.status);
+  const [status, setStatus] = useState<KanbanTask["status"]>(myInitialAssignment?.status || task.status);
   const [priority, setPriority] = useState<KanbanTask["priority"]>(task.priority);
   const [progress, setProgress] = useState<number>(task.progress ?? (task.status === "DONE" ? 100 : 0));
   const [dueDate, setDueDate] = useState<string>(
@@ -71,7 +73,8 @@ export function TaskDetailForm({
   useEffect(() => {
     setTitle(task.title);
     setDescription(task.description || "");
-    setStatus(task.status);
+    const myAssignment = task.assignments?.find((a) => a.user.id === currentUserId);
+    setStatus(myAssignment?.status || task.status);
     setPriority(task.priority);
     setProgress(task.progress ?? (task.status === "DONE" ? 100 : 0));
     setDueDate(task.dueDate ? new Date(task.dueDate).toISOString().slice(0, 10) : "");
@@ -80,7 +83,7 @@ export function TaskDetailForm({
     setValidationCriteria(task.validationCriteria || task.validator || "");
     setDelayReason(task.delayReason || "");
     setAssigneeIds(task.assignments ? task.assignments.map((a) => a.user.id) : []);
-  }, [task]);
+  }, [task, currentUserId]);
 
   const handleStatusChange = (newStatus: KanbanTask["status"]) => {
     if (!canEdit) return;

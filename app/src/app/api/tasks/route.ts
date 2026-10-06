@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { requireAuth, requireAdmin } from "@/lib/permissions";
 import { createTaskSchema } from "@/lib/validations/task";
@@ -127,6 +128,7 @@ export async function POST(request: NextRequest) {
         data: validAssigneeIds.map((userId: string) => ({
           taskId: task.id,
           userId,
+          status: taskData.status || "TODO",
         })),
         skipDuplicates: true,
       });
@@ -159,6 +161,10 @@ export async function POST(request: NextRequest) {
         );
       }
     }
+
+    // Réactivité instantanée du Dashboard et du Kanban
+    revalidatePath("/dashboard");
+    revalidatePath("/kanban");
 
     return NextResponse.json(taskWithRelations, { status: 201 });
   } catch (error) {

@@ -168,13 +168,14 @@ model Task {
 }
 
 model TaskAssignment {
-  id         String   @id @default(uuid())
+  id         String     @id @default(uuid())
   taskId     String
   userId     String
-  assignedAt DateTime @default(now())
-  updatedAt  DateTime @updatedAt // Ajout de updatedAt
-  task       Task     @relation(fields: [taskId], references: [id], onDelete: Cascade)
-  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  status     TaskStatus @default(TODO)
+  assignedAt DateTime   @default(now())
+  updatedAt  DateTime   @updatedAt // Ajout de updatedAt
+  task       Task       @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  user       User       @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([taskId, userId])
   @@index([userId])

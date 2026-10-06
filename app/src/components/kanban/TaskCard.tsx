@@ -28,6 +28,16 @@ const PRIORITY_LABELS: Record<string, string> = {
   CRITICAL: "Critique",
 };
 
+/**
+ * Configuration visuelle des pastilles de statut par assigné.
+ */
+const ASSIGNEE_STATUS_CONFIG: Record<string, { dot: string; label: string }> = {
+  TODO: { dot: "bg-slate-400", label: "À faire" },
+  IN_PROGRESS: { dot: "bg-amber-400", label: "En cours" },
+  DONE: { dot: "bg-emerald-400", label: "Terminée" },
+  BLOCKED: { dot: "bg-red-500", label: "Bloquée" },
+};
+
 interface TaskCardProps {
   task: KanbanTask;
   isDragging?: boolean;
@@ -38,7 +48,7 @@ interface TaskCardProps {
 
 /**
  * Carte draggable représentant une tâche dans le Kanban.
- * Affiche titre, priorité, date d'échéance et les noms complets des assignés ou du créateur.
+ * Affiche titre, priorité, date d'échéance et les assignés avec leur statut individuel en temps réel.
  */
 export function TaskCard({ task, isDragging, onClick, onDelete, canDelete = false }: TaskCardProps) {
   const { attributes, listeners, setNodeRef, transform } = useDraggable({
@@ -51,6 +61,7 @@ export function TaskCard({ task, isDragging, onClick, onDelete, canDelete = fals
 
   // Vérifier si la tâche est en retard
   const isOverdue = task.dueDate && new Date(task.dueDate) < new Date() && task.status !== "DONE";
+  const isMultiAssigned = (task.assignments?.length || 0) > 1;
 
   return (
     <div ref={setNodeRef} style={style} {...listeners} {...attributes}>
@@ -88,7 +99,11 @@ export function TaskCard({ task, isDragging, onClick, onDelete, canDelete = fals
                     onDelete();
                   }}
                   className="opacity-0 group-hover:opacity-100 transition-opacity p-1 text-muted-foreground hover:text-destructive rounded hover:bg-muted"
-                  title="Supprimer la tâche"
+                  title={
+                    isMultiAssigned
+                      ? "Se retirer de la tâche (ou supprimer)"
+                      : "Supprimer définitivement la tâche"
+                  }
                 >
                   <Trash2 className="h-3.5 w-3.5" />
                 </button>
@@ -118,20 +133,22 @@ export function TaskCard({ task, isDragging, onClick, onDelete, canDelete = fals
             )}
           </div>
 
-          {/* Noms et avatars des membres assignés ou du créateur */}
+          {/* Noms et pastilles d'avancement individuel des membres assignés */}
           <div className="pt-2 border-t border-border/50 flex flex-wrap items-center gap-1.5">
             {task.assignments && task.assignments.length > 0 ? (
-              task.assignments.map((a) => (
-                <div
-                  key={a.user.id}
-                  className="inline-flex items-center gap-1.5 rounded-full bg-secondary/80 border border-border px-2 py-0.5 text-xs font-medium text-foreground"
-                >
-                  <span className="flex h-4 w-4 items-center justify-center rounded-full bg-primary/20 text-[9px] font-bold text-primary">
-                    {a.user.name.charAt(0).toUpperCase()}
-                  </span>
-                  <span>{a.user.name}</span>
-                </div>
-              ))
+              task.assignments.map((a) => {
+                const statusMeta = ASSIGNEE_STATUS_CONFIG[a.status || "TODO"] || ASSIGNEE_STATUS_CONFIG.TODO;
+                return (
+                  <div
+                    key={a.user.id}
+                    className="inline-flex items-center gap-1.5 rounded-full bg-secondary/80 border border-border px-2 py-0.5 text-xs font-medium text-foreground"
+                    title={`${a.user.name} : ${statusMeta.label}`}
+                  >
+                    <span className={cn("h-2 w-2 rounded-full shrink-0 shadow-sm", statusMeta.dot)} />
+                    <span>{a.user.name}</span>
+                  </div>
+                );
+              })
             ) : task.createdBy ? (
               <div className="inline-flex items-center gap-1.5 rounded-full bg-muted/70 border border-border/60 px-2 py-0.5 text-xs text-muted-foreground">
                 <span className="flex h-4 w-4 items-center justify-center rounded-full bg-muted-foreground/20 text-[9px] font-medium">

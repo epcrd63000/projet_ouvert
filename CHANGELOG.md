@@ -1,5 +1,24 @@
 # Journal des Modifications (CHANGELOG)
 
+## [2.14.0] - 2026-10-06
+
+### Statuts Individuels d'Assignation, Désassignation Intelligente & Réactivité Dashboard
+- **Statut Individuel par Membre sur les Tâches Partagées (`TaskAssignment.status`)** :
+  - Migration de la base PostgreSQL Neon : Ajout de la colonne `status` (énumération `TaskStatus`, valeur par défaut `TODO`) sur le modèle `TaskAssignment`, avec synchronisation des enregistrements existants.
+  - Dans « Mes tâches », chaque membre voit et manipule la carte dans sa colonne Kanban personnelle selon son état d'avancement propre (`TODO`, `IN_PROGRESS`, `DONE`, `BLOCKED`).
+  - Dans la vue globale « Toutes les tâches », la tâche est positionnée selon le statut consolidé du projet (règle collective stricte : terminée uniquement si 100% des assignés ont validé `DONE`, en cours dès qu'au moins un membre s'y met).
+  - Pastilles visuelles d'avancement en temps réel sur les cartes Kanban pour chaque membre assigné (🟢 Terminé, 🟡 En cours, ⚪ À faire, 🔴 Bloqué).
+- **Suppression Intelligente & Sécurisée des Tâches Partagées (`api/tasks/[id]/route.ts`)** :
+  - Sur une tâche collective comportant plusieurs membres : un clic sur la corbeille par un membre standard retire son profil de la tâche (`UNASSIGN`) sans détruire la tâche pour les autres coéquipiers.
+  - Sur une tâche individuelle (1 seul membre) : la suppression supprime définitivement la tâche de la base de données (`DELETE`).
+  - Pour les administrateurs et créateurs : affichage d'un choix explicite entre « Me retirer de la tâche » et « Supprimer définitivement pour toute l'équipe ».
+- **Réactivité Instantanée du Tableau de Bord sans F5 (`dashboardMetrics.ts` & `ActivityHeartbeat.tsx`)** :
+  - Les indicateurs du haut (« Mes tâches : X assignées, Y en cours, Z terminées ») et les graphiques d'avancement par membre utilisent désormais le statut individuel réel de chaque membre.
+  - Invalidation automatique du Router Cache Next.js via `revalidatePath("/dashboard")` et `revalidatePath("/kanban")` lors de chaque action (`POST`, `PATCH`, `DELETE`).
+  - Appel systématique de `router.refresh()` lors des déplacements de cartes et au retour actif sur l'onglet (`visibilitychange`), actualisant instantanément les métriques sans surconsommation de ressources.
+- **Suite de Tests Unitaires TDD (`11_collective_task_assignment_status.test.ts`)** :
+  - 100% des tests validés sur la logique de calcul consolidé d'équipe, le statut effectif personnel et la matrice de décision de suppression.
+
 ## [2.13.1] - 2026-10-06
 
 ### Optimisation & Correction de la Navigation Temporelle Admin (/dashboard)

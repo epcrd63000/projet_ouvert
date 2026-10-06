@@ -1,8 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
+import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { requireAuth } from "@/lib/permissions";
 import { updateTaskSchema } from "@/lib/validations/task";
 import { createNotification, notifyUsers } from "@/lib/notifications";
+import {
+  computeCollectiveTaskStatus,
+  determineTaskDeletionAction,
+} from "@/lib/tasks/collectiveTaskLogic";
 
 interface RouteParams {
   params: Promise<{ id: string }>;
@@ -118,15 +123,59 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
       }
     }
 
-    // Détecter si le statut passe à DONE
+    // 1. Si un statut est modifié, mettre à jour l'assignation individuelle du membre connecté
+    if (resolvedStatus !== undefined && currentUserId) {
+      const isUserAssigned = existingTask.assignments.some((a) => a.userId === currentUserId);
+      if (isUserAssigned) {
+        await prisma.taskAssignment.update({
+          where: { taskId_userId: { taskId: id, userId: currentUserId } },
+          data: { status: resolvedStatus },
+        });
+      }
+    }
+
+    // 2. Mise à jour des assignations si fourni
+    if (assigneeIds !== undefined) {
+      const validAssignees = Array.from(new Set(assigneeIds.filter(Boolean)));
+      const existingStatusMap = new Map(
+        existingTask.assignments.map((a) => [a.userId, a.status])
+      );
+
+      await prisma.taskAssignment.deleteMany({
+        where: { taskId: id },
+      });
+
+      if (validAssignees.length > 0) {
+        await prisma.taskAssignment.createMany({
+          data: validAssignees.map((uId: string) => ({
+            taskId: id,
+            userId: uId,
+            status: existingStatusMap.get(uId) || resolvedStatus || "TODO",
+          })),
+          skipDuplicates: true,
+        });
+      }
+    }
+
+    // 3. Calculer le statut global consolidé pour l'équipe
+    const currentAssignments = await prisma.taskAssignment.findMany({
+      where: { taskId: id },
+    });
+
+    const collectiveStatus = computeCollectiveTaskStatus(
+      currentAssignments,
+      resolvedStatus || existingTask.status
+    );
+
+    // Détecter si le statut passe globalement à DONE
     const isCompletingTask =
-      resolvedStatus === "DONE" && existingTask.status !== "DONE";
+      collectiveStatus === "DONE" && existingTask.status !== "DONE";
 
     await prisma.task.update({
       where: { id },
       data: {
         ...updateFields,
-        ...(resolvedStatus !== undefined ? { status: resolvedStatus } : {}),
+        status: collectiveStatus,
         ...(resolvedProgress !== undefined ? { progress: resolvedProgress } : {}),
         ...(dueDate !== undefined
           ? { dueDate: dueDate ? new Date(dueDate) : null }
@@ -136,27 +185,9 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
             ? { parent: { connect: { id: parentId } } }
             : { parent: { disconnect: true } }
           : {}),
-        // Remplir completedAt automatiquement quand la tâche passe à DONE
         ...(isCompletingTask ? { completedAt: new Date() } : {}),
       },
     });
-
-    // Mise à jour des assignations si fourni
-    if (assigneeIds !== undefined) {
-      const validAssignees = Array.from(new Set(assigneeIds.filter(Boolean)));
-      await prisma.taskAssignment.deleteMany({
-        where: { taskId: id },
-      });
-      if (validAssignees.length > 0) {
-        await prisma.taskAssignment.createMany({
-          data: validAssignees.map((uId: string) => ({
-            taskId: id,
-            userId: uId,
-          })),
-          skipDuplicates: true,
-        });
-      }
-    }
 
     const task = await prisma.task.findUnique({
       where: { id },
@@ -187,12 +218,16 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
         uniqueRecipients,
         "TASK_COMPLETED",
         "Tâche terminée",
-        `La tâche "${task.title}" a été marquée comme terminée.`,
+        `La tâche "${task.title}" a été marquée comme terminée pour l'équipe.`,
         task.id,
         "Task",
         currentUserId || session.user.id
       );
     }
+
+    // Réactivité instantanée du Dashboard et du Kanban
+    revalidatePath("/dashboard");
+    revalidatePath("/kanban");
 
     return NextResponse.json(task);
   } catch (error) {
@@ -202,10 +237,12 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
 }
 
 /**
- * DELETE /api/tasks/[id] — Supprime une tâche.
- * Accessible aux ADMIN et aux membres assignés à la tâche ou créateurs.
+ * DELETE /api/tasks/[id] — Supprime une tâche ou désassigne l'utilisateur.
+ * - Sur tâche collective : retire le membre assigné (UNASSIGN).
+ * - Sur tâche solo : supprime la tâche définitivement (DELETE).
+ * - Action paramétrable ("unassign" | "delete") pour les administrateurs.
  */
-export async function DELETE(_request: NextRequest, { params }: RouteParams) {
+export async function DELETE(request: NextRequest, { params }: RouteParams) {
   const session = await requireAuth();
   if (!session) {
     return NextResponse.json({ error: "Non autorisé" }, { status: 401 });
@@ -214,7 +251,6 @@ export async function DELETE(_request: NextRequest, { params }: RouteParams) {
   const { id } = await params;
 
   try {
-    // Récupérer la tâche avec ses assignations pour vérifier les permissions
     const task = await prisma.task.findUnique({
       where: { id },
       include: {
@@ -238,7 +274,6 @@ export async function DELETE(_request: NextRequest, { params }: RouteParams) {
       }
     }
 
-    // Vérifier les permissions : ADMIN, créateur ou membre assigné
     const isAdmin = session.user.role === "ADMIN";
     const isAssigned = Boolean(
       currentUserId && task.assignments.some((a) => a.userId === currentUserId)
@@ -249,17 +284,60 @@ export async function DELETE(_request: NextRequest, { params }: RouteParams) {
       return NextResponse.json({ error: "Accès refusé" }, { status: 403 });
     }
 
-    // Collecter tous les utilisateurs assignés (tâche + sous-tâches) pour notification
+    const { searchParams } = new URL(request.url);
+    const requestedAction = searchParams.get("action") as "unassign" | "delete" | null;
+
+    const decision = determineTaskDeletionAction(
+      task,
+      currentUserId || "",
+      isAdmin,
+      requestedAction || undefined
+    );
+
+    if (decision.action === "UNASSIGN" && decision.targetUserId) {
+      // Désassigner l'utilisateur uniquement
+      await prisma.taskAssignment.delete({
+        where: {
+          taskId_userId: {
+            taskId: id,
+            userId: decision.targetUserId,
+          },
+        },
+      });
+
+      // Recalculer le statut consolidé pour les assignés restants
+      const remainingAssignments = await prisma.taskAssignment.findMany({
+        where: { taskId: id },
+      });
+      const newCollectiveStatus = computeCollectiveTaskStatus(
+        remainingAssignments,
+        task.status
+      );
+
+      await prisma.task.update({
+        where: { id },
+        data: { status: newCollectiveStatus },
+      });
+
+      revalidatePath("/dashboard");
+      revalidatePath("/kanban");
+
+      return NextResponse.json({
+        success: true,
+        action: "UNASSIGN",
+        message: "Vous avez été retiré de la tâche.",
+      });
+    }
+
+    // Suppression définitive de la tâche complète
     const allAssignedUserIds = [
       ...task.assignments.map((a) => a.userId),
       ...task.subTasks.flatMap((st) => st.assignments.map((a) => a.userId)),
     ];
     const uniqueAssignedIds = Array.from(new Set(allAssignedUserIds));
 
-    // Supprimer la tâche (cascade : sous-tâches + assignations)
     await prisma.task.delete({ where: { id } });
 
-    // Notifier les anciens assignés
     await notifyUsers(
       uniqueAssignedIds,
       "TASK_DELETED",
@@ -270,7 +348,14 @@ export async function DELETE(_request: NextRequest, { params }: RouteParams) {
       session.user.id
     );
 
-    return NextResponse.json({ success: true });
+    revalidatePath("/dashboard");
+    revalidatePath("/kanban");
+
+    return NextResponse.json({
+      success: true,
+      action: "DELETE",
+      message: "La tâche a été définitivement supprimée.",
+    });
   } catch (error) {
     console.error("Erreur DELETE /api/tasks/[id]:", error);
     return NextResponse.json({ error: "Erreur serveur" }, { status: 500 });

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import { useRouter } from "next/navigation";
 import type { KanbanTask } from "@/components/kanban/KanbanBoard";
 import type { TaskFormData } from "@/components/kanban/TaskModal";
 
@@ -17,13 +18,14 @@ export type TaskUpdatePayload = Partial<KanbanTask> & {
 
 /**
  * Hook personnalisé encapsulant la gestion de l'état et des opérations CRUD sur les tâches.
- * Gère l'étanchéité stricte de 'Mes tâches' par rapport à la vue globale.
+ * Gère l'étanchéité stricte de 'Mes tâches' par rapport à la vue globale et la réactivité du Dashboard.
  */
 export function useTasks(
   showAll: boolean,
   isAdmin: boolean = false,
   currentUserId?: string
 ) {
+  const router = useRouter();
   const [tasks, setTasks] = useState<KanbanTask[]>([]);
   const [users, setUsers] = useState<UserSummary[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -82,15 +84,23 @@ export function useTasks(
 
   /**
    * Déplace une tâche (drag & drop Kanban).
+   * Met à jour immédiatement le statut individuel de l'assigné et rafraîchit le cache Next.js.
    */
   const handleTaskMove = useCallback(
     async (taskId: string, newStatus: string, newPosition: number) => {
       setTasks((prev) =>
-        prev.map((t) =>
-          t.id === taskId
-            ? { ...t, status: newStatus as KanbanTask["status"], position: newPosition }
-            : t
-        )
+        prev.map((t) => {
+          if (t.id !== taskId) return t;
+          const updatedAssignments = t.assignments?.map((a) =>
+            a.user.id === currentUserId ? { ...a, status: newStatus as KanbanTask["status"] } : a
+          );
+          return {
+            ...t,
+            status: !showAll ? (newStatus as KanbanTask["status"]) : t.status,
+            position: newPosition,
+            assignments: updatedAssignments,
+          };
+        })
       );
 
       try {
@@ -99,12 +109,14 @@ export function useTasks(
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ status: newStatus, position: newPosition }),
         });
+        // Invalidation instantanée du cache client pour le Dashboard
+        router.refresh();
       } catch (error) {
         console.error("Erreur déplacement tâche:", error);
         fetchTasks();
       }
     },
-    [fetchTasks]
+    [fetchTasks, currentUserId, showAll, router]
   );
 
   /**
@@ -124,6 +136,7 @@ export function useTasks(
           setTasks((prev) =>
             prev.map((t) => (t.id === taskId ? { ...t, ...updated } : t))
           );
+          router.refresh();
           return updated;
         } else {
           const errData = await res.json().catch(() => ({}));
@@ -137,7 +150,7 @@ export function useTasks(
         throw error;
       }
     },
-    [fetchTasks]
+    [fetchTasks, router]
   );
 
   /**
@@ -157,31 +170,82 @@ export function useTasks(
 
         if (res.ok) {
           fetchTasks();
+          router.refresh();
         }
       } catch (error) {
         console.error("Erreur création tâche:", error);
       }
     },
-    [fetchTasks]
+    [fetchTasks, router]
   );
 
   /**
-   * Supprime une tâche.
+   * Supprime une tâche ou désassigne l'utilisateur courant selon la règle collective.
    */
-  const handleDeleteTask = useCallback(async (taskId: string) => {
-    if (!confirm("Voulez-vous vraiment supprimer cette tâche ?")) return;
+  const handleDeleteTask = useCallback(
+    async (taskId: string, requestedAction?: "unassign" | "delete") => {
+      const task = tasks.find((t) => t.id === taskId);
+      const isMulti = (task?.assignments?.length || 0) > 1;
 
-    try {
-      const res = await fetch(`/api/tasks/${taskId}`, { method: "DELETE" });
-      if (res.ok) {
-        setTasks((prev) => prev.filter((t) => t.id !== taskId));
-      } else {
-        console.error("Erreur suppression tâche:", await res.text());
+      let action = requestedAction;
+      if (!action) {
+        if (isMulti) {
+          if (isAdmin) {
+            const shouldUnassign = confirm(
+              "Cette tâche est partagée avec d'autres membres.\n\n" +
+              "• Cliquez sur 'OK' pour vous retirer uniquement de la tâche.\n" +
+              "• Cliquez sur 'Annuler' si vous préférez la supprimer définitivement pour tout le monde (une confirmation suivra)."
+            );
+            if (shouldUnassign) {
+              action = "unassign";
+            } else {
+              const confirmAll = confirm(
+                "⚠️ ATTENTION : Voulez-vous vraiment supprimer définitivement cette tâche pour TOUTE l'équipe ?"
+              );
+              if (confirmAll) {
+                action = "delete";
+              } else {
+                return;
+              }
+            }
+          } else {
+            const confirmUnassign = confirm(
+              "Cette tâche est partagée avec vos coéquipiers.\n\n" +
+              "Voulez-vous vous retirer de cette tâche ? Votre nom sera retiré mais la tâche restera pour les autres membres."
+            );
+            if (!confirmUnassign) return;
+            action = "unassign";
+          }
+        } else {
+          if (!confirm("Voulez-vous vraiment supprimer définitivement cette tâche ?")) return;
+          action = "delete";
+        }
       }
-    } catch (error) {
-      console.error("Erreur suppression tâche:", error);
-    }
-  }, []);
+
+      try {
+        const url = `/api/tasks/${taskId}${action ? `?action=${action}` : ""}`;
+        const res = await fetch(url, { method: "DELETE" });
+        if (res.ok) {
+          const result = await res.json();
+          if (result.action === "UNASSIGN") {
+            if (!showAll) {
+              setTasks((prev) => prev.filter((t) => t.id !== taskId));
+            } else {
+              fetchTasks();
+            }
+          } else {
+            setTasks((prev) => prev.filter((t) => t.id !== taskId));
+          }
+          router.refresh();
+        } else {
+          console.error("Erreur suppression tâche:", await res.text());
+        }
+      } catch (error) {
+        console.error("Erreur suppression tâche:", error);
+      }
+    },
+    [tasks, isAdmin, showAll, fetchTasks, router]
+  );
 
   return {
     tasks,

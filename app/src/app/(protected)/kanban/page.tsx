@@ -161,6 +161,7 @@ export default function KanbanPage() {
           onTaskDelete={handleDeleteTask}
           currentUserId={currentUserId}
           isAdmin={isAdmin}
+          showAll={showAll}
         />
       ) : (
         <TaskTableView
