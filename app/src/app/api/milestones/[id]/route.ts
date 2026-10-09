@@ -71,17 +71,23 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
       },
     });
 
-    // Mettre à jour l'événement calendrier synchronisé si nécessaire
+    // Mettre à jour l'événement calendrier synchronisé si nécessaire (mode Neon HTTP compatible)
     if (startDate || endDate || name || color) {
-      await prisma.event.updateMany({
+      const milestoneEvents = await prisma.event.findMany({
         where: { relatedMilestoneId: id },
-        data: {
-          ...(name ? { title: `Jalon: ${name}` } : {}),
-          ...(color ? { color } : {}),
-          ...(startDate ? { startAt: new Date(startDate) } : {}),
-          ...(endDate ? { endAt: new Date(endDate) } : {}),
-        },
+        select: { id: true },
       });
+      for (const ev of milestoneEvents) {
+        await prisma.event.update({
+          where: { id: ev.id },
+          data: {
+            ...(name ? { title: `Jalon: ${name}` } : {}),
+            ...(color ? { color } : {}),
+            ...(startDate ? { startAt: new Date(startDate) } : {}),
+            ...(endDate ? { endAt: new Date(endDate) } : {}),
+          },
+        });
+      }
     }
 
     return NextResponse.json(updatedMilestone);

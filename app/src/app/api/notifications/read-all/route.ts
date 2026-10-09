@@ -12,12 +12,19 @@ export async function PATCH() {
   }
 
   try {
-    const result = await prisma.notification.updateMany({
+    const unread = await prisma.notification.findMany({
       where: { userId: session.user.id, isRead: false },
-      data: { isRead: true },
+      select: { id: true },
     });
 
-    return NextResponse.json({ success: true, count: result.count });
+    for (const notif of unread) {
+      await prisma.notification.update({
+        where: { id: notif.id },
+        data: { isRead: true },
+      });
+    }
+
+    return NextResponse.json({ success: true, count: unread.length });
   } catch (error) {
     console.error("Erreur PATCH /api/notifications/read-all:", error);
     return NextResponse.json({ error: "Erreur serveur" }, { status: 500 });

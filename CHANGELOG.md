@@ -1,6 +1,13 @@
 # Journal des Modifications (CHANGELOG)
 
-## [2.15.0] - 2026-10-09
+## [2.15.1] - 2026-10-09
+
+### Correctif de Compatibilité Serveur Neon HTTP (Résolution de l'« Erreur serveur » en Modification de Réunion)
+- **Résolution de l'erreur `Transactions are not supported in HTTP mode` (`api/meetings/[id]/route.ts`)** :
+  - Remplacement de l'appel interne `prisma.event.updateMany` par une mise à jour unitaire ciblée (`findMany` + `update`), éliminant l'utilisation implicite de transactions incompatibles avec le driver `@prisma/adapter-neon` en mode HTTP serverless.
+  - La modification des réunions depuis la modale de la liste (`/meetings`) et depuis la fiche détaillée (`/meetings/[id]`) enregistre désormais instantanément et synchronise le calendrier sans aucune erreur.
+- **Sécurisation Globale du Pilote Serverless Neon (`api/milestones/[id]`, `api/notifications`, `api/alerts`)** :
+  - Migration préventive de l'ensemble des requêtes `updateMany` et `$transaction` vers des boucles de mise à jour unitaire pour assurer une robustesse totale sur le réseau IMT sans blocage de ports ni WebSockets.
 
 ### Modification Intégrale des Informations de Réunion & Synchronisation Globale
 - **Édition Rapide & Intuitive sur la Liste des Réunions (`MeetingCard.tsx` & `/meetings`)** :

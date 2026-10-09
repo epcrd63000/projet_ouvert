@@ -32,10 +32,16 @@ export default async function NotificationsPage() {
         </div>
         <form action={async () => {
           "use server";
-          await prisma.notification.updateMany({
+          const unread = await prisma.notification.findMany({
             where: { userId: session.user.id, isRead: false },
-            data: { isRead: true }
+            select: { id: true },
           });
+          for (const notif of unread) {
+            await prisma.notification.update({
+              where: { id: notif.id },
+              data: { isRead: true },
+            });
+          }
         }}>
           <Button variant="outline" type="submit">Tout marquer lu</Button>
         </form>

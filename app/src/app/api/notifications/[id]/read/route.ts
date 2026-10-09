@@ -18,14 +18,19 @@ export async function PATCH(_request: NextRequest, { params }: RouteParams) {
   const { id } = await params;
 
   try {
-    const result = await prisma.notification.updateMany({
+    const notif = await prisma.notification.findFirst({
       where: { id, userId: session.user.id },
-      data: { isRead: true },
+      select: { id: true },
     });
 
-    if (result.count === 0) {
+    if (!notif) {
       return NextResponse.json({ error: "Notification introuvable" }, { status: 404 });
     }
+
+    await prisma.notification.update({
+      where: { id: notif.id },
+      data: { isRead: true },
+    });
 
     return NextResponse.json({ success: true });
   } catch (error) {

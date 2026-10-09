@@ -5,7 +5,7 @@ import { requireAuth } from "@/lib/permissions";
 import { updateMeetingSchema } from "@/lib/validations/meeting";
 import { notifyUsers } from "@/lib/notifications";
 import { syncMeetingPreparationTask, deleteMeetingPreparationTask } from "@/lib/meetings/agendaService";
-import { computeAttendeeDiff } from "@/lib/meetings/meetingEditService";
+import { computeAttendeeDiff, buildCalendarEventSyncData } from "@/lib/meetings/meetingEditService";
 
 interface RouteParams {
   params: Promise<{ id: string }>;
@@ -127,22 +127,23 @@ export async function PATCH(
     });
 
     // Mettre à jour l'Event associé dans le calendrier (date, titre, notes)
-    const eventUpdateData: Record<string, unknown> = {};
-    if (scheduledAt) {
-      eventUpdateData.startAt = new Date(scheduledAt);
-      eventUpdateData.endAt = new Date(new Date(scheduledAt).getTime() + 60 * 60 * 1000);
-    }
-    if (meetingData.title) {
-      eventUpdateData.title = meetingData.title;
-    }
-    if (meetingData.notes !== undefined) {
-      eventUpdateData.description = meetingData.notes || undefined;
-    }
+    // Utilisation d'une boucle update unitaire pour compatibilité totale Neon HTTP (pas de transaction)
+    const eventUpdateData = buildCalendarEventSyncData({
+      title: meetingData.title,
+      scheduledAt,
+      notes: meetingData.notes,
+    });
     if (Object.keys(eventUpdateData).length > 0) {
-      await prisma.event.updateMany({
+      const relatedEvents = await prisma.event.findMany({
         where: { relatedMeetingId: id },
-        data: eventUpdateData,
+        select: { id: true },
       });
+      for (const event of relatedEvents) {
+        await prisma.event.update({
+          where: { id: event.id },
+          data: eventUpdateData,
+        });
+      }
     }
 
     // Gestion du cycle de vie de la tâche Kanban collective

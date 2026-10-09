@@ -24,19 +24,17 @@ export async function POST(request: Request) {
 
     const users = await prisma.user.findMany({ select: { id: true } });
     
-    // Create notifications for all users
-    await prisma.$transaction(
-      users.map(u => 
-        prisma.notification.create({
-          data: {
-            userId: u.id,
-            type: 'SYSTEM_ALERT' as NotificationType,
-            title,
-            body: message,
-          }
-        })
-      )
-    );
+    // Create notifications for all users (compatible Neon HTTP serverless)
+    for (const u of users) {
+      await prisma.notification.create({
+        data: {
+          userId: u.id,
+          type: 'SYSTEM_ALERT' as NotificationType,
+          title,
+          body: message,
+        },
+      });
+    }
 
     return NextResponse.json({ success: true, message: "Notifications envoyées" }, { status: 201 });
   } catch (error) {
