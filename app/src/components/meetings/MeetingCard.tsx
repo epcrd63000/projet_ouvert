@@ -10,14 +10,13 @@ import {
   MapPin,
   CheckSquare,
   Square,
-  FileText,
-  Sparkles,
-  Eye,
   ArrowRight,
+  Pencil,
 } from "lucide-react";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import { MeetingQuickAgendaModal } from "./MeetingQuickAgendaModal";
+import { MeetingCardAgendaBox } from "./MeetingCardAgendaBox";
 import {
   extractAgendaSummary,
   extractUserSpecificPreparation,
@@ -39,6 +38,7 @@ interface MeetingCardProps {
   meeting: MeetingListItem;
   isSelected: boolean;
   onToggleSelect: (id: string) => void;
+  onEdit?: (meeting: MeetingListItem) => void;
   currentUserName?: string | null;
 }
 
@@ -46,6 +46,7 @@ export function MeetingCard({
   meeting,
   isSelected,
   onToggleSelect,
+  onEdit,
   currentUserName,
 }: MeetingCardProps) {
   const [isQuickViewOpen, setIsQuickViewOpen] = useState(false);
@@ -119,43 +120,12 @@ export function MeetingCard({
           </div>
 
           {/* Encadré Ordre du Jour & Préparatifs */}
-          <div className="rounded-lg border bg-muted/40 p-3 text-xs space-y-2">
-            <div className="flex items-center justify-between">
-              <span className="font-semibold text-muted-foreground flex items-center gap-1.5">
-                <FileText className="h-3.5 w-3.5 text-indigo-500" />
-                Ordre du Jour &amp; Préparation
-              </span>
-              {hasAgenda && (
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setIsQuickViewOpen(true)}
-                  className="h-6 px-2 text-[11px] gap-1 text-indigo-600 hover:text-indigo-700 hover:bg-indigo-50 dark:hover:bg-indigo-950/40"
-                >
-                  <Eye className="h-3 w-3" />
-                  Aperçu
-                </Button>
-              )}
-            </div>
-
-            {/* Consigne personnelle mise en avant pour le membre */}
-            {personalPrep ? (
-              <div className="bg-indigo-500/10 border border-indigo-500/20 rounded p-2 text-indigo-900 dark:text-indigo-200">
-                <span className="font-medium flex items-center gap-1 text-[11px]">
-                  <Sparkles className="h-3 w-3 text-indigo-500" /> Vos préparatifs :
-                </span>
-                <p className="line-clamp-2 mt-0.5 text-[11px] font-normal">{personalPrep}</p>
-              </div>
-            ) : hasAgenda ? (
-              <p className="text-muted-foreground line-clamp-2 text-[11px]">
-                {agendaSummary}
-              </p>
-            ) : (
-              <p className="text-muted-foreground italic text-[11px]">
-                En attente de rédaction par le chef de projet.
-              </p>
-            )}
-          </div>
+          <MeetingCardAgendaBox
+            hasAgenda={hasAgenda}
+            personalPrep={personalPrep}
+            agendaSummary={agendaSummary}
+            onOpenQuickView={() => setIsQuickViewOpen(true)}
+          />
 
           {/* Participants */}
           <div className="pt-2 border-t text-xs">
@@ -166,14 +136,29 @@ export function MeetingCard({
           </div>
         </div>
 
-        {/* Bouton d'action principal */}
-        <div className="pt-2">
-          <Link href={`/meetings/${meeting.id}`}>
-            <Button variant={meeting.status === "DONE" ? "outline" : "default"} className="w-full text-xs font-medium gap-1.5">
+        {/* Boutons d'action */}
+        <div className="pt-2 flex items-center gap-2">
+          <Link href={`/meetings/${meeting.id}`} className="flex-1">
+            <Button
+              variant={meeting.status === "DONE" ? "outline" : "default"}
+              className="w-full text-xs font-medium gap-1.5"
+            >
               {meeting.status === "DONE" ? "Voir le compte rendu" : "Préparer la réunion"}
               <ArrowRight className="h-3.5 w-3.5" />
             </Button>
           </Link>
+
+          {onEdit && (
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={() => onEdit(meeting)}
+              title="Modifier les informations"
+              className="h-9 w-9 shrink-0 hover:bg-muted text-muted-foreground hover:text-foreground"
+            >
+              <Pencil className="h-4 w-4" />
+            </Button>
+          )}
         </div>
       </div>
 

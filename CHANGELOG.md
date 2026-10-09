@@ -1,5 +1,24 @@
 # Journal des Modifications (CHANGELOG)
 
+## [2.15.0] - 2026-10-09
+
+### Modification Intégrale des Informations de Réunion & Synchronisation Globale
+- **Édition Rapide & Intuitive sur la Liste des Réunions (`MeetingCard.tsx` & `/meetings`)** :
+  - Ajout d'un bouton d'édition direct (icône crayon ✏️) sur chaque carte de réunion pour modifier immédiatement le titre, la date/heure, le lieu, le statut, les objectifs/ordre du jour et la liste des participants sans quitter la vue liste.
+  - Découpage modulaire respectant la règle des 200 lignes : création de `MeetingCardAgendaBox.tsx`, `MeetingsGrid.tsx`, `MeetingsHeader.tsx` et `meetingBatchExport.ts`.
+- **Édition Avancée sur la Fiche Détail (`meetings/[id]/page.tsx` & `MeetingAttendanceCard.tsx`)** :
+  - Bouton « Modifier les infos » intégré à la barre d'actions supérieure avec pré-remplissage dynamique de l'ensemble des métadonnées de la séance.
+  - Bouton « Gérer » ajouté directement sur la carte latérale d'émargement pour ajouter ou retirer des participants en 1 clic.
+- **Formulaire Modulaire & Multi-Mode (`MeetingModal.tsx`, `MeetingModalFields.tsx` & `MeetingModalAttendeesList.tsx`)** :
+  - Support unifié des modes création et modification avec gestion des formats d'heures locales HTML5 (`datetime-local`) vers ISO 8601 UTC.
+  - Préservation des présences existantes grâce au calcul différentiel (`computeAttendeeDiff`).
+- **Synchronisation Automatique Serveur & Calendrier (`api/meetings/[id]/route.ts` & `meetingEditService.ts`)** :
+  - Mise à jour en cascade de l'événement de calendrier associé (`Event` : titre, date de début, date de fin, description).
+  - Synchronisation temps réel de la tâche de préparation collective sur le tableau Kanban.
+  - Invalidation instantanée du cache de routage Next.js (`revalidatePath`).
+- **Suite de Tests Unitaires TDD (`12_meeting_edit_logic.test.ts`)** :
+  - Validation à 100% du formatage des dates, du parsing ISO, du calcul différentiel des participants, de la synchronisation calendrier et du schéma Zod.
+
 ## [2.14.0] - 2026-10-06
 
 ### Statuts Individuels d'Assignation, Désassignation Intelligente & Réactivité Dashboard

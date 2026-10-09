@@ -12,9 +12,10 @@ import { MeetingDecisionsCard } from "@/components/meetings/MeetingDecisionsCard
 import { MeetingAiAssistantDrawer } from "@/components/meetings/MeetingAiAssistantDrawer";
 import { MeetingAgendaCard } from "@/components/meetings/MeetingAgendaCard";
 import { MeetingAgendaAssistantDrawer } from "@/components/meetings/MeetingAgendaAssistantDrawer";
+import { MeetingModal, MeetingFormData } from "@/components/meetings/MeetingModal";
 import { generateAndDownloadMeetingPdf } from "@/lib/meetings/meetingPdfGenerator";
 import { ParsedMeetingReport } from "@/lib/meetings/aiReportParser";
-import { Bot, Download, ArrowLeft, Trash2, Save, Calendar, MapPin, CheckCircle } from "lucide-react";
+import { Bot, Download, ArrowLeft, Trash2, Save, Calendar, MapPin, CheckCircle, Pencil } from "lucide-react";
 import { toast } from "sonner";
 
 interface User {
@@ -66,6 +67,7 @@ export default function MeetingDetailPage() {
   const [isAiDrawerOpen, setIsAiDrawerOpen] = useState(false);
   const [isAgendaDrawerOpen, setIsAgendaDrawerOpen] = useState(false);
   const [isExportingPdf, setIsExportingPdf] = useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
 
   const isAdmin = session?.user?.role === "ADMIN";
 
@@ -129,6 +131,34 @@ export default function MeetingDetailPage() {
       }
     } catch {
       toast.error("Erreur lors de la suppression");
+    }
+  };
+
+  const handleSaveMeetingDetails = async (data: MeetingFormData) => {
+    try {
+      const res = await fetch(`/api/meetings/${params.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          title: data.title,
+          scheduledAt: data.scheduledAt,
+          location: data.location || null,
+          objectives: data.objectives || null,
+          status: data.status,
+          attendeeIds: data.attendeeIds,
+        }),
+      });
+
+      if (res.ok) {
+        toast.success("Informations de la réunion mises à jour");
+        setIsEditModalOpen(false);
+        fetchMeeting();
+      } else {
+        const err = await res.json();
+        toast.error(err.error || "Erreur lors de la mise à jour");
+      }
+    } catch {
+      toast.error("Erreur de connexion serveur");
     }
   };
 
@@ -383,6 +413,14 @@ export default function MeetingDetailPage() {
             <option value="DONE">Terminée</option>
           </select>
 
+          <Button
+            variant="outline"
+            onClick={() => setIsEditModalOpen(true)}
+            className="gap-2 text-foreground hover:bg-muted"
+          >
+            <Pencil className="h-4 w-4 text-primary" /> Modifier les infos
+          </Button>
+
           <Button variant="outline" onClick={() => setIsAiDrawerOpen(true)} className="gap-2 text-primary border-primary/30 hover:bg-primary/5">
             <Bot className="h-4 w-4" /> Assistant Compte Rendu
           </Button>
@@ -406,6 +444,7 @@ export default function MeetingDetailPage() {
             meetingId={meeting.id}
             attendees={meeting.attendees}
             onAttendanceChange={handleAttendanceChange}
+            onManageAttendees={() => setIsEditModalOpen(true)}
           />
         </div>
 
@@ -462,6 +501,24 @@ export default function MeetingDetailPage() {
         meeting={meeting}
         users={users}
         onApplyReport={handleApplyAiReport}
+      />
+
+      {/* Modale d'Édition des Informations de la Réunion */}
+      <MeetingModal
+        isOpen={isEditModalOpen}
+        onClose={() => setIsEditModalOpen(false)}
+        onSubmit={handleSaveMeetingDetails}
+        users={users}
+        initialData={{
+          id: meeting.id,
+          title: meeting.title,
+          scheduledAt: meeting.scheduledAt,
+          location: meeting.location,
+          objectives: objectives || meeting.objectives,
+          status: meeting.status,
+          attendeeIds: meeting.attendees.map((a) => a.user.id),
+        }}
+        mode="edit"
       />
     </div>
   );

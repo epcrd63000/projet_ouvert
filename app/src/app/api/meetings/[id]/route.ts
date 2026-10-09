@@ -1,9 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
+import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { requireAuth } from "@/lib/permissions";
 import { updateMeetingSchema } from "@/lib/validations/meeting";
 import { notifyUsers } from "@/lib/notifications";
 import { syncMeetingPreparationTask, deleteMeetingPreparationTask } from "@/lib/meetings/agendaService";
+import { computeAttendeeDiff } from "@/lib/meetings/meetingEditService";
 
 interface RouteParams {
   params: Promise<{ id: string }>;
@@ -89,14 +91,13 @@ export async function PATCH(
     }
 
     if (attendeeIds) {
-      // Fetch existing attendees to preserve their statuses
+      // Récupérer les participants existants pour conserver leurs statuts d'émargement
       const existingAttendees = await prisma.meetingAttendee.findMany({
         where: { meetingId: id }
       });
       
       const existingUserIds = existingAttendees.map(a => a.userId);
-      const toDelete = existingUserIds.filter(userId => !attendeeIds.includes(userId));
-      const toAdd = attendeeIds.filter(userId => !existingUserIds.includes(userId));
+      const { toAdd, toDelete } = computeAttendeeDiff(existingUserIds, attendeeIds);
 
       if (toDelete.length > 0) {
         await prisma.meetingAttendee.deleteMany({
@@ -125,14 +126,22 @@ export async function PATCH(
       },
     });
 
-    // Si la date a changé, mettre à jour l'Event associé dans le calendrier
+    // Mettre à jour l'Event associé dans le calendrier (date, titre, notes)
+    const eventUpdateData: Record<string, unknown> = {};
     if (scheduledAt) {
+      eventUpdateData.startAt = new Date(scheduledAt);
+      eventUpdateData.endAt = new Date(new Date(scheduledAt).getTime() + 60 * 60 * 1000);
+    }
+    if (meetingData.title) {
+      eventUpdateData.title = meetingData.title;
+    }
+    if (meetingData.notes !== undefined) {
+      eventUpdateData.description = meetingData.notes || undefined;
+    }
+    if (Object.keys(eventUpdateData).length > 0) {
       await prisma.event.updateMany({
         where: { relatedMeetingId: id },
-        data: {
-          startAt: new Date(scheduledAt),
-          endAt: new Date(new Date(scheduledAt).getTime() + 60 * 60 * 1000),
-        },
+        data: eventUpdateData,
       });
     }
 
@@ -151,6 +160,13 @@ export async function PATCH(
         });
       }
     }
+
+    // Révalidation instantanée du cache de routage Next.js
+    revalidatePath("/meetings");
+    revalidatePath(`/meetings/${id}`);
+    revalidatePath("/agenda");
+    revalidatePath("/kanban");
+    revalidatePath("/dashboard");
 
     return NextResponse.json(updatedMeeting);
   } catch (error: unknown) {

@@ -4,7 +4,7 @@ import React, { useState } from "react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Check, UserX, Clock, Users } from "lucide-react";
+import { Check, UserX, Clock, Users, UserCheck } from "lucide-react";
 import { toast } from "sonner";
 
 export type AttendanceStatus = "PRESENT" | "EXCUSED" | "ABSENT";
@@ -24,12 +24,14 @@ interface MeetingAttendanceCardProps {
   meetingId: string;
   attendees: AttendeeItem[];
   onAttendanceChange: (attendeeId: string, status: AttendanceStatus) => Promise<void>;
+  onManageAttendees?: () => void;
 }
 
 export function MeetingAttendanceCard({
   meetingId,
   attendees,
   onAttendanceChange,
+  onManageAttendees,
 }: MeetingAttendanceCardProps) {
   const [updatingId, setUpdatingId] = useState<string | null>(null);
 
@@ -53,10 +55,23 @@ export function MeetingAttendanceCard({
     <Card className="shadow-sm">
       <CardHeader className="pb-3 border-b">
         <div className="flex items-center justify-between">
-          <CardTitle className="text-base font-semibold flex items-center gap-2">
-            <Users className="h-4 w-4 text-primary" />
-            Émargement ({attendees.length})
-          </CardTitle>
+          <div className="flex items-center gap-2">
+            <CardTitle className="text-base font-semibold flex items-center gap-2">
+              <Users className="h-4 w-4 text-primary" />
+              Émargement ({attendees.length})
+            </CardTitle>
+            {onManageAttendees && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={onManageAttendees}
+                className="h-6 px-1.5 text-xs text-primary gap-1"
+                title="Modifier les participants de la réunion"
+              >
+                <UserCheck className="h-3 w-3" /> Gérer
+              </Button>
+            )}
+          </div>
           <div className="flex gap-1 text-xs">
             <Badge variant="outline" className="bg-emerald-500/10 text-emerald-600 border-emerald-200">
               {presentCount} Présent{presentCount > 1 ? "s" : ""}

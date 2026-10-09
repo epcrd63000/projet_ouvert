@@ -2,12 +2,16 @@
 
 import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
+import { formatToDateTimeLocal, parseDateTimeLocalToIso } from "@/lib/meetings/meetingEditService";
+import { MeetingModalFields } from "./MeetingModalFields";
+import { MeetingModalAttendeesList } from "./MeetingModalAttendeesList";
 
 export interface MeetingFormData {
+  id?: string;
   title: string;
   scheduledAt: string;
-  location?: string;
-  objectives?: string;
+  location?: string | null;
+  objectives?: string | null;
   status: "PLANNED" | "IN_PROGRESS" | "DONE";
   attendeeIds: string[];
 }
@@ -15,35 +19,72 @@ export interface MeetingFormData {
 interface MeetingModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSubmit: (data: MeetingFormData) => void;
+  onSubmit: (data: MeetingFormData) => Promise<void> | void;
   users: { id: string; name: string }[];
+  initialData?: Partial<MeetingFormData> | null;
+  mode?: "create" | "edit";
 }
 
-export function MeetingModal({ isOpen, onClose, onSubmit, users }: MeetingModalProps) {
+export function MeetingModal({
+  isOpen,
+  onClose,
+  onSubmit,
+  users,
+  initialData,
+  mode = "create",
+}: MeetingModalProps) {
   const [title, setTitle] = useState("");
   const [scheduledAt, setScheduledAt] = useState("");
   const [location, setLocation] = useState("");
   const [objectives, setObjectives] = useState("");
   const [status, setStatus] = useState<"PLANNED" | "IN_PROGRESS" | "DONE">("PLANNED");
   const [attendeeIds, setAttendeeIds] = useState<string[]>([]);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const isEditMode = mode === "edit" || Boolean(initialData?.id);
 
   useEffect(() => {
     if (isOpen) {
-      setTitle("");
-      setScheduledAt("");
-      setLocation("");
-      setObjectives("");
-      setStatus("PLANNED");
-      setAttendeeIds([]);
+      if (initialData) {
+        setTitle(initialData.title || "");
+        setScheduledAt(formatToDateTimeLocal(initialData.scheduledAt));
+        setLocation(initialData.location || "");
+        setObjectives(initialData.objectives || "");
+        setStatus(initialData.status || "PLANNED");
+        setAttendeeIds(initialData.attendeeIds || []);
+      } else {
+        setTitle("");
+        setScheduledAt("");
+        setLocation("");
+        setObjectives("");
+        setStatus("PLANNED");
+        setAttendeeIds([]);
+      }
     }
-  }, [isOpen]);
+  }, [isOpen, initialData]);
 
   if (!isOpen) return null;
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    onSubmit({ title, scheduledAt, location, objectives, status, attendeeIds });
-    onClose();
+    setIsSubmitting(true);
+    try {
+      const isoDate = parseDateTimeLocalToIso(scheduledAt);
+      await onSubmit({
+        id: initialData?.id,
+        title,
+        scheduledAt: isoDate,
+        location,
+        objectives,
+        status,
+        attendeeIds,
+      });
+      onClose();
+    } catch (error) {
+      console.error("Erreur soumission réunion:", error);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const toggleAttendee = (userId: string) => {
@@ -56,89 +97,48 @@ export function MeetingModal({ isOpen, onClose, onSubmit, users }: MeetingModalP
     if (attendeeIds.length === users.length) {
       setAttendeeIds([]);
     } else {
-      setAttendeeIds(users.map(u => u.id));
+      setAttendeeIds(users.map((u) => u.id));
     }
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-      <div className="w-full max-w-md rounded-lg bg-background p-6 shadow-lg">
-        <h2 className="mb-4 text-xl font-bold">Nouvelle Réunion</h2>
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+      <div className="w-full max-w-lg rounded-xl bg-background p-6 shadow-xl border">
+        <h2 className="mb-4 text-xl font-bold flex items-center gap-2">
+          {isEditMode ? "Modifier la réunion" : "Nouvelle réunion"}
+        </h2>
         <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium">Titre</label>
-            <input
-              type="text"
-              required
-              className="w-full rounded-md border p-2"
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-            />
-          </div>
+          <MeetingModalFields
+            title={title}
+            onTitleChange={setTitle}
+            scheduledAt={scheduledAt}
+            onScheduledAtChange={setScheduledAt}
+            status={status}
+            onStatusChange={setStatus}
+            location={location}
+            onLocationChange={setLocation}
+            objectives={objectives}
+            onObjectivesChange={setObjectives}
+          />
 
-          <div>
-            <label className="block text-sm font-medium">Lieu</label>
-            <input
-              type="text"
-              className="w-full rounded-md border p-2"
-              value={location}
-              onChange={(e) => setLocation(e.target.value)}
-              placeholder="Ex: Salle 301, Visioconférence..."
-            />
-          </div>
+          <MeetingModalAttendeesList
+            users={users}
+            selectedAttendeeIds={attendeeIds}
+            onToggleAttendee={toggleAttendee}
+            onToggleAll={toggleAllAttendees}
+          />
 
-          <div>
-            <label className="block text-sm font-medium">Objectifs</label>
-            <textarea
-              className="w-full rounded-md border p-2"
-              rows={3}
-              value={objectives}
-              onChange={(e) => setObjectives(e.target.value)}
-              placeholder="Ex: Validation du sprint, points bloquants..."
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium">Date et heure</label>
-            <input
-              type="datetime-local"
-              required
-              className="w-full rounded-md border p-2"
-              value={scheduledAt}
-              onChange={(e) => setScheduledAt(e.target.value)}
-            />
-          </div>
-
-          <div>
-            <div className="flex items-center justify-between mb-1">
-              <label className="block text-sm font-medium">Participants</label>
-              <button 
-                type="button" 
-                onClick={toggleAllAttendees}
-                className="text-xs text-blue-500 hover:underline"
-              >
-                {attendeeIds.length === users.length ? "Tout désélectionner" : "Tout sélectionner"}
-              </button>
-            </div>
-            <div className="max-h-32 overflow-y-auto rounded-md border p-2 space-y-1">
-              {users.map((user) => (
-                <label key={user.id} className="flex items-center gap-2 text-sm cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={attendeeIds.includes(user.id)}
-                    onChange={() => toggleAttendee(user.id)}
-                  />
-                  {user.name}
-                </label>
-              ))}
-            </div>
-          </div>
-
-          <div className="flex justify-end gap-2 pt-4">
-            <Button type="button" variant="outline" onClick={onClose}>
+          <div className="flex justify-end gap-2 pt-2 border-t">
+            <Button type="button" variant="outline" size="sm" onClick={onClose} disabled={isSubmitting}>
               Annuler
             </Button>
-            <Button type="submit">Créer</Button>
+            <Button type="submit" size="sm" disabled={isSubmitting}>
+              {isSubmitting
+                ? "Enregistrement..."
+                : isEditMode
+                ? "Enregistrer les modifications"
+                : "Créer la réunion"}
+            </Button>
           </div>
         </form>
       </div>
