@@ -7,8 +7,22 @@ import { normalizeUrl, fetchGoogleFavicon } from "@/components/links/linkUtils";
 export const dynamic = "force-dynamic";
 
 const createLinkSchema = z.object({
-  title: z.string().min(1, "Le titre est requis"),
-  url: z.string().min(1, "L'URL est requise"),
+  title: z.string().trim().min(1, "Le titre est requis"),
+  url: z
+    .string()
+    .trim()
+    .min(1, "L'URL est requise")
+    .refine((value) => {
+      try {
+        const parsedUrl = new URL(normalizeUrl(value));
+        return (
+          (parsedUrl.protocol === "http:" || parsedUrl.protocol === "https:") &&
+          !!parsedUrl.hostname
+        );
+      } catch {
+        return false;
+      }
+    }, "Saisissez une URL valide (http:// ou https://)."),
   category: z.string().optional().default("Général"),
   description: z.string().nullable().optional(),
   imageUrl: z.string().nullable().optional(),

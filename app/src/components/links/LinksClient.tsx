@@ -8,6 +8,25 @@ import { LinkToolbar } from "./LinkToolbar";
 import { LinkCard } from "./LinkCard";
 import { LinkModal } from "./LinkModal";
 import { Link as LinkIcon } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+
+async function getResponseError(response: Response, fallback: string) {
+  const body = (await response.json().catch(() => null)) as
+    | { error?: unknown }
+    | null;
+  if (typeof body?.error === "string" && body.error.trim()) {
+    return body.error;
+  }
+  return `${fallback} (HTTP ${response.status})`;
+}
 
 interface LinksClientProps {
   initialLinks: ProjectLinkItem[];
@@ -24,6 +43,8 @@ export function LinksClient({ initialLinks }: LinksClientProps) {
   const [isEditMode, setIsEditMode] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingLink, setEditingLink] = useState<ProjectLinkItem | null>(null);
+  const [pendingDelete, setPendingDelete] = useState<ProjectLinkItem | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const categories = useMemo(() => {
     const set = new Set<string>();
@@ -51,43 +72,50 @@ export function LinksClient({ initialLinks }: LinksClientProps) {
   }, [filteredLinks]);
 
   const handleSave = async (data: LinkFormData, id?: string) => {
-    try {
-      if (id) {
-        const res = await fetch(`/api/links/${id}`, {
-          method: "PATCH",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(data),
-        });
-        if (!res.ok) throw new Error("Erreur de mise à jour");
-        const updated = await res.json();
-        setLinks((prev) => prev.map((item) => (item.id === id ? updated : item)));
-        toast.success("Lien mis à jour avec succès");
-      } else {
-        const res = await fetch("/api/links", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(data),
-        });
-        if (!res.ok) throw new Error("Erreur de création");
-        const created = await res.json();
-        setLinks((prev) => [created, ...prev]);
-        toast.success("Nouveau lien ajouté");
-      }
-    } catch (err: any) {
-      toast.error(err.message || "Une erreur est survenue");
-      throw err;
+    const isEditing = !!id;
+    const res = await fetch(isEditing ? `/api/links/${id}` : "/api/links", {
+      method: isEditing ? "PATCH" : "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(data),
+    });
+    if (!res.ok) {
+      throw new Error(
+        await getResponseError(
+          res,
+          isEditing ? "Erreur lors de la mise à jour du lien" : "Erreur lors de la création du lien"
+        )
+      );
+    }
+    const savedLink: ProjectLinkItem = await res.json();
+    if (isEditing) {
+      setLinks((prev) => prev.map((item) => (item.id === id ? savedLink : item)));
+      toast.success("Lien mis à jour avec succès");
+    } else {
+      setLinks((prev) => [savedLink, ...prev]);
+      toast.success("Nouveau lien ajouté");
     }
   };
 
-  const handleDelete = async (id: string) => {
-    if (!confirm("Voulez-vous vraiment supprimer ce lien ?")) return;
+  const handleDelete = (id: string) => {
+    const link = links.find((item) => item.id === id);
+    if (link) setPendingDelete(link);
+  };
+
+  const confirmDelete = async () => {
+    if (!pendingDelete) return;
+    setIsDeleting(true);
     try {
-      const res = await fetch(`/api/links/${id}`, { method: "DELETE" });
-      if (!res.ok) throw new Error("Erreur de suppression");
-      setLinks((prev) => prev.filter((l) => l.id !== id));
+      const res = await fetch(`/api/links/${pendingDelete.id}`, { method: "DELETE" });
+      if (!res.ok) {
+        throw new Error(await getResponseError(res, "Erreur lors de la suppression du lien"));
+      }
+      setLinks((prev) => prev.filter((link) => link.id !== pendingDelete.id));
       toast.success("Lien supprimé");
-    } catch (err: any) {
-      toast.error(err.message || "Erreur de suppression");
+      setPendingDelete(null);
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Erreur lors de la suppression du lien");
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -191,6 +219,42 @@ export function LinksClient({ initialLinks }: LinksClientProps) {
         editingLink={editingLink}
         existingCategories={categories}
       />
+
+      <Dialog
+        open={!!pendingDelete}
+        onOpenChange={(open) => {
+          if (!open && !isDeleting) setPendingDelete(null);
+        }}
+      >
+        <DialogContent className="max-w-md rounded-2xl border-border bg-card">
+          <DialogHeader className="pr-8">
+            <DialogTitle>Supprimer ce lien ?</DialogTitle>
+            <DialogDescription>
+              {pendingDelete
+                ? `« ${pendingDelete.title} » sera supprimé définitivement de la liste.`
+                : ""}
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setPendingDelete(null)}
+              disabled={isDeleting}
+            >
+              Annuler
+            </Button>
+            <Button
+              type="button"
+              variant="destructive"
+              onClick={confirmDelete}
+              disabled={isDeleting}
+            >
+              {isDeleting ? "Suppression…" : "Supprimer"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
