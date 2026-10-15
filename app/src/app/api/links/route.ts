@@ -187,11 +187,6 @@ export async function POST(request: NextRequest) {
         projectId: project?.id || null,
         createdById: session.user.id || null,
       },
-      include: {
-        createdBy: {
-          select: { id: true, name: true, email: true },
-        },
-      },
     });
 
     console.info("POST /api/links succeeded", {
