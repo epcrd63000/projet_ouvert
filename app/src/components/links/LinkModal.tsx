@@ -1,9 +1,15 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { X, Image as ImageIcon, Globe, Loader2, Sparkles, Pin } from "lucide-react";
+import { Globe, Loader2, Sparkles, Pin } from "lucide-react";
 import { LinkFormData, ProjectLinkItem, DEFAULT_LINK_CATEGORIES } from "./linkTypes";
 import { fetchGoogleFavicon, normalizeUrl } from "./linkUtils";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 interface LinkModalProps {
   isOpen: boolean;
@@ -32,6 +38,9 @@ export function LinkModal({
   const [imageUrl, setImageUrl] = useState("");
   const [isPinned, setIsPinned] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState("");
+  const [titleError, setTitleError] = useState("");
+  const [urlError, setUrlError] = useState("");
 
   // Synchronisation avec le lien sélectionné pour édition
   useEffect(() => {
@@ -56,6 +65,14 @@ export function LinkModal({
     }
   }, [editingLink, isOpen]);
 
+  useEffect(() => {
+    if (isOpen) {
+      setSubmitError("");
+      setTitleError("");
+      setUrlError("");
+    }
+  }, [isOpen]);
+
   // Récupération automatique du favicon au blur du champ URL
   const handleUrlBlur = () => {
     if (url.trim() && !imageUrl.trim()) {
@@ -70,7 +87,24 @@ export function LinkModal({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setSubmitError("");
+    setTitleError("");
+    setUrlError("");
+    if (!title.trim()) setTitleError("Le titre est requis.");
+    if (!url.trim()) setUrlError("L’URL de destination est requise.");
     if (!title.trim() || !url.trim()) return;
+
+    let parsedUrl: URL;
+    try {
+      parsedUrl = new URL(normalizeUrl(url));
+    } catch {
+      setUrlError("Saisissez une URL valide, par exemple https://exemple.fr.");
+      return;
+    }
+    if (parsedUrl.protocol !== "http:" && parsedUrl.protocol !== "https:") {
+      setUrlError("L’URL doit commencer par http:// ou https://.");
+      return;
+    }
 
     setIsSubmitting(true);
     try {
@@ -93,6 +127,12 @@ export function LinkModal({
         editingLink ? editingLink.id : undefined
       );
       onClose();
+    } catch (error) {
+      setSubmitError(
+        error instanceof Error
+          ? error.message
+          : "Une erreur est survenue pendant l’enregistrement du lien."
+      );
     } finally {
       setIsSubmitting(false);
     }
@@ -101,45 +141,64 @@ export function LinkModal({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-background/80 backdrop-blur-sm animate-in fade-in-0">
-      <div className="w-full max-w-lg bg-card border border-border rounded-2xl shadow-xl overflow-hidden animate-in zoom-in-95">
-        <div className="flex items-center justify-between p-5 border-b border-border">
-          <h3 className="font-semibold text-lg text-foreground flex items-center gap-2">
+    <Dialog
+      open={isOpen}
+      onOpenChange={(open) => {
+        if (!open && !isSubmitting) onClose();
+      }}
+    >
+      <DialogContent className="max-h-[90vh] max-w-2xl overflow-y-auto rounded-2xl border-border bg-card p-0">
+        <DialogHeader className="border-b border-border p-5">
+          <DialogTitle className="flex items-center gap-2 pr-8 text-lg font-semibold text-foreground">
             <Sparkles className="w-5 h-5 text-primary" />
             {editingLink ? "Modifier le lien" : "Ajouter un nouveau lien"}
-          </h3>
-          <button
-            onClick={onClose}
-            className="p-1.5 rounded-lg text-muted-foreground hover:bg-muted hover:text-foreground"
-          >
-            <X className="w-5 h-5" />
-          </button>
-        </div>
+          </DialogTitle>
+        </DialogHeader>
 
-        <form onSubmit={handleSubmit} className="p-5 space-y-4">
+        <form onSubmit={handleSubmit} noValidate className="space-y-4 p-5">
+          {submitError && (
+            <div
+              role="alert"
+              className="rounded-xl border border-destructive/30 bg-destructive/10 px-3 py-2.5 text-sm text-destructive"
+            >
+              {submitError}
+            </div>
+          )}
           <div>
-            <label className="block text-xs font-medium text-foreground mb-1.5">Titre du lien *</label>
+            <label htmlFor="link-title" className="mb-1.5 block text-xs font-medium text-foreground">Titre du lien *</label>
             <input
+              id="link-title"
               type="text"
-              required
+              maxLength={200}
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               placeholder="Ex: Min-imoca-26-27, GitHub, Trello..."
-              className="w-full px-3 py-2 rounded-xl border border-input bg-background text-sm focus:outline-hidden focus:ring-2 focus:ring-primary/40"
+              aria-invalid={!!titleError}
+              aria-describedby={titleError ? "link-title-error" : undefined}
+              className="w-full rounded-xl border border-input bg-background px-3 py-2 text-sm focus:outline-hidden focus:ring-2 focus:ring-primary/40"
             />
+            {titleError && <p id="link-title-error" className="mt-1.5 text-xs text-destructive">{titleError}</p>}
           </div>
 
           <div>
-            <label className="block text-xs font-medium text-foreground mb-1.5">URL de destination *</label>
+            <label htmlFor="link-url" className="mb-1.5 block text-xs font-medium text-foreground">URL de destination *</label>
             <input
+              id="link-url"
               type="text"
-              required
+              inputMode="url"
+              autoComplete="url"
               value={url}
-              onChange={(e) => setUrl(e.target.value)}
+              onChange={(e) => {
+                setUrl(e.target.value);
+                setUrlError("");
+              }}
               onBlur={handleUrlBlur}
               placeholder="https://..."
-              className="w-full px-3 py-2 rounded-xl border border-input bg-background text-sm focus:outline-hidden focus:ring-2 focus:ring-primary/40"
+              aria-invalid={!!urlError}
+              aria-describedby={urlError ? "link-url-error" : undefined}
+              className="w-full rounded-xl border border-input bg-background px-3 py-2 text-sm focus:outline-hidden focus:ring-2 focus:ring-primary/40"
             />
+            {urlError && <p id="link-url-error" className="mt-1.5 text-xs text-destructive">{urlError}</p>}
           </div>
 
           <div>
@@ -152,7 +211,7 @@ export function LinkModal({
                   value={customCategory}
                   onChange={(e) => setCustomCategory(e.target.value)}
                   placeholder="Nom de la nouvelle catégorie..."
-                  className="flex-1 px-3 py-2 rounded-xl border border-input bg-background text-sm focus:outline-hidden focus:ring-2 focus:ring-primary/40"
+                  className="flex-1 rounded-xl border border-input bg-background px-3 py-2 text-sm focus:outline-hidden focus:ring-2 focus:ring-primary/40"
                 />
                 <button
                   type="button"
@@ -172,7 +231,7 @@ export function LinkModal({
                     setCategory(e.target.value);
                   }
                 }}
-                className="w-full px-3 py-2 rounded-xl border border-input bg-background text-sm focus:outline-hidden focus:ring-2 focus:ring-primary/40"
+                className="w-full rounded-xl border border-input bg-background px-3 py-2 text-sm focus:outline-hidden focus:ring-2 focus:ring-primary/40"
               >
                 {allCategories.map((c) => (
                   <option key={c} value={c}>
@@ -185,13 +244,15 @@ export function LinkModal({
           </div>
 
           <div>
-            <label className="block text-xs font-medium text-foreground mb-1.5">Description optionnelle</label>
+            <label htmlFor="link-description" className="mb-1.5 block text-xs font-medium text-foreground">Description optionnelle</label>
             <input
+              id="link-description"
               type="text"
+              maxLength={500}
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               placeholder="Courte note ou rappel sur la ressource..."
-              className="w-full px-3 py-2 rounded-xl border border-input bg-background text-sm focus:outline-hidden focus:ring-2 focus:ring-primary/40"
+              className="w-full rounded-xl border border-input bg-background px-3 py-2 text-sm focus:outline-hidden focus:ring-2 focus:ring-primary/40"
             />
           </div>
 
@@ -206,11 +267,12 @@ export function LinkModal({
                 )}
               </div>
               <input
+                aria-label="URL de l’icône ou du favicon"
                 type="url"
                 value={imageUrl}
                 onChange={(e) => setImageUrl(e.target.value)}
                 placeholder="URL du logo/favicon..."
-                className="flex-1 px-3 py-2 rounded-xl border border-input bg-background text-sm focus:outline-hidden focus:ring-2 focus:ring-primary/40"
+                className="flex-1 rounded-xl border border-input bg-background px-3 py-2 text-sm focus:outline-hidden focus:ring-2 focus:ring-primary/40"
               />
             </div>
           </div>
@@ -229,7 +291,7 @@ export function LinkModal({
             </label>
           </div>
 
-          <div className="flex items-center justify-end gap-2 pt-3 border-t border-border">
+          <div className="flex items-center justify-end gap-2 border-t border-border pt-3">
             <button
               type="button"
               onClick={onClose}
@@ -248,7 +310,7 @@ export function LinkModal({
             </button>
           </div>
         </form>
-      </div>
-    </div>
+      </DialogContent>
+    </Dialog>
   );
 }
