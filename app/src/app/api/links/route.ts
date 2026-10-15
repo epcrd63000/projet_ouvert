@@ -1,10 +1,31 @@
 import { NextRequest, NextResponse } from "next/server";
+import { Prisma } from "@prisma/client";
 import prisma from "@/lib/prisma";
 import { requireAuth } from "@/lib/permissions";
 import { z } from "zod";
 import { normalizeUrl, fetchGoogleFavicon } from "@/components/links/linkUtils";
 
 export const dynamic = "force-dynamic";
+
+function getLinkCreationErrorMessage(error: unknown): string {
+  if (!(error instanceof Prisma.PrismaClientKnownRequestError)) {
+    return "Le serveur n’a pas pu enregistrer le lien. Réessayez ou contactez l’administrateur.";
+  }
+
+  switch (error.code) {
+    case "P2002":
+      return "Un lien avec ces informations existe déjà. Actualisez la page et réessayez.";
+    case "P2003":
+      return "Le projet ou le compte associé au lien est introuvable. Actualisez la page et réessayez.";
+    case "P2021":
+    case "P2022":
+      return "La base de données n’est pas à jour avec cette version. Contactez l’administrateur pour synchroniser le schéma.";
+    case "P2024":
+      return "La base de données est temporairement indisponible. Réessayez dans quelques instants.";
+    default:
+      return `La base de données a refusé la création du lien (code ${error.code}). Contactez l’administrateur.`;
+  }
+}
 
 const createLinkSchema = z.object({
   title: z.string().trim().min(1, "Le titre est requis"),
@@ -106,6 +127,9 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(newLink, { status: 201 });
   } catch (error) {
     console.error("Erreur POST /api/links:", error);
-    return NextResponse.json({ error: "Erreur lors de la création du lien" }, { status: 500 });
+    return NextResponse.json(
+      { error: getLinkCreationErrorMessage(error) },
+      { status: 500 }
+    );
   }
 }
