@@ -20,10 +20,14 @@ import { Button } from "@/components/ui/button";
 
 async function getResponseError(response: Response, fallback: string) {
   const body = (await response.json().catch(() => null)) as
-    | { error?: unknown }
+    | { error?: unknown; requestId?: unknown }
     | null;
   if (typeof body?.error === "string" && body.error.trim()) {
-    return body.error;
+    const reference =
+      typeof body.requestId === "string" && body.requestId.trim()
+        ? ` (référence : ${body.requestId})`
+        : "";
+    return `${body.error}${reference}`;
   }
   return `${fallback} (HTTP ${response.status})`;
 }

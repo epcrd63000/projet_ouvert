@@ -203,7 +203,7 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     logLinkCreationFailure(requestId, stage, error);
     return jsonWithRequestId(
-      { error: getLinkCreationErrorMessage(error) },
+      { error: getLinkCreationErrorMessage(error), requestId },
       500,
       requestId
     );
