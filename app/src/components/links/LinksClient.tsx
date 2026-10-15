@@ -92,7 +92,11 @@ export function LinksClient({ initialLinks }: LinksClientProps) {
     }
     const savedLink: ProjectLinkItem = await res.json();
     if (isEditing) {
-      setLinks((prev) => prev.map((item) => (item.id === id ? savedLink : item)));
+      setLinks((prev) =>
+        prev.map((item) =>
+          item.id === id ? { ...item, ...savedLink } : item
+        )
+      );
       toast.success("Lien mis à jour avec succès");
     } else {
       setLinks((prev) => [savedLink, ...prev]);

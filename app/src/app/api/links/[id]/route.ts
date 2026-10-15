@@ -57,11 +57,6 @@ export async function PATCH(
     const updated = await prisma.projectLink.update({
       where: { id: params.id },
       data: dataToUpdate,
-      include: {
-        createdBy: {
-          select: { id: true, name: true, email: true },
-        },
-      },
     });
 
     return NextResponse.json(updated);
