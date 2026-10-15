@@ -9,6 +9,7 @@ import {
   Bell,
   Settings,
   BookOpen,
+  Link2,
 } from "lucide-react";
 
 /**
@@ -27,6 +28,7 @@ export interface NavItem {
 export const NAV_ITEMS: NavItem[] = [
   { href: "/dashboard", label: "Tableau de bord", icon: LayoutDashboard },
   { href: "/infos", label: "Infos Importantes", icon: BookOpen },
+  { href: "/links", label: "Liens Utiles", icon: Link2 },
   { href: "/kanban", label: "Mes Tâches", icon: CheckSquare },
   { href: "/meetings", label: "Réunions", icon: Users },
   { href: "/agenda", label: "Agenda", icon: CalendarDays },

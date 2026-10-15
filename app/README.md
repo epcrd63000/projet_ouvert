@@ -17,8 +17,8 @@ Plateforme collaborative de gestion et de suivi de projet pour l'équipe IMT CI1
 ```text
 app/
 ├── prisma/
-│   ├── schema.prisma           # Schéma Prisma (11 modèles, 10 énumérations)
-│   ├── seed-data.ts            # Données initiales (6 utilisateurs, 11 jalons Gantt)
+│   ├── schema.prisma           # Schéma Prisma (12 modèles dont ProjectLink, 10 énumérations)
+│   ├── seed-data.ts            # Données initiales (6 utilisateurs, 11 jalons Gantt, liens officiels)
 │   ├── seed.ts                 # Script de seed idempotent avec hash bcrypt
 │   └── verify-db.ts            # Script de contrôle de conformité automatisé
 ├── src/
@@ -29,11 +29,14 @@ app/
 │   │   ├── (auth)/             # Groupe de routes publiques (connexion)
 │   │   │   ├── layout.tsx
 │   │   │   └── login/page.tsx  # Interface de connexion interactive (Suspense, Alert, Quick login)
-│   │   ├── (protected)/        # Groupe de routes protégées (tableau de bord)
+│   │   ├── (protected)/        # Groupe de routes protégées (dashboard, liens, tâches, etc.)
 │   │   │   ├── layout.tsx
-│   │   │   └── dashboard/page.tsx # Tableau de bord avec profil utilisateur et déconnexion
-│   │   ├── api/                # Points d'entrée d'API (santé, NextAuth)
+│   │   │   ├── dashboard/page.tsx # Tableau de bord avec profil utilisateur et déconnexion
+│   │   │   └── links/page.tsx     # Page dédiée aux Liens Utiles du projet
+│   │   ├── api/                # Points d'entrée d'API (santé, NextAuth, liens, tâches, etc.)
 │   │   │   ├── health/route.ts
+│   │   │   ├── links/route.ts      # CRUD Liens utiles (GET, POST)
+│   │   │   ├── links/[id]/route.ts # CRUD Liens utiles (PATCH, DELETE)
 │   │   │   └── auth/[...nextauth]/route.ts # Handlers API GET/POST NextAuth v5
 │   │   ├── globals.css         # Directives Tailwind et variables HSL
 │   │   ├── layout.tsx          # Layout racine HTML & Providers
@@ -42,6 +45,7 @@ app/
 │   │   ├── not-found.tsx       # Page 404 conviviale
 │   │   └── error.tsx           # Frontière de capture des erreurs
 │   ├── components/
+│   │   ├── links/              # Composants modulaires des liens (Cards, Modal, Toolbar, Client)
 │   │   ├── providers.tsx       # Enveloppe client NextThemesProvider
 │   │   └── ui/                 # Primitives shadcn (Button, Input, Card, Label, Alert, Badge)
 │   └── lib/

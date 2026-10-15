@@ -117,6 +117,7 @@ model User {
   createdEvents       Event[]           @relation("EventCreator")
   fundingSources      FundingSource[]   @relation("FundingCreator")
   activityLogs        UserActivityLog[]
+  createdLinks        ProjectLink[]     @relation("LinkCreator")
 }
 
 model Project {
@@ -133,6 +134,7 @@ model Project {
   budgets        BudgetEntry[]
   fundingSources FundingSource[]
   events         Event[]
+  links          ProjectLink[]
 }
 
 model Task {
@@ -384,3 +386,24 @@ model UserActivityLog {
   @@index([userId, createdAt])
   @@index([createdAt])
 }
+
+model ProjectLink {
+  id          String    @id @default(uuid())
+  projectId   String?
+  createdById String?
+  title       String
+  url         String
+  category    String    @default("Général")
+  description String?
+  imageUrl    String?
+  order       Int       @default(0)
+  isPinned    Boolean   @default(false)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  project     Project?  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  createdBy   User?     @relation("LinkCreator", fields: [createdById], references: [id], onDelete: SetNull)
+
+  @@index([category])
+  @@index([isPinned])
+}
+

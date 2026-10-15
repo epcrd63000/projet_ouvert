@@ -1,5 +1,18 @@
 # Journal des Modifications (CHANGELOG)
 
+## [2.16.0] - 2026-10-15
+
+### Ajouté : Nouvel Onglet « Liens Utiles » (`/links`) & Architecture Modulaire
+- **Intégration d'un Espace Centralisé pour les Ressources & Liens Rapides du Projet** :
+  - **Vue Centralisée & Grille Responsive (`/links`, `LinksClient.tsx`, `LinkCard.tsx`)** : Page dédiée avec affichage sous forme de cartes élégantes, aperçu automatique des favicons haute résolution via Google Favicon V2, badges de catégories et ouverture externe sécurisée (`target="_blank"`).
+  - **Mode Gestion & Épinglage** : Bascule fluide en mode édition pour modifier, épingler en tête de liste ou supprimer des ressources en 1 clic avec alertes Sonner.
+  - **Recherche & Filtres par Pilules (`LinkToolbar.tsx`)** : Recherche instantanée multi-critères (titre, URL, description) et filtrage direct par catégorie avec compteurs d'éléments.
+  - **Formulaire Modal Avancé (`LinkModal.tsx`)** : Auto-complétion du favicon au blur du champ URL et prise en charge de catégories sur-mesure à la volée.
+  - **Table PostgreSQL Neon & Prisma (`ProjectLink`)** : Schéma relationnel avec index sur `category` et `isPinned`, sans impact sur la configuration d'authentification de production.
+  - **API REST Serverless (`/api/links`, `/api/links/[id]`)** : Endpoints CRUD conformes au driver HTTP Neon pour éliminer tout risque de blocage réseau ou websocket.
+  - **Lien Initial Préchargé** : Intégration et persistance du dossier Google Drive officiel `"Min-imoca-26-27"` (`https://drive.google.com/drive/folders/1akw0okvT7NpMaIfZV0QcKd0NATUXsDJm?usp=drive_link`).
+  - **Tests Unitaires TDD (`13_links_logic.test.ts`)** : 100% de validation des règles de normalisation d'URL, extraction de favicons, partitionnement par catégorie et tri.
+
 ## [2.15.1] - 2026-10-09
 
 ### Correctif de Compatibilité Serveur Neon HTTP (Résolution de l'« Erreur serveur » en Modification de Réunion)

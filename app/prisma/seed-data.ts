@@ -173,3 +173,20 @@ Pour chaque action validée, ajoute une ligne STRICTEMENT selon le format suivan
     content: "Nous concevons des composants pour le 'Voilier MINIMOCA'. Analyse la proposition technique suivante et liste les risques potentiels (mécaniques, électroniques, environnementaux, ou de coûts). Propose des stratégies d'atténuation pour chaque risque identifié.",
   }
 ];
+
+/**
+ * Liens utiles officiels et ressources clés pré-chargées pour le projet.
+ */
+export const SEED_LINKS = [
+  {
+    id: "link-minimoca-drive-01",
+    title: "Min-imoca-26-27",
+    url: "https://drive.google.com/drive/folders/1akw0okvT7NpMaIfZV0QcKd0NATUXsDJm?usp=drive_link",
+    category: "Drive & Documents",
+    description: "Dossier Google Drive officiel du projet Min-imoca 26-27",
+    imageUrl: "https://t3.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=https%3A%2F%2Fdrive.google.com&size=128",
+    isPinned: true,
+    order: 0,
+  },
+];
+

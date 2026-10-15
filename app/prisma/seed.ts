@@ -1,6 +1,6 @@
 import prisma from "../src/lib/prisma";
 import bcrypt from "bcryptjs";
-import { SEED_PROJECT, SEED_USERS, SEED_MILESTONES, SEED_AI_PROMPTS } from "./seed-data";
+import { SEED_PROJECT, SEED_USERS, SEED_MILESTONES, SEED_AI_PROMPTS, SEED_LINKS } from "./seed-data";
 
 /**
  * Script d'initialisation et de peuplement idempotent de la base Neon PostgreSQL.
@@ -110,11 +110,41 @@ async function main() {
   }
   console.log("     ✓ Modèles IA synchronisés.");
 
-  // 6. Validation finale des volumes
+  // 6. Peuplement idempotent des liens utiles (Google Drive, outils, etc.)
+  console.log("  🔗 Enregistrement des liens utiles officiels...");
+  for (const link of SEED_LINKS) {
+    await prisma.projectLink.upsert({
+      where: { id: link.id },
+      update: {
+        title: link.title,
+        url: link.url,
+        category: link.category,
+        description: link.description,
+        imageUrl: link.imageUrl,
+        isPinned: link.isPinned,
+        order: link.order,
+      },
+      create: {
+        id: link.id,
+        projectId: SEED_PROJECT.id,
+        title: link.title,
+        url: link.url,
+        category: link.category,
+        description: link.description,
+        imageUrl: link.imageUrl,
+        isPinned: link.isPinned,
+        order: link.order,
+      },
+    });
+    console.log(`     - [${link.category}] ${link.title} -> ${link.url}`);
+  }
+
+  // 7. Validation finale des volumes
   const userCount = await prisma.user.count();
   const milestoneCount = await prisma.ganttMilestone.count();
   const aiPromptCount = await prisma.aiPrompt.count();
-  console.log(`\n📊 Bilan : ${userCount} utilisateurs / 6, ${milestoneCount} jalons / 11, ${aiPromptCount} modèles IA / 3.`);
+  const linkCount = await prisma.projectLink.count();
+  console.log(`\n📊 Bilan : ${userCount} utilisateurs / 6, ${milestoneCount} jalons / 11, ${aiPromptCount} modèles IA / 3, ${linkCount} liens utiles.`);
 
   if (userCount !== 6 || milestoneCount !== 11 || aiPromptCount < 3) {
     throw new Error(

@@ -1,5 +1,18 @@
 # Changelog
 
+## [2.13.0] - 2026-10-15
+
+### Ajouté
+- **Nouvel Onglet Liens Utiles (`/links`) & Architecture Modulaire (`src/components/links`)** :
+  - **Vue Centralisée des Liens du Projet** : Page dédiée avec grille responsive de cartes interactives, aperçu automatique des favicons haute résolution (Google Favicon V2), badges de catégorie et ouverture externe sécurisée (`target="_blank"`, `rel="noopener noreferrer"`).
+  - **Mode Gestion & Épinglage** : Bascule fluide en mode édition pour ajouter, modifier, épingler en tête de liste ou supprimer des liens avec notifications Sonner.
+  - **Filtrage & Recherche Instantanée (`LinkToolbar.tsx`)** : Barre de recherche multi-critères (titre, URL, description) et filtrage par pilules de catégories ("Général", "Drive & Documents", "Code & Dépôts", etc.) avec compteurs dynamiques.
+  - **Dialogue Modale d'Ajout / Édition (`LinkModal.tsx`)** : Formulaire moderne avec auto-complétion du favicon au blur du champ URL, prévisualisation immédiate et création de catégories personnalisées à la volée.
+  - **Persistance Base de Données PostgreSQL Neon (`ProjectLink`)** : Modèle Prisma indexé sur `category` et `isPinned`, lié au projet IMT et à l'utilisateur créateur.
+  - **Endpoints API REST (`/api/links`, `/api/links/[id]`)** : Routes sécurisées GET, POST, PATCH et DELETE avec validation Zod et normalisation systématique des URLs.
+  - **Lien Initial Préchargé** : Intégration et persistance du dossier Google Drive officiel `"Min-imoca-26-27"` (`https://drive.google.com/drive/folders/1akw0okvT7NpMaIfZV0QcKd0NATUXsDJm?usp=drive_link`).
+  - **Tests Unitaires TDD (`13_links_logic.test.ts`)** : Validation rigoureuse de la normalisation d'URL, de la génération de favicon, du partitionnement par catégorie et du tri des favoris épinglés.
+
 ## [2.12.1] - 2026-10-06
 
 ### Corrigé & Optimisé
