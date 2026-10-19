@@ -1,5 +1,13 @@
 # Journal des Modifications (CHANGELOG)
 
+## [2.16.1] - 2026-10-19
+
+### Amélioration : Simplification du Message de Partage d'Ordre du Jour (`formatDiscordAnnouncement`)
+- **Format Épuré de Convocation (`agendaService.ts`)** :
+  - Allègement du template de message copié pour WhatsApp/Discord (suppression des emojis décoratifs et des séparateurs Markdown pour un rendu net et concis).
+  - Gestion du repli par défaut `"à confirmer"` pour le lieu lorsque celui-ci est omis.
+  - Mise à jour et validation de la suite de tests unitaires TDD (`07_meeting_agenda_logic.test.ts`).
+
 ## [2.16.0] - 2026-10-15
 
 ### Ajouté : Nouvel Onglet « Liens Utiles » (`/links`) & Architecture Modulaire

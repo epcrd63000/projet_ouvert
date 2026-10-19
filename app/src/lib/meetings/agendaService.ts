@@ -71,18 +71,19 @@ export function formatDiscordAnnouncement(
     dateStyle: "full",
     timeStyle: "short",
   });
-  const participants = meeting.attendees.map((a) => a.user.name).join(", ") || "Équipe Voilier MINIMOCA";
+  const location = meeting.location || "à confirmer";
+  const participants =
+    meeting.attendees.map((a) => a.user.name).join(", ") || "Équipe Voilier MINIMOCA";
 
-  return `📢 **CONVOCATION & ORDRE DU JOUR : ${meeting.title}**
+  return `**CONVOCATION & ORDRE DU JOUR : ${meeting.title}**
 
-📅 **Date & Heure** : ${dateFormatted}
-📍 **Lieu** : ${meeting.location || "Salle de projet / FabLab"}
-👥 **Participants convoqués** : ${participants}
+**Date & Heure** : ${dateFormatted}
+**Lieu** : ${location}
+**Participants convoqués** : ${participants}
 
----
 ${agendaMarkdown.trim()}
----
-💡 *Pensez à consulter vos tâches et apporter vos livrables. À très vite !*`;
+
+*Pensez à consulter vos tâches et apporter vos livrables. À très vite !*`;
 }
 
 /**

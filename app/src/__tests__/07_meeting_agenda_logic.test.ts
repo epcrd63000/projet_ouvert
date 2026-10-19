@@ -66,11 +66,16 @@ function runAgendaLogicTests() {
 
   const announcement = formatDiscordAnnouncement(mockMeeting, sampleAgendaMarkdown);
 
-  assertTrue(announcement.includes("📢 **CONVOCATION & ORDRE DU JOUR"), "Doit comporter l'en-tête officiel de convocation");
+  assertTrue(announcement.includes("**CONVOCATION & ORDRE DU JOUR"), "Doit comporter l'en-tête officiel de convocation");
   assertTrue(announcement.includes(mockMeeting.title), "Doit contenir le titre de la réunion");
-  assertTrue(announcement.includes("Salle 301 - FabLab"), "Doit préciser le lieu");
+  assertTrue(announcement.includes("**Lieu** : Salle 301 - FabLab"), "Doit préciser le lieu");
   assertTrue(announcement.includes("**Hugo** : Exporter les fichiers STEP"), "Doit conserver le contenu de l'ordre du jour");
   assertTrue(announcement.includes("Étienne PICARD, Hugo RAMPAZZO, Solal BENQADI"), "Doit lister les participants");
+
+  // Test du repli lieu "à confirmer"
+  const meetingWithoutLocation = { ...mockMeeting, location: null };
+  const announcementWithoutLocation = formatDiscordAnnouncement(meetingWithoutLocation, sampleAgendaMarkdown);
+  assertTrue(announcementWithoutLocation.includes("**Lieu** : à confirmer"), "Doit afficher 'à confirmer' si aucun lieu n'est renseigné");
   console.log("     ✓ Annonce d'équipe Discord / WhatsApp formatée avec succès.");
 
   // 3. Test des métadonnées de la tâche Kanban liée
