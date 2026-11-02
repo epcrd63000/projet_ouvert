@@ -187,11 +187,6 @@ export async function POST(request: NextRequest) {
         projectId: project?.id || null,
         createdById: session.user.id || null,
       },
-      include: {
-        createdBy: {
-          select: { id: true, name: true, email: true },
-        },
-      },
     });
 
     console.info("POST /api/links succeeded", {
@@ -199,7 +194,20 @@ export async function POST(request: NextRequest) {
       hasProject: !!project,
       isPinned,
     });
-    return jsonWithRequestId(newLink, 201, requestId);
+    return jsonWithRequestId(
+      {
+        ...newLink,
+        createdBy: session.user.id
+          ? {
+              id: session.user.id,
+              name: session.user.name || "",
+              email: session.user.email || "",
+            }
+          : null,
+      },
+      201,
+      requestId
+    );
   } catch (error) {
     logLinkCreationFailure(requestId, stage, error);
     return jsonWithRequestId(
