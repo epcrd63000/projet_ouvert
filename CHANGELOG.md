@@ -1,5 +1,11 @@
 # Journal des Modifications (CHANGELOG)
 
+## [2.16.4] - 2026-11-19
+
+### Correctif : le bandeau « mot de passe temporaire » restait affiché après le changement
+- **`UserSettings.tsx`** : après un changement de mot de passe réussi, appel de `router.refresh()` pour récupérer l'arbre de composants serveur. Le bandeau `TempPasswordBanner` disparaît immédiatement (ainsi que l'échéance affichée côté admin), sans rechargement manuel de la page.
+- **Vérifié** : bannière présente avant le changement, absente après, sur `/dashboard` comme sur `/settings`.
+
 ## [2.16.3] - 2026-11-19
 
 ### Correctif : Mots de Passe Temporaires Désynchronisés & Réactivation des Accès

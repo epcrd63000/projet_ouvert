@@ -1,10 +1,12 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 
 export function UserSettings() {
+  const router = useRouter();
   const [password, setPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -36,6 +38,9 @@ export function UserSettings() {
         setPassword("");
         setNewPassword("");
         setConfirmPassword("");
+        // Le mot de passe n'est plus temporaire : on récupère l'arbre de composants
+        // serveur pour faire disparaître immédiatement le bandeau d'information.
+        router.refresh();
       } else {
         const error = await res.json();
         alert(error.error || "Erreur de mise à jour");
