@@ -164,36 +164,47 @@ export default async function DashboardPage() {
       <ActivityHeartbeat />
 
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-4 border-b border-border">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">
-            Bonjour {user.name} 👋
-          </h1>
-          <p className="text-muted-foreground text-sm mt-1">
-            Suivi opérationnel du Projet Ouvert IMT CI1 (2026-2027) — Voilier MINIMOCA.
-          </p>
-          <div className="flex flex-wrap items-center gap-2 mt-2.5">
-            <span className="text-xs font-semibold text-muted-foreground mr-0.5">
-              Mes tâches assignées :
-            </span>
-            <Badge variant="outline" className="bg-primary/10 text-primary border-primary/20 text-xs">
-              🎯 {personalSummary.totalAssigned} assignée{personalSummary.totalAssigned > 1 ? "s" : ""}
-            </Badge>
-            <Badge variant="outline" className="bg-amber-500/10 text-amber-500 border-amber-500/20 text-xs">
-              ⏳ {personalSummary.inProgress} en cours
-            </Badge>
-            <Badge variant="outline" className="bg-emerald-500/10 text-emerald-500 border-emerald-500/20 text-xs">
-              ✅ {personalSummary.done} terminée{personalSummary.done > 1 ? "s" : ""}
-            </Badge>
-            {personalSummary.totalAssigned > 0 && (
-              <Badge variant="secondary" className="text-xs font-medium">
-                📊 {personalSummary.completionRate}% de vos tâches
+        <div className="flex items-center gap-4">
+          {/* Logo officiel du projet MIN'IMOCA (asset statique servi depuis /public) */}
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src="/logo-minimoca.svg"
+            alt="Logo MIN'IMOCA 2026-2027"
+            width={80}
+            height={80}
+            className="h-16 w-16 sm:h-20 sm:w-20 shrink-0 rounded-full ring-1 ring-border shadow-sm"
+          />
+          <div>
+            <h1 className="text-3xl font-bold tracking-tight">
+              Bonjour {user.name} 👋
+            </h1>
+            <p className="text-muted-foreground text-sm mt-1">
+              Suivi opérationnel du Projet Ouvert IMT CI1 (2026-2027) — Voilier MINIMOCA.
+            </p>
+            <div className="flex flex-wrap items-center gap-2 mt-2.5">
+              <span className="text-xs font-semibold text-muted-foreground mr-0.5">
+                Mes tâches assignées :
+              </span>
+              <Badge variant="outline" className="bg-primary/10 text-primary border-primary/20 text-xs">
+                🎯 {personalSummary.totalAssigned} assignée{personalSummary.totalAssigned > 1 ? "s" : ""}
               </Badge>
-            )}
-            {personalSummary.late > 0 && (
-              <Badge variant="destructive" className="text-xs">
-                ⚠️ {personalSummary.late} en retard
+              <Badge variant="outline" className="bg-amber-500/10 text-amber-500 border-amber-500/20 text-xs">
+                ⏳ {personalSummary.inProgress} en cours
               </Badge>
-            )}
+              <Badge variant="outline" className="bg-emerald-500/10 text-emerald-500 border-emerald-500/20 text-xs">
+                ✅ {personalSummary.done} terminée{personalSummary.done > 1 ? "s" : ""}
+              </Badge>
+              {personalSummary.totalAssigned > 0 && (
+                <Badge variant="secondary" className="text-xs font-medium">
+                  📊 {personalSummary.completionRate}% de vos tâches
+                </Badge>
+              )}
+              {personalSummary.late > 0 && (
+                <Badge variant="destructive" className="text-xs">
+                  ⚠️ {personalSummary.late} en retard
+                </Badge>
+              )}
+            </div>
           </div>
         </div>
       </div>
