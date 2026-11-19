@@ -1,73 +1,87 @@
 "use client";
 
-import React from "react";
-import { useCustomTheme } from "@/components/theme/CustomThemeProvider";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
+import React, { useEffect, useState } from "react";
+import { useTheme } from "next-themes";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Sun, Moon, Monitor, Check } from "lucide-react";
+import { cn } from "@/lib/utils";
 
-const THEMES = [
-  {
-    name: "Défaut (Zinc)",
-    colors: { background: "", foreground: "", primary: "", primaryForeground: "" }
-  },
-  {
-    name: "Océan",
-    colors: {
-      background: "220 50% 98%",
-      foreground: "220 50% 10%",
-      primary: "210 100% 50%",
-      primaryForeground: "210 100% 98%"
-    }
-  },
-  {
-    name: "Forêt",
-    colors: {
-      background: "120 20% 98%",
-      foreground: "120 20% 10%",
-      primary: "140 70% 40%",
-      primaryForeground: "140 70% 98%"
-    }
-  },
-  {
-    name: "Crépuscule",
-    colors: {
-      background: "280 40% 98%",
-      foreground: "280 40% 10%",
-      primary: "270 70% 50%",
-      primaryForeground: "270 70% 98%"
-    }
-  }
+/**
+ * Sélecteur d'apparence : clair, sombre ou automatique (système).
+ * Les deux palettes sont dérivées du logo MIN'IMOCA.
+ */
+const OPTIONS = [
+  { value: "light", label: "Clair", description: "Crème & bleu marine", icon: Sun },
+  { value: "dark", label: "Sombre", description: "Nuit en mer", icon: Moon },
+  { value: "system", label: "Système", description: "Suit l'appareil", icon: Monitor },
+] as const;
+
+/** Échantillon des couleurs du logo, pour rappeler l'origine de la palette. */
+const PALETTE = [
+  { className: "bg-brand-navy", label: "Bleu marine" },
+  { className: "bg-brand-red", label: "Rouge coque" },
+  { className: "bg-brand-sky", label: "Bleu océan" },
+  { className: "bg-brand-cream", label: "Crème" },
 ];
 
 export function ThemeSettings() {
-  const { setColors, resetColors } = useCustomTheme();
+  const { theme, setTheme } = useTheme();
+  const [mounted, setMounted] = useState(false);
+
+  // Évite un décalage d'hydratation : le thème n'est connu que côté client.
+  useEffect(() => setMounted(true), []);
 
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Apparence & Thèmes</CardTitle>
+        <CardTitle>Apparence</CardTitle>
         <CardDescription>
-          Personnalisez les couleurs de base de l&apos;application.
+          Choisissez le mode clair ou sombre. Les deux palettes reprennent les couleurs du logo
+          MIN&apos;IMOCA.
         </CardDescription>
       </CardHeader>
-      <CardContent>
-        <div className="flex gap-4 flex-wrap">
-          {THEMES.map((theme) => (
-            <Button
-              key={theme.name}
-              variant="outline"
-              onClick={() => {
-                if (theme.name === "Défaut (Zinc)") {
-                  resetColors();
-                } else {
-                  setColors(theme.colors);
-                }
-              }}
-              className="w-32"
-            >
-              {theme.name}
-            </Button>
-          ))}
+      <CardContent className="space-y-5">
+        <div className="grid gap-3 sm:grid-cols-3">
+          {OPTIONS.map((option) => {
+            const Icon = option.icon;
+            const isActive = mounted && theme === option.value;
+
+            return (
+              <button
+                key={option.value}
+                type="button"
+                onClick={() => setTheme(option.value)}
+                aria-pressed={isActive}
+                className={cn(
+                  "relative flex items-center gap-3 rounded-lg border p-3 text-left transition-colors",
+                  "hover:bg-accent hover:text-accent-foreground",
+                  isActive
+                    ? "border-primary bg-primary/5 ring-1 ring-primary"
+                    : "border-border bg-card"
+                )}
+              >
+                <Icon className={cn("h-5 w-5 shrink-0", isActive ? "text-primary" : "text-muted-foreground")} />
+                <span className="min-w-0">
+                  <span className="block text-sm font-semibold">{option.label}</span>
+                  <span className="block text-xs text-muted-foreground">{option.description}</span>
+                </span>
+                {isActive && <Check className="ml-auto h-4 w-4 shrink-0 text-primary" />}
+              </button>
+            );
+          })}
+        </div>
+
+        <div className="flex flex-wrap items-center gap-3 border-t border-border pt-4">
+          <span className="text-xs font-medium text-muted-foreground">Palette du logo :</span>
+          <div className="flex items-center gap-1.5">
+            {PALETTE.map((color) => (
+              <span
+                key={color.label}
+                title={color.label}
+                className={cn("h-4 w-4 rounded-full ring-1 ring-border", color.className)}
+              />
+            ))}
+          </div>
         </div>
       </CardContent>
     </Card>

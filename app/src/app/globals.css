@@ -2,70 +2,108 @@
 @tailwind components;
 @tailwind utilities;
 
+/* =============================================================================
+   Palette « MIN'IMOCA » — dérivée directement du logo du projet
+   Bleu marine #0b3f7d · Rouge coque #800000 · Bleu océan #3a9fd8
+   Ciel #bfe9fb · Crème #fbf1dc
+   ============================================================================= */
+
 @layer base {
   :root {
-    /* Palette Mode Clair (Base Slate) */
-    --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
+    color-scheme: light;
+
+    /* Fonds : crème du logo, cartes blanc pur pour la lisibilité des données */
+    --background: 40 50% 97%;
+    --foreground: 213 55% 12%;
 
     --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
+    --card-foreground: 213 55% 12%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
+    --popover-foreground: 213 55% 12%;
 
-    --primary: 222.2 47.4% 11.2%;
-    --primary-foreground: 210 40% 98%;
+    /* Bleu marine du logo */
+    --primary: 213 84% 27%;
+    --primary-foreground: 40 60% 97%;
 
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
+    --secondary: 204 45% 93%;
+    --secondary-foreground: 213 60% 18%;
 
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
+    --muted: 40 30% 94%;
+    --muted-foreground: 213 18% 42%;
 
-    --accent: 210 40% 96.1%;
-    --accent-foreground: 222.2 47.4% 11.2%;
+    /* Ciel très clair, pour les survols et les états actifs */
+    --accent: 198 70% 92%;
+    --accent-foreground: 213 60% 18%;
 
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
+    /* Rouge coque du logo */
+    --destructive: 0 100% 25%;
+    --destructive-foreground: 40 60% 97%;
 
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 222.2 84% 4.9%;
+    --border: 204 25% 87%;
+    --input: 204 25% 87%;
+    --ring: 213 84% 27%;
+
+    /* Identité du logo, pour les accents ponctuels */
+    --brand-navy: 213 84% 27%;
+    --brand-red: 0 100% 25%;
+    --brand-sky: 202 67% 54%;
+    --brand-cream: 41 79% 92%;
+
+    /* Séries de graphiques (cohérentes avec le logo) */
+    --chart-1: 213 84% 27%;
+    --chart-2: 0 100% 30%;
+    --chart-3: 202 67% 54%;
+    --chart-4: 160 70% 38%;
+    --chart-5: 35 90% 52%;
 
     /* Rayon de bordure standard (8px) */
     --radius: 0.5rem;
   }
 
   .dark {
-    /* Palette Mode Sombre (Slate Dark) */
-    --background: 222.2 84% 4.9%;
-    --foreground: 210 40% 98%;
+    color-scheme: dark;
 
-    --card: 222.2 84% 4.9%;
-    --card-foreground: 210 40% 98%;
+    /* Nuit en mer : bleu très profond, textes chauds (crème) */
+    --background: 213 65% 8%;
+    --foreground: 40 35% 94%;
 
-    --popover: 222.2 84% 4.9%;
-    --popover-foreground: 210 40% 98%;
+    --card: 213 50% 11%;
+    --card-foreground: 40 35% 94%;
 
-    --primary: 210 40% 98%;
-    --primary-foreground: 222.2 47.4% 11.2%;
+    --popover: 213 50% 11%;
+    --popover-foreground: 40 35% 94%;
 
-    --secondary: 217.2 32.6% 17.5%;
-    --secondary-foreground: 210 40% 98%;
+    /* Ciel du logo : lisible sur fond nuit */
+    --primary: 198 85% 72%;
+    --primary-foreground: 213 65% 8%;
 
-    --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
+    --secondary: 213 40% 17%;
+    --secondary-foreground: 40 35% 94%;
 
-    --accent: 217.2 32.6% 17.5%;
-    --accent-foreground: 210 40% 98%;
+    --muted: 213 35% 16%;
+    --muted-foreground: 205 20% 68%;
 
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 210 40% 98%;
+    --accent: 213 40% 20%;
+    --accent-foreground: 40 35% 94%;
 
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
-    --ring: 212.8 75% 17.3%;
+    --destructive: 0 70% 55%;
+    --destructive-foreground: 40 60% 97%;
+
+    --border: 213 30% 20%;
+    --input: 213 30% 20%;
+    --ring: 198 80% 65%;
+
+    --brand-navy: 198 85% 72%;
+    --brand-red: 0 75% 62%;
+    --brand-sky: 202 70% 62%;
+    --brand-cream: 41 60% 82%;
+
+    --chart-1: 198 85% 72%;
+    --chart-2: 0 75% 62%;
+    --chart-3: 202 70% 60%;
+    --chart-4: 160 65% 55%;
+    --chart-5: 35 95% 62%;
   }
 }
 

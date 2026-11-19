@@ -1,5 +1,14 @@
 # Journal des Modifications (CHANGELOG)
 
+## [2.16.5] - 2026-11-19
+
+### Apparence : palette dérivée du logo MIN'IMOCA et mode clair / sombre complet
+- **`globals.css`** : nouvelles palettes issues du logo — clair (fond crème `#fbf1dc`, bleu marine `#0b3f7d`, rouge coque `#800000`, ciel `#bfe9fb`) et sombre (« nuit en mer » : fond bleu nuit, textes crème, accents ciel). Ajout de `--brand-*`, de `--chart-1..5` et de `color-scheme` pour les contrôles natifs.
+- **Logo** : affiché sur l'écran de connexion (à la place du carré « IMT »), dans l'en-tête à la place du badge « IMT CI1 », et utilisé comme favicon (`app/icon.svg`).
+- **`ThemeSettings.tsx`** : sélecteur **Clair / Sombre / Système** basé sur `next-themes`, avec rappel de la palette du logo. Suppression des anciens presets de couleurs qui écrasaient aussi le mode sombre (fonds clairs sur textes clairs) et de `CustomThemeProvider`, devenu inutile.
+- **Graphiques** : couleurs branchées sur `--chart-*` pour rester lisibles dans les deux modes ; le radar Workload affiche les prénoms pour ne plus tronquer les libellés.
+- **Vérifié** : captures d'écran du tableau de bord et des paramètres en clair et en sombre.
+
 ## [2.16.4] - 2026-11-19
 
 ### Correctif : le bandeau « mot de passe temporaire » restait affiché après le changement

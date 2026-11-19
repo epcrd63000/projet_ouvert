@@ -89,13 +89,13 @@ export function MemberProgressChart({
               <Bar
                 dataKey="done"
                 name="Tâches terminées"
-                fill="#10b981"
+                fill="hsl(var(--chart-4))"
                 radius={[4, 4, 0, 0]}
               />
               <Bar
                 dataKey="total"
                 name="Total assigné"
-                fill="#6366f1"
+                fill="hsl(var(--chart-1))"
                 radius={[4, 4, 0, 0]}
               />
             </BarChart>
@@ -112,6 +112,8 @@ export function WorkloadChart({
   data: { name: string; totalAssigned?: number; inProgress: number; todo?: number; active?: number }[];
 }) {
   const maxVal = Math.max(1, ...data.map((d) => d.totalAssigned ?? d.active ?? d.inProgress));
+  // Prénoms seuls : les noms complets sortent du cadre du radar sur les petits écrans.
+  const chartData = data.map((d) => ({ ...d, name: d.name.split(" ")[0] }));
 
   return (
     <Card className="col-span-1 lg:col-span-1">
@@ -124,22 +126,22 @@ export function WorkloadChart({
       <CardContent>
         <div className="h-[250px]">
           <ResponsiveContainer width="100%" height="100%">
-            <RadarChart cx="50%" cy="50%" outerRadius="55%" data={data} margin={{ top: 10, right: 10, bottom: 10, left: 10 }}>
+            <RadarChart cx="50%" cy="50%" outerRadius="52%" data={chartData} margin={{ top: 8, right: 8, bottom: 8, left: 8 }}>
               <PolarGrid stroke="hsl(var(--border))" />
-              <PolarAngleAxis dataKey="name" fontSize={11} tick={{ fill: "hsl(var(--foreground))" }} />
+              <PolarAngleAxis dataKey="name" fontSize={10} tick={{ fill: "hsl(var(--foreground))" }} />
               <PolarRadiusAxis angle={30} domain={[0, maxVal]} tick={false} axisLine={false} />
               <Radar
                 name="Tâches assignées"
                 dataKey="totalAssigned"
-                stroke="#6366f1"
-                fill="#6366f1"
+                stroke="hsl(var(--chart-1))"
+                fill="hsl(var(--chart-1))"
                 fillOpacity={0.45}
               />
               <Radar
                 name="En cours"
                 dataKey="inProgress"
-                stroke="#f59e0b"
-                fill="#f59e0b"
+                stroke="hsl(var(--chart-5))"
+                fill="hsl(var(--chart-5))"
                 fillOpacity={0.6}
               />
               <RechartsTooltip 
@@ -215,7 +217,7 @@ export function BudgetGauge({
 
 export function MilestoneProgress({ achieved, remaining }: { achieved: number; remaining: number }) {
   const data = [
-    { name: "Atteints", value: achieved, color: "#10b981" },
+    { name: "Atteints", value: achieved, color: "hsl(var(--chart-4))" },
     { name: "Restants", value: remaining, color: "hsl(var(--muted))" },
   ];
   return (
@@ -240,7 +242,7 @@ export function MilestoneProgress({ achieved, remaining }: { achieved: number; r
           </ResponsiveContainer>
         </div>
         <div className="flex justify-center gap-4 text-sm mt-2">
-          <div className="flex items-center gap-2"><div className="w-3 h-3 bg-[#10b981] rounded-full"></div>{achieved} atteints</div>
+          <div className="flex items-center gap-2"><div className="w-3 h-3 bg-[hsl(var(--chart-4))] rounded-full"></div>{achieved} atteints</div>
           <div className="flex items-center gap-2"><div className="w-3 h-3 bg-muted rounded-full border border-border"></div>{remaining} restants</div>
         </div>
       </CardContent>

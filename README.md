@@ -250,7 +250,7 @@ app/src/
 │
 ├── app/                           Routes Next.js (App Router)
 │   ├── layout.tsx                 <html>, polices, <Providers>, métadonnées
-│   ├── globals.css                Variables CSS du thème (clair/sombre) + base Tailwind
+│   ├── globals.css                Palette « MIN'IMOCA » (clair / sombre), variables CSS des tokens shadcn + `--chart-*`
 │   ├── page.tsx                   Racine « / » → redirection (le middleware gère le cas)
 │   ├── loading.tsx                Écran de chargement global
 │   ├── error.tsx                  Error boundary globale (client)
@@ -289,7 +289,7 @@ app/src/
 │   ├── infos/                     Cartes, éditeur, toolbar, rendu Markdown, export
 │   ├── links/                     Grille, cartes, modale, toolbar, utilitaires
 │   ├── settings/                  Gestion utilisateurs, panneau identifiants Étienne, alertes, préférences
-│   └── theme/                     Fournisseur de thème custom + réglages
+│   ├── theme/                     Sélecteur d'apparence (clair / sombre / système) + rappel de la palette
 │
 ├── lib/                           Logique métier pure + accès base (§11)
 │   ├── prisma.ts                  Singleton PrismaClient + adaptateur Neon HTTP
@@ -628,7 +628,7 @@ Schémas Zod : `createTaskSchema`, `updateTaskSchema`, `assignTaskSchema`, `crea
 | `infos/` | `InfoCard`, `InfoEditorModal`, `InfoToolbar`, `infoMarkdownRenderer`, `infoExportUtils`, `infoTypes` | Fiches documentaires |
 | `links/` | `LinksClient`, `LinkCard`, `LinkModal`, `LinkToolbar`, `linkTypes`, `linkUtils` | Liens utiles |
 | `settings/` | `UserManagement`, `EtienneCredentialsPanel`, `UserCredentialRow`, `UserSettings`, `AlertBannerManager` | Comptes, identifiants, mot de passe, alertes |
-| `theme/` | `CustomThemeProvider`, `ThemeSettings` | Thème clair/sombre/couleurs |
+| `theme/` | `ThemeSettings` | Sélecteur Clair / Sombre / Système, palette du logo |
 | `providers.tsx` | — | `SessionProvider` + `next-themes` + thème custom |
 | Pages budget | `app/(protected)/budget/components/*` (`BudgetSummaryCards`, `FundingSourcesTable`, `ExpensesTable`, `AddFundingModal`, `EditFundingModal`, `AddExpenseModal`, `EditExpenseModal`, `CommentDialog`, `types`) | Trésorerie (co-localisée avec la page) |
 

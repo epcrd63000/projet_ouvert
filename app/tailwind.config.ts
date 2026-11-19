@@ -51,6 +51,20 @@ const config: Config = {
           DEFAULT: "hsl(var(--card))",
           foreground: "hsl(var(--card-foreground))",
         },
+        // Couleurs du logo MIN'IMOCA (accents ponctuels : titres, filets, badges)
+        brand: {
+          navy: "hsl(var(--brand-navy))",
+          red: "hsl(var(--brand-red))",
+          sky: "hsl(var(--brand-sky))",
+          cream: "hsl(var(--brand-cream))",
+        },
+        chart: {
+          1: "hsl(var(--chart-1))",
+          2: "hsl(var(--chart-2))",
+          3: "hsl(var(--chart-3))",
+          4: "hsl(var(--chart-4))",
+          5: "hsl(var(--chart-5))",
+        },
       },
       borderRadius: {
         lg: "var(--radius)",

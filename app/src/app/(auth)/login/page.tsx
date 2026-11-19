@@ -81,8 +81,16 @@ function LoginForm() {
   return (
     <Card className="shadow-xl border-border max-w-md w-full mx-auto">
       <CardHeader className="space-y-1 text-center">
-        <div className="mx-auto mb-2 flex h-12 w-12 items-center justify-center rounded-xl bg-primary text-primary-foreground font-bold text-lg shadow-sm">
-          IMT
+        <div className="mx-auto mb-2">
+          {/* Logo officiel du projet */}
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src="/logo-minimoca.svg"
+            alt="Logo MIN'IMOCA 2026-2027"
+            width={80}
+            height={80}
+            className="h-20 w-20 rounded-full ring-1 ring-border shadow-sm"
+          />
         </div>
         <CardTitle className="text-2xl font-bold tracking-tight">
           Projet Ouvert IMT

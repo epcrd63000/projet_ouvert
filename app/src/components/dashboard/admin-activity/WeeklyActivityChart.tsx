@@ -143,14 +143,14 @@ export function WeeklyActivityChart({ data }: WeeklyActivityChartProps) {
                 <Bar
                   dataKey="visits"
                   name="Visites actives"
-                  fill="#3b82f6"
+                  fill="hsl(var(--chart-3))"
                   stackId="activity"
                   radius={[0, 0, 0, 0]}
                 />
                 <Bar
                   dataKey="actions"
                   name="Actions concrètes"
-                  fill="#10b981"
+                  fill="hsl(var(--chart-4))"
                   stackId="activity"
                   radius={[4, 4, 0, 0]}
                 />

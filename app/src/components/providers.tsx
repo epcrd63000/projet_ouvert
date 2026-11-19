@@ -3,7 +3,6 @@
 import * as React from "react";
 import { SessionProvider } from "next-auth/react";
 import { ThemeProvider as NextThemesProvider } from "next-themes";
-import { CustomThemeProvider } from "./theme/CustomThemeProvider";
 
 interface ProvidersProps {
   children: React.ReactNode;
@@ -11,7 +10,7 @@ interface ProvidersProps {
 
 /**
  * Enveloppe globale pour les fournisseurs de contexte client.
- * Combine SessionProvider (NextAuth) et ThemeProvider (dark/light) ainsi que CustomThemeProvider.
+ * Combine SessionProvider (NextAuth) et ThemeProvider (clair / sombre / système).
  */
 export function Providers({ children }: ProvidersProps) {
   return (
@@ -22,9 +21,7 @@ export function Providers({ children }: ProvidersProps) {
         enableSystem
         disableTransitionOnChange
       >
-        <CustomThemeProvider>
-          {children}
-        </CustomThemeProvider>
+        {children}
       </NextThemesProvider>
     </SessionProvider>
   );

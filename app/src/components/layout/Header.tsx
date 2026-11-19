@@ -47,11 +47,21 @@ export function Header({
           )}
 
           <Link href="/dashboard" className="flex items-center gap-2 font-semibold">
-            <span className="rounded bg-primary px-2 py-0.5 text-xs text-primary-foreground font-bold shadow-xs">
-              IMT CI1
-            </span>
+            {/* Logo du projet (asset statique servi depuis /public) */}
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src="/logo-minimoca.svg"
+              alt=""
+              aria-hidden="true"
+              width={28}
+              height={28}
+              className="h-7 w-7 shrink-0 rounded-full ring-1 ring-border"
+            />
             <span className="text-sm font-semibold tracking-tight">
               Projet Ouvert
+            </span>
+            <span className="hidden text-[11px] font-medium text-muted-foreground sm:inline">
+              IMT CI1
             </span>
           </Link>
         </div>
