@@ -101,6 +101,7 @@ model User {
   name                String
   passwordHash        String
   tempPassword        String?           // Mot de passe temporaire lisible réservé à l'administrateur pour distribution
+  tempPasswordExpiresAt DateTime?       // Échéance du mot de passe temporaire (nul = mot de passe personnalisé)
   role                Role              @default(MEMBER)
   avatarUrl           String?
   reminderHoursBefore Int               @default(24) // Heures de délai pour les rappels

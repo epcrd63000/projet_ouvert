@@ -42,16 +42,25 @@ export default async function SettingsPage() {
   }
 
   if (isEtienne) {
-    credentialUsers = await prisma.user.findMany({
+    const rawCredentialUsers = await prisma.user.findMany({
       select: {
         id: true,
         name: true,
         email: true,
         role: true,
         tempPassword: true,
+        tempPasswordExpiresAt: true,
       },
       orderBy: { name: "asc" },
     });
+
+    // Sérialisation de l'échéance pour le composant client
+    credentialUsers = rawCredentialUsers.map((u) => ({
+      ...u,
+      tempPasswordExpiresAt: u.tempPasswordExpiresAt
+        ? u.tempPasswordExpiresAt.toISOString()
+        : null,
+    }));
   }
 
   return (

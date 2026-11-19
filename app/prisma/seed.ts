@@ -1,5 +1,6 @@
 import prisma from "../src/lib/prisma";
 import bcrypt from "bcryptjs";
+import { computeTempPasswordExpiry } from "../src/lib/auth/credentialsLogic";
 import { SEED_PROJECT, SEED_USERS, SEED_MILESTONES, SEED_AI_PROMPTS, SEED_LINKS } from "./seed-data";
 
 /**
@@ -39,16 +40,19 @@ async function main() {
   for (const user of SEED_USERS) {
     const upsertedUser = await prisma.user.upsert({
       where: { email: user.email },
+      // ⚠️ Ne jamais réécrire passwordHash ici : un utilisateur existant a pu
+      // personnaliser son mot de passe. Seuls le nom et le rôle sont synchronisés.
       update: {
         name: user.name,
         role: user.role,
-        passwordHash,
       },
       create: {
         email: user.email,
         name: user.name,
         role: user.role,
         passwordHash,
+        tempPassword: defaultPassword,
+        tempPasswordExpiresAt: computeTempPasswordExpiry(),
       },
     });
     console.log(`     - [${upsertedUser.role}] ${upsertedUser.name} (${upsertedUser.email})`);

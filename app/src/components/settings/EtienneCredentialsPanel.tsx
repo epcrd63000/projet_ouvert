@@ -14,6 +14,7 @@ export interface UserCredentialItem {
   email: string;
   role: "ADMIN" | "MEMBER";
   tempPassword: string | null;
+  tempPasswordExpiresAt?: string | null;
 }
 
 /**
@@ -68,7 +69,15 @@ export function EtienneCredentialsPanel({
 
       const data = await res.json();
       setUsers((prev) =>
-        prev.map((u) => (u.id === userId ? { ...u, tempPassword: data.newPassword } : u))
+        prev.map((u) =>
+          u.id === userId
+            ? {
+                ...u,
+                tempPassword: data.newPassword,
+                tempPasswordExpiresAt: data.tempPasswordExpiresAt ?? null,
+              }
+            : u
+        )
       );
       setRevealedPasswords((prev) => ({ ...prev, [userId]: true }));
     } catch (err) {

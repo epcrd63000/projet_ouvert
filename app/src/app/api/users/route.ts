@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAuth, requireAdmin } from "@/lib/permissions";
 import { createUserSchema } from "@/lib/validations/user";
+import { computeTempPasswordExpiry } from "@/lib/auth/credentialsLogic";
 import bcrypt from "bcryptjs";
 
 /**
@@ -79,6 +80,7 @@ export async function POST(request: NextRequest) {
         name,
         passwordHash,
         tempPassword: password,
+        tempPasswordExpiresAt: computeTempPasswordExpiry(),
         role,
         avatarUrl: avatarUrl || null,
       },

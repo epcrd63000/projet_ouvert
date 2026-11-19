@@ -8,6 +8,7 @@ import {
   extractUserPseudo,
   buildMailtoUrl,
   buildInvitationEmailBody,
+  formatTempPasswordExpiry,
 } from "@/lib/auth/credentialsLogic";
 import type { UserCredentialItem } from "./EtienneCredentialsPanel";
 
@@ -37,6 +38,10 @@ export function UserCredentialRow({
   onResetPassword,
 }: UserCredentialRowProps) {
   const pseudo = extractUserPseudo(user.name);
+  const expiryLabel = formatTempPasswordExpiry(user.tempPasswordExpiresAt);
+  const isExpired = user.tempPasswordExpiresAt
+    ? new Date(user.tempPasswordExpiresAt).getTime() < Date.now()
+    : false;
 
   // Construction de l'URL mailto pour l'envoi direct par le client de messagerie
   const mailto = buildMailtoUrl(
@@ -135,6 +140,18 @@ export function UserCredentialRow({
             <RefreshCw className={`h-3 w-3 ${isLoadingReset ? "animate-spin" : ""}`} />
           </button>
         </div>
+
+        {user.tempPassword && expiryLabel && (
+          <div
+            className={`w-full text-[10px] ${
+              isExpired ? "text-destructive font-medium" : "text-muted-foreground"
+            }`}
+          >
+            {isExpired
+              ? `Mot de passe temporaire expiré le ${expiryLabel} — à personnaliser`
+              : `Mot de passe temporaire valable jusqu'au ${expiryLabel}`}
+          </div>
+        )}
       </div>
 
       {/* Actions de partage : Envoi par mail (nouvel onglet) et Copie du texte */}

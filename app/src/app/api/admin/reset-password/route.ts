@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import prisma from "@/lib/prisma";
 import bcrypt from "bcryptjs";
-import { generateSecurePassword } from "@/lib/auth/credentialsLogic";
+import { generateSecurePassword, computeTempPasswordExpiry } from "@/lib/auth/credentialsLogic";
 
 /**
  * Route API d'administration stricte réservée exclusivement à Étienne.
@@ -53,6 +53,7 @@ export async function POST(request: NextRequest) {
     // Génération d'un nouveau mot de passe aléatoire robuste
     const newTempPassword = generateSecurePassword(10);
     const newPasswordHash = await bcrypt.hash(newTempPassword, 10);
+    const tempPasswordExpiresAt = computeTempPasswordExpiry();
 
     // Mise à jour synchrone en base Neon
     const updated = await prisma.user.update({
@@ -60,12 +61,14 @@ export async function POST(request: NextRequest) {
       data: {
         passwordHash: newPasswordHash,
         tempPassword: newTempPassword,
+        tempPasswordExpiresAt,
       },
       select: {
         id: true,
         name: true,
         email: true,
         tempPassword: true,
+        tempPasswordExpiresAt: true,
       },
     });
 
@@ -75,6 +78,7 @@ export async function POST(request: NextRequest) {
       success: true,
       userId: updated.id,
       newPassword: newTempPassword,
+      tempPasswordExpiresAt: updated.tempPasswordExpiresAt,
     });
   } catch (error) {
     console.error("[admin] Erreur lors de la réinitialisation du mot de passe :", error);

@@ -1,5 +1,23 @@
 # Journal des Modifications (CHANGELOG)
 
+## [2.16.3] - 2026-11-19
+
+### Correctif : Mots de Passe Temporaires Désynchronisés & Réactivation des Accès
+- **Cause racine identifiée** : `seed.ts` réécrivait `passwordHash` avec le mot de passe par défaut lors de chaque réexécution, sans mettre à jour `tempPassword`. L'espace admin affichait donc un mot de passe temporaire qui ne correspondait plus au hash réellement stocké (aucun membre ne pouvait se connecter avec les identifiants communiqués).
+- **Correction du seed (`prisma/seed.ts`)** : le bloc `update` de l'upsert ne touche plus jamais `passwordHash` (un compte existant a pu personnaliser son mot de passe) ; seuls `name` et `role` sont synchronisés. La création initiale renseigne désormais aussi `tempPassword` et son échéance.
+- **Réactivation des accès (`prisma/restore-temp-passwords.ts`)** : script idempotent (avec `--dry-run` et `--days=N`) qui réactive le mot de passe temporaire affiché à l'admin, uniquement pour les comptes qui ne l'ont jamais personnalisé.
+- **Régénération ciblée (`prisma/regenerate-temp-passwords.ts`)** : script `--users=prénom1,prénom2` / `--all` pour créer un mot de passe temporaire neuf (avec échéance) quand l'ancien est inconnu ou égaré. Utilisé pour les deux comptes dont le mot de passe temporaire n'était plus connu.
+- **Nouveau champ `User.tempPasswordExpiresAt`** : échéance du mot de passe temporaire (30 jours par défaut, `computeTempPasswordExpiry()`), remise à `null` dès que le membre personnalise son mot de passe (`/api/user/password`), propagée à la réinitialisation admin (`/api/admin/reset-password`) et à la création de compte (`POST /api/users`).
+- **Interface** : le panneau « Espace Accès & Identifiants » affiche l'échéance (« Mot de passe temporaire valable jusqu'au … ») et signale les mots de passe expirés ; nouveau bandeau `TempPasswordBanner` incitant les membres à personnaliser leur mot de passe avant expiration.
+- **Contrôle qualité (`prisma/verify-db.ts`)** : la vérification ne teste plus le mot de passe par défaut mais la validité du hash et la cohérence entre `tempPassword` affiché et hash actif.
+
+## [2.16.2] - 2026-11-02
+
+### Ajouté : Script & Cahier des Charges de Présentation des 6 Slides (`04_Script_Expose_Slides_Projet_Ouvert.md`)
+- **Documentation et Prompt IA pour l'Exposé Projet Ouvert (Canva / Gamma)** :
+  - Structuration détaillée des 6 slides réglementaires : Identification & Logos (IMT, APICIL, Projet), Client & Tuteurs (Hulot & Hassel), Équipe de 6 membres, Objectif & Besoin (avec statut RDV), Jalons clés du planning et Financements réels (3 183 € APICIL/BDE/FabLab).
+  - Charte typographique unifiée et placeholders pour logos temporaires.
+
 ## [2.16.1] - 2026-10-19
 
 ### Amélioration : Simplification du Message de Partage d'Ordre du Jour (`formatDiscordAnnouncement`)

@@ -45,6 +45,7 @@ export async function POST(request: NextRequest) {
       data: {
         passwordHash: newPasswordHash,
         tempPassword: null,
+        tempPasswordExpiresAt: null,
       },
     });
 

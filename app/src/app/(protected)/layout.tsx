@@ -2,6 +2,7 @@ import React from "react";
 import { auth } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import { ProtectedShell } from "@/components/layout/ProtectedShell";
+import { TempPasswordBanner } from "@/components/layout/TempPasswordBanner";
 
 interface ProtectedLayoutProps {
   children: React.ReactNode;
@@ -24,6 +25,7 @@ export default async function ProtectedLayout({ children }: ProtectedLayoutProps
       userEmail={session.user.email || ""}
       userRole={(session.user.role as "ADMIN" | "MEMBER") || "MEMBER"}
     >
+      <TempPasswordBanner />
       {children}
     </ProtectedShell>
   );

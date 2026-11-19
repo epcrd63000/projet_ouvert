@@ -43,6 +43,39 @@ export function generateSecurePassword(length = 10): string {
 }
 
 /**
+ * Durée de validité (en jours) d'un mot de passe temporaire distribué par l'administrateur.
+ * Passé ce délai, le membre est invité à personnaliser son mot de passe.
+ */
+export const TEMP_PASSWORD_VALIDITY_DAYS = 30;
+
+/**
+ * Calcule la date d'échéance d'un mot de passe temporaire.
+ *
+ * @param from Date de départ (par défaut : maintenant)
+ * @returns La date d'expiration à J+30
+ */
+export function computeTempPasswordExpiry(from: Date = new Date()): Date {
+  return new Date(from.getTime() + TEMP_PASSWORD_VALIDITY_DAYS * 24 * 60 * 60 * 1000);
+}
+
+/**
+ * Formate une échéance de mot de passe temporaire pour l'affichage (jj/mm/aaaa).
+ *
+ * @param date Échéance à formater
+ * @returns La date au format français, ou null si absente
+ */
+export function formatTempPasswordExpiry(date: Date | string | null | undefined): string | null {
+  if (!date) return null;
+  const parsed = typeof date === "string" ? new Date(date) : date;
+  if (Number.isNaN(parsed.getTime())) return null;
+  return parsed.toLocaleDateString("fr-FR", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+  });
+}
+
+/**
  * Extrait le pseudo / identifiant de connexion par défaut à partir d'un nom complet ou partiel.
  * Par exemple: "Hugo RAMPAZZO" -> "hugo", "Solal BENQADI" -> "solal".
  *
