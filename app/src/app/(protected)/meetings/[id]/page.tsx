@@ -383,7 +383,7 @@ export default function MeetingDetailPage() {
   }
 
   return (
-    <div className="space-y-6 max-w-6xl mx-auto pb-12">
+    <div className="space-y-6 w-full max-w-6xl mx-auto pb-12">
       {/* Barre de navigation et Actions principales */}
       <div className="flex items-center justify-between flex-wrap gap-4 border-b pb-4">
         <div>

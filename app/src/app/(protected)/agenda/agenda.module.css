@@ -1,18 +1,61 @@
+/* =============================================================================
+   Agenda — styles du calendrier react-big-calendar
+   Palette alignée sur le logo MIN'IMOCA (bleu marine, rouge coque, océan, vert)
+   ============================================================================= */
+
 .agendaPage {
-  height: calc(100vh - 8rem);
-  min-height: 34rem;
-  --agenda-meeting: 209 92% 66%;
-  --agenda-meeting-foreground: 222 47% 11%;
-  --agenda-task: 43 91% 68%;
-  --agenda-task-foreground: 222 47% 11%;
-  --agenda-task-mine: 43 91% 68%;
-  --agenda-task-mine-foreground: 222 47% 11%;
-  --agenda-task-team: 226 70% 68%;
-  --agenda-task-team-foreground: 222 47% 11%;
-  --agenda-milestone: 160 62% 55%;
-  --agenda-milestone-foreground: 222 47% 11%;
-  --agenda-manual: 266 72% 76%;
-  --agenda-manual-foreground: 222 47% 11%;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  --radius-event: 0.4rem;
+
+  /* Réunion — bleu marine */
+  --agenda-meeting: 213 84% 27%;
+  --agenda-meeting-bg: 213 84% 27% / 0.1;
+  --agenda-meeting-fg: 213 75% 22%;
+
+  /* Mes tâches — bleu océan */
+  --agenda-task-mine: 202 67% 50%;
+  --agenda-task-mine-bg: 202 67% 50% / 0.16;
+  --agenda-task-mine-fg: 205 80% 20%;
+
+  /* Tâches de l'équipe — acier */
+  --agenda-task-team: 215 22% 45%;
+  --agenda-task-team-bg: 215 22% 45% / 0.12;
+  --agenda-task-team-fg: 215 30% 25%;
+
+  /* Jalons — rouge coque */
+  --agenda-milestone: 0 100% 25%;
+  --agenda-milestone-bg: 0 100% 25% / 0.1;
+  --agenda-milestone-fg: 0 75% 28%;
+
+  /* Événement manuel — vert */
+  --agenda-manual: 160 55% 35%;
+  --agenda-manual-bg: 160 55% 35% / 0.12;
+  --agenda-manual-fg: 160 60% 18%;
+}
+
+/* Mode sombre : mêmes familles, teintes éclaircies pour rester lisibles */
+:global(.dark) .agendaPage {
+  --agenda-meeting: 198 85% 72%;
+  --agenda-meeting-bg: 198 85% 72% / 0.16;
+  --agenda-meeting-fg: 198 90% 88%;
+
+  --agenda-task-mine: 202 80% 66%;
+  --agenda-task-mine-bg: 202 80% 66% / 0.16;
+  --agenda-task-mine-fg: 202 90% 88%;
+
+  --agenda-task-team: 210 20% 65%;
+  --agenda-task-team-bg: 210 20% 65% / 0.14;
+  --agenda-task-team-fg: 210 30% 86%;
+
+  --agenda-milestone: 0 80% 66%;
+  --agenda-milestone-bg: 0 80% 66% / 0.16;
+  --agenda-milestone-fg: 0 90% 88%;
+
+  --agenda-manual: 160 60% 58%;
+  --agenda-manual-bg: 160 60% 58% / 0.16;
+  --agenda-manual-fg: 160 70% 86%;
 }
 
 .calendar {
@@ -20,18 +63,23 @@
   font-size: 0.875rem;
 }
 
+/* ── Barre d'outils ───────────────────────────────────────────────────────── */
+
 .calendar :global(.rbc-toolbar) {
   align-items: center;
   gap: 1rem;
-  margin-bottom: 1.25rem;
+  margin-bottom: 1rem;
 }
 
 .calendar :global(.rbc-toolbar-label) {
   color: hsl(var(--foreground));
-  font-size: 1.1rem;
+  font-size: 1.05rem;
   font-weight: 650;
   letter-spacing: -0.02em;
+  text-transform: capitalize;
 }
+
+/* ── Grille ───────────────────────────────────────────────────────────────── */
 
 .calendar :global(.rbc-month-view),
 .calendar :global(.rbc-time-view),
@@ -48,10 +96,10 @@
 .calendar :global(.rbc-header) {
   border-bottom: 1px solid hsl(var(--border));
   color: hsl(var(--muted-foreground));
-  font-size: 0.72rem;
+  font-size: 0.7rem;
   font-weight: 650;
-  letter-spacing: 0.045em;
-  padding: 0.65rem 0.3rem;
+  letter-spacing: 0.06em;
+  padding: 0.6rem 0.3rem;
   text-transform: uppercase;
 }
 
@@ -66,58 +114,88 @@
   border-top: 1px solid hsl(var(--border) / 0.72);
 }
 
+/* Numéro du jour : pastille cliquable */
 .calendar :global(.rbc-date-cell) {
-  padding: 0.45rem 0.55rem 0.15rem;
+  padding: 0.4rem 0.5rem 0.1rem;
 }
 
-.calendar :global(.rbc-date-cell > a) {
+.calendar :global(.rbc-date-cell > a),
+.calendar :global(.rbc-date-cell > button) {
   align-items: center;
   border-radius: 999px;
   color: hsl(var(--muted-foreground));
   display: inline-flex;
+  font-size: 0.78rem;
+  font-weight: 600;
   height: 1.75rem;
   justify-content: center;
+  transition: background-color 140ms ease, color 140ms ease;
   width: 1.75rem;
 }
 
-.calendar :global(.rbc-date-cell.rbc-now > a) {
+.calendar :global(.rbc-date-cell > a:hover),
+.calendar :global(.rbc-date-cell > button:hover) {
+  background: hsl(var(--accent));
+  color: hsl(var(--accent-foreground));
+}
+
+/* Aujourd'hui */
+.calendar :global(.rbc-date-cell.rbc-now > a),
+.calendar :global(.rbc-date-cell.rbc-now > button) {
   background: hsl(var(--primary));
   color: hsl(var(--primary-foreground));
   font-weight: 700;
 }
 
-.calendar :global(.rbc-off-range-bg) {
-  background: hsl(var(--muted) / 0.22);
-}
-
-.calendar :global(.rbc-off-range .rbc-date-cell > a) {
-  color: hsl(var(--muted-foreground) / 0.58);
-}
-
 .calendar :global(.rbc-day-bg.rbc-today) {
-  background: hsl(var(--accent) / 0.48);
+  background: hsl(var(--primary) / 0.06);
 }
+
+.calendar :global(.rbc-off-range-bg) {
+  background: hsl(var(--muted) / 0.25);
+}
+
+.calendar :global(.rbc-off-range .rbc-date-cell > a),
+.calendar :global(.rbc-off-range .rbc-date-cell > button) {
+  color: hsl(var(--muted-foreground) / 0.55);
+}
+
+/* ── Événements ───────────────────────────────────────────────────────────── */
 
 .calendar :global(.rbc-event) {
-  border-radius: 0.375rem;
-  font-size: 0.75rem;
+  border: 0;
+  border-left: 3px solid transparent;
+  border-radius: var(--radius-event);
+  box-shadow: none;
+  font-size: 0.73rem;
   font-weight: 600;
-  line-height: 1.35;
-  padding: 0.2rem 0.4rem;
+  line-height: 1.3;
+  padding: 0.2rem 0.45rem;
+  transition: filter 140ms ease;
+}
+
+.calendar :global(.rbc-event:hover) {
+  filter: brightness(0.97);
 }
 
 .calendar :global(.rbc-event:focus),
 .calendar :global(.rbc-day-slot .rbc-event:focus) {
   outline: 2px solid hsl(var(--ring));
-  outline-offset: 2px;
+  outline-offset: 1px;
+}
+
+.calendar :global(.rbc-event.rbc-selected) {
+  filter: brightness(0.94);
 }
 
 .calendar :global(.rbc-show-more) {
   color: hsl(var(--primary));
-  font-size: 0.72rem;
+  font-size: 0.7rem;
   font-weight: 650;
-  padding: 0.2rem 0.45rem;
+  padding: 0.15rem 0.4rem;
 }
+
+/* ── Vues semaine / jour / planning ───────────────────────────────────────── */
 
 .calendar :global(.rbc-time-header),
 .calendar :global(.rbc-time-header-content),
@@ -142,7 +220,7 @@
 .calendar :global(.rbc-agenda-time-cell),
 .calendar :global(.rbc-agenda-event-cell) {
   border-color: hsl(var(--border) / 0.72);
-  padding: 0.65rem 0.75rem;
+  padding: 0.6rem 0.75rem;
 }
 
 .calendar :global(.rbc-agenda-date-cell),
@@ -150,9 +228,11 @@
   color: hsl(var(--muted-foreground));
 }
 
+/* Boutons internes éventuels (react-big-calendar en génère pour la navigation) */
 .calendar :global(.rbc-toolbar button) {
   background: transparent;
   border: 1px solid hsl(var(--border));
+  border-radius: 0.5rem;
   color: hsl(var(--foreground));
   font-size: 0.8rem;
   transition: background-color 140ms ease, border-color 140ms ease;
@@ -176,10 +256,12 @@
   outline-offset: 2px;
 }
 
+/* ── Mobile : on laisse la page défiler plutôt que de comprimer la grille ──── */
+
 @media (max-width: 640px) {
   .agendaPage {
-    height: auto;
-    min-height: calc(100vh - 8rem);
+    flex: none;
+    min-height: calc(100vh - 12rem);
   }
 
   .calendar :global(.rbc-toolbar) {
@@ -198,26 +280,26 @@
     justify-content: center;
   }
 
-  .calendar :global(.rbc-toolbar button) {
-    padding: 0.45rem 0.6rem;
-  }
-
   .calendar :global(.rbc-date-cell) {
-    padding: 0.3rem 0.2rem 0;
+    padding: 0.25rem 0.2rem 0;
   }
 
-  .calendar :global(.rbc-date-cell > a) {
+  .calendar :global(.rbc-date-cell > a),
+  .calendar :global(.rbc-date-cell > button) {
     height: 1.5rem;
     width: 1.5rem;
   }
 
   .calendar :global(.rbc-event) {
     font-size: 0.68rem;
-    padding: 0.15rem 0.25rem;
+    padding: 0.15rem 0.3rem;
   }
 }
 
 @media (prefers-reduced-motion: reduce) {
+  .calendar :global(.rbc-event),
+  .calendar :global(.rbc-date-cell > a),
+  .calendar :global(.rbc-date-cell > button),
   .calendar :global(.rbc-toolbar button) {
     transition: none;
   }

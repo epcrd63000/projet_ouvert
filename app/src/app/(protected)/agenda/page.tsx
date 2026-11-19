@@ -6,6 +6,7 @@ import "react-big-calendar/lib/css/react-big-calendar.css";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import CustomCalendarToolbar from "@/components/agenda/CustomCalendarToolbar";
+import { AgendaEventChip } from "@/components/agenda/AgendaEventChip";
 import { EventModal, EventFormData } from "@/components/agenda/EventModal";
 import { TaskSideDrawer } from "@/components/agenda/TaskSideDrawer";
 import { AgendaHeader } from "@/components/agenda/AgendaHeader";
@@ -144,7 +145,7 @@ export default function AgendaPage() {
   }
 
   return (
-    <div className={`flex min-h-0 flex-col gap-5 ${styles.agendaPage}`}>
+    <div className={`flex min-h-0 flex-1 flex-col gap-5 ${styles.agendaPage}`}>
       <AgendaHeader
         tasksCount={drawerTasks.length}
         onOpenDrawer={() => {
@@ -164,11 +165,17 @@ export default function AgendaPage() {
           startAccessor="start"
           endAccessor="end"
           culture="fr"
+          // Vues semaine/jour : on cadre sur les heures utiles (6 h → 23 h)
+          min={new Date(1970, 0, 1, 6, 0, 0)}
+          max={new Date(1970, 0, 1, 23, 0, 0)}
           date={currentDate}
           onNavigate={setCurrentDate}
           view={currentView}
           onView={setCurrentView}
-          components={{ toolbar: CustomCalendarToolbar }}
+          components={{ toolbar: CustomCalendarToolbar, event: AgendaEventChip }}
+          messages={{
+            showMore: (total: number) => `+${total} autre${total > 1 ? "s" : ""}`,
+          }}
           onSelectEvent={handleSelectEvent}
           className={`min-h-0 flex-1 ${styles.calendar}`}
           eventPropGetter={getCalendarEventStyle}

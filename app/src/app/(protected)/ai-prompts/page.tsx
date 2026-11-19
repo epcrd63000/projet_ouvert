@@ -18,7 +18,7 @@ export default async function AiPromptsPage() {
   });
 
   return (
-    <div className="space-y-6 max-w-5xl mx-auto">
+    <div className="space-y-6 w-full max-w-5xl mx-auto">
       <div className="pb-4 border-b border-border">
         <h1 className="text-3xl font-bold tracking-tight">Bibliothèque de Prompts IA</h1>
         <p className="text-muted-foreground">

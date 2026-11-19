@@ -70,7 +70,9 @@ export async function GET(request: NextRequest) {
     const events = [
       ...meetings.map((m) => ({
         id: `meeting-${m.id}`,
-        title: `Réunion: ${m.title}`,
+        // Pas de préfixe « Réunion: » : la couleur de la pastille porte déjà le type,
+        // ce qui laisse toute la place au titre dans la case du calendrier.
+        title: m.title,
         start: m.scheduledAt,
         end: new Date(new Date(m.scheduledAt).getTime() + 60 * 60 * 1000),
         type: "meeting",
@@ -84,7 +86,7 @@ export async function GET(request: NextRequest) {
         const isOverdue = !!(t.dueDate && new Date(t.dueDate) < new Date() && t.status !== "DONE");
         return {
           id: `task-${t.id}`,
-          title: `Tâche: ${t.title}${titleSuffix}`,
+          title: `${t.title}${titleSuffix}`,
           start: t.dueDate,
           end: t.dueDate,
           type: "task",

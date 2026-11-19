@@ -41,7 +41,7 @@ export function ProtectedShell({
         <Sidebar userRole={userRole} />
 
         {/* Zone de contenu principale responsive (marge inférieure pour la barre mobile) */}
-        <main className="flex-1 overflow-auto p-3.5 sm:p-5 md:p-6 pb-20 md:pb-6 md:ml-56">
+        <main className="flex flex-1 flex-col overflow-auto p-3.5 sm:p-5 md:p-6 pb-20 md:pb-6 md:ml-56">
           {children}
         </main>
       </div>

@@ -1,5 +1,15 @@
 # Journal des Modifications (CHANGELOG)
 
+## [2.16.6] - 2026-11-19
+
+### Agenda retravaillé : pleine hauteur, palette du logo et lisibilité
+- **Plus de mois coupé** : l'agenda occupait une hauteur fixe (`calc(100vh - 8rem)`) qui débordait sous le bandeau d'information. La zone de contenu principale devient une colonne flex et l'agenda prend l'espace restant (`flex-1 min-h-0`) : les 6 semaines du mois tiennent à l'écran.
+- **Palette d'événements alignée sur le logo** : fonds en teinte légère + filet coloré à gauche (bleu marine = réunion, bleu océan = mes tâches, acier = tâches d'équipe, rouge coque = jalon, vert = événement), avec une variante lisible en mode sombre. Une tâche en retard passe en rouge coque.
+- **Pastilles plus lisibles** : suppression des préfixes « Tâche: » / « Réunion: » (le type est porté par la couleur), titre tronqué avec « … » et infobulle native, libellé français « +2 autres » au lieu de « +2 more ».
+- **Barre d'outils** : navigation regroupée (`Aujourd'hui` + flèches), période centrée, sélecteur de vue en segments avec état actif clair, libellés accessibles (`aria-pressed`, `aria-label`).
+- **Vues semaine / jour** : grille cadrée sur 6 h → 23 h au lieu de minuit, donc directement sur les heures utiles.
+- **Correctif de mise en page** : les pages centrées (`/settings`, `/notifications`, `/ai-prompts`, `/meetings/[id]`) recevaient `w-full` pour conserver leur largeur maximale dans la nouvelle colonne flex.
+
 ## [2.16.5] - 2026-11-19
 
 ### Apparence : palette dérivée du logo MIN'IMOCA et mode clair / sombre complet

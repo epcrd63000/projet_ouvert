@@ -15,42 +15,49 @@ export const calendarLocalizer = dateFnsLocalizer({
 
 /**
  * Calcule les styles visuels d'un événement selon son type et sa portée (perso vs équipe).
+ * Le fond est une teinte légère et le filet gauche porte la couleur d'identité :
+ * les pastilles restent lisibles dans les deux thèmes (les variables `--agenda-*`
+ * basculent en mode sombre).
  */
 export function getCalendarEventStyle(event: AppCalendarEvent) {
-  let backgroundColor = "hsl(var(--agenda-task-mine))";
-  let color = "hsl(var(--agenda-task-mine-foreground))";
-  let border = "1px solid transparent";
+  let accent = "hsl(var(--agenda-task-mine))";
+  let backgroundColor = "hsl(var(--agenda-task-mine-bg))";
+  let color = "hsl(var(--agenda-task-mine-fg))";
 
   if (event.type === "meeting") {
-    backgroundColor = "hsl(var(--agenda-meeting))";
-    color = "hsl(var(--agenda-meeting-foreground))";
+    accent = "hsl(var(--agenda-meeting))";
+    backgroundColor = "hsl(var(--agenda-meeting-bg))";
+    color = "hsl(var(--agenda-meeting-fg))";
   } else if (event.type === "milestone") {
-    backgroundColor = "hsl(var(--agenda-milestone))";
-    color = "hsl(var(--agenda-milestone-foreground))";
+    accent = "hsl(var(--agenda-milestone))";
+    backgroundColor = "hsl(var(--agenda-milestone-bg))";
+    color = "hsl(var(--agenda-milestone-fg))";
   } else if (event.type === "manual") {
-    backgroundColor = event.color || "hsl(var(--agenda-manual))";
-    color = "hsl(var(--agenda-manual-foreground))";
+    // La couleur choisie par l'utilisateur reste portée par le filet gauche.
+    accent = event.color || "hsl(var(--agenda-manual))";
+    backgroundColor = "hsl(var(--agenda-manual-bg))";
+    color = "hsl(var(--agenda-manual-fg))";
   } else if (event.type === "task") {
     if (event.isMine) {
-      backgroundColor = "hsl(var(--agenda-task-mine))";
-      color = "hsl(var(--agenda-task-mine-foreground))";
+      accent = "hsl(var(--agenda-task-mine))";
+      backgroundColor = "hsl(var(--agenda-task-mine-bg))";
+      color = "hsl(var(--agenda-task-mine-fg))";
     } else {
-      backgroundColor = "hsl(var(--agenda-task-team))";
-      color = "hsl(var(--agenda-task-team-foreground))";
-    }
-
-    if (event.isOverdue) {
-      border = "2px solid hsl(0 84% 60%)";
+      accent = "hsl(var(--agenda-task-team))";
+      backgroundColor = "hsl(var(--agenda-task-team-bg))";
+      color = "hsl(var(--agenda-task-team-fg))";
     }
   }
+
+  // Une tâche en retard prend le rouge coque, quel que soit son propriétaire.
+  const isOverdue = event.type === "task" && event.isOverdue;
 
   return {
     style: {
       backgroundColor,
-      border,
-      borderRadius: "4px",
+      borderLeft: `3px solid ${isOverdue ? "hsl(var(--destructive))" : accent}`,
       color,
-      fontWeight: 600,
+      fontWeight: isOverdue ? 700 : 600,
     },
   };
 }

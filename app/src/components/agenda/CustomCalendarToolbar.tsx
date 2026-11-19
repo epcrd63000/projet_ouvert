@@ -1,57 +1,83 @@
+"use client";
+
 import React from "react";
-import { ToolbarProps } from "react-big-calendar";
 import { Button } from "@/components/ui/button";
-import { ChevronLeft, ChevronRight, Calendar as CalendarIcon } from "lucide-react";
+import { ChevronLeft, ChevronRight } from "lucide-react";
+import { cn } from "@/lib/utils";
 
+const VIEWS = ["month", "week", "day", "agenda"] as const;
+
+const VIEW_NAMES: Record<string, string> = {
+  month: "Mois",
+  week: "Semaine",
+  day: "Jour",
+  agenda: "Planning",
+};
+
+/**
+ * Barre d'outils du calendrier : navigation, période affichée et sélecteur de vue.
+ */
 export default function CustomCalendarToolbar(props: any) {
-  const { date, onNavigate, label, view, onView } = props;
-
-  const navigate = (action: "PREV" | "NEXT" | "TODAY") => {
-    onNavigate(action);
-  };
-
-  const views = ["month", "week", "day", "agenda"] as const;
-
-  const viewNames: Record<string, string> = {
-    month: "Mois",
-    week: "Semaine",
-    day: "Jour",
-    agenda: "Planning",
-  };
+  const { onNavigate, label, view, onView } = props;
 
   return (
-    <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mb-4">
+    <div className="mb-4 flex flex-col items-center justify-between gap-3 sm:flex-row">
+      {/* Navigation : aujourd'hui + pas à pas */}
       <div className="flex items-center gap-2">
-        <Button variant="outline" size="sm" onClick={() => navigate("TODAY")}>
+        <Button variant="outline" size="sm" className="h-8" onClick={() => onNavigate("TODAY")}>
           Aujourd&apos;hui
         </Button>
-        <div className="flex items-center gap-1">
-          <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => navigate("PREV")}>
+        <div className="flex items-center overflow-hidden rounded-md border border-border bg-card">
+          <button
+            type="button"
+            onClick={() => onNavigate("PREV")}
+            aria-label="Période précédente"
+            className="flex h-8 w-8 items-center justify-center text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+          >
             <ChevronLeft className="h-4 w-4" />
-          </Button>
-          <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => navigate("NEXT")}>
+          </button>
+          <span className="h-4 w-px bg-border" aria-hidden="true" />
+          <button
+            type="button"
+            onClick={() => onNavigate("NEXT")}
+            aria-label="Période suivante"
+            className="flex h-8 w-8 items-center justify-center text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+          >
             <ChevronRight className="h-4 w-4" />
-          </Button>
+          </button>
         </div>
       </div>
-      
-      <div className="text-lg font-semibold flex items-center gap-2">
-        <CalendarIcon className="h-5 w-5 text-muted-foreground" />
-        {label}
-      </div>
 
-      <div className="flex items-center gap-1 bg-muted p-1 rounded-md">
-        {views.map((v) => (
-          <Button
-            key={v}
-            variant={view === v ? "secondary" : "ghost"}
-            size="sm"
-            onClick={() => onView(v)}
-            className="capitalize h-8"
-          >
-            {viewNames[v]}
-          </Button>
-        ))}
+      {/* Période affichée */}
+      <p className="text-base font-semibold capitalize tracking-tight" aria-live="polite">
+        {label}
+      </p>
+
+      {/* Sélecteur de vue */}
+      <div
+        role="group"
+        aria-label="Type de vue du calendrier"
+        className="flex items-center gap-1 rounded-lg bg-muted p-1"
+      >
+        {VIEWS.map((v) => {
+          const isActive = view === v;
+          return (
+            <button
+              key={v}
+              type="button"
+              onClick={() => onView(v)}
+              aria-pressed={isActive}
+              className={cn(
+                "h-7 rounded-md px-2.5 text-xs font-medium transition-colors",
+                isActive
+                  ? "bg-card text-foreground shadow-sm"
+                  : "text-muted-foreground hover:text-foreground"
+              )}
+            >
+              {VIEW_NAMES[v]}
+            </button>
+          );
+        })}
       </div>
     </div>
   );

@@ -22,7 +22,7 @@ export default async function NotificationsPage() {
   });
 
   return (
-    <div className="space-y-6 max-w-3xl mx-auto">
+    <div className="space-y-6 w-full max-w-3xl mx-auto">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-4 border-b border-border">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Notifications</h1>
