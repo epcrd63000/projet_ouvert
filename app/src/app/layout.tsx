@@ -11,13 +11,23 @@ const inter = Inter({
 
 export const metadata: Metadata = {
   title: {
-    default: "Projet Ouvert IMT — Plateforme de Gestion de Projet",
-    template: "%s | Projet Ouvert IMT",
+    default: "Min'IMOCA — Plateforme de Gestion de Projet",
+    template: "%s | Min'IMOCA",
   },
   description:
     "Application de suivi, planification et gestion de projet pour l'équipe IMT CI1 (Projet Ouvert 2026-2027).",
-  keywords: ["IMT", "Projet Ouvert", "Gestion de projet", "Gantt", "Kanban"],
+  keywords: ["IMT", "Min'IMOCA", "Projet Ouvert", "Gestion de projet", "Gantt", "Kanban"],
   authors: [{ name: "Équipe Projet Ouvert IMT" }],
+  manifest: "/site.webmanifest",
+  icons: {
+    icon: [
+      { url: "/favicon.ico", sizes: "48x48" },
+      { url: "/icon-32x32.png", sizes: "32x32", type: "image/png" },
+      { url: "/icon-192x192.png", sizes: "192x192", type: "image/png" },
+      { url: "/icon-512x512.png", sizes: "512x512", type: "image/png" },
+    ],
+    apple: { url: "/apple-touch-icon.png", sizes: "180x180", type: "image/png" },
+  },
 };
 
 export const viewport: Viewport = {

@@ -1,5 +1,12 @@
 # Journal des Modifications (CHANGELOG)
 
+## [2.16.8] - 2026-11-20
+
+### Icône d'application (favicon, PWA, barre des tâches)
+- **Favicon et icônes PWA générés à partir du logo `logo_minimoca_V7`** : fichier `favicon.ico` multi-résolution (16/32/48 px) et 13 variantes PNG (de 16×16 à 512×512) déposés dans `app/public/`.
+- **Manifest PWA (`site.webmanifest`)** : déclaration complète pour l'installation en mode `standalone` avec toutes les tailles d'icônes, `theme_color` bleu marine et `background_color` nuit.
+- **Layout Next.js (`layout.tsx`)** : ajout des balises `icons` (favicon, PNG, apple-touch-icon) et de la référence au manifest dans les métadonnées. Le logo Min'IMOCA s'affiche désormais dans l'onglet du navigateur et comme icône d'application épinglée dans la barre des tâches Windows.
+
 ## [2.16.7] - 2026-11-20
 
 ### Mail d'accès réécrit et garantie que le mot de passe envoyé est le bon
