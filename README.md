@@ -144,6 +144,7 @@ npm run dev            # http://localhost:3000, écoute sur 0.0.0.0 (test mobile
 | `npm run prisma:generate` | Régénère le client Prisma |
 | `npm run db:seed` | Rejoue le seed (`prisma db seed` → `prisma/seed.ts`) |
 | `npm run db:verify` | Vérifie la conformité de la base |
+| `npm run db:check-passwords` | Vérifie que chaque mot de passe temporaire affiché fonctionne |
 
 > ⚠️ `db:seed` est **idempotent** mais écrase les données de référence. Il ne touche plus aux mots de passe depuis la v2.16.3.
 
@@ -296,6 +297,7 @@ app/src/
 │   ├── auth.ts                    Configuration NextAuth + callback `authorize` (credentials)
 │   ├── auth.config.ts             Configuration Edge-safe (sessions JWT, callbacks, pages)
 │   ├── auth/credentialsLogic.ts   Identifiants, mots de passe temporaires, email d'invitation
+│   ├── auth/tempPasswordCheck.ts  Contrôle bcrypt : le mot de passe affiché est-il le bon ?
 │   ├── permissions.ts             requireAuth / requireAdmin / isAdmin
 │   ├── notifications.ts           Création de notifications (1, N, tous)
 │   ├── csvExport.ts               Export CSV des tâches (M2V5)
@@ -559,8 +561,11 @@ app/src/
 | `extractUserPseudo(fullName)` | `"Hugo RAMPAZZO"` → `"hugo"` |
 | `matchUserIdentifier(user, identifiant)` | Résolution email / nom / prénom / préfixe |
 | `buildInvitationEmailSubject()` | Objet du mail d'invitation |
-| `buildInvitationEmailBody(user, appUrl)` | Corps du mail (identifiants, tour des onglets) |
-| `buildMailtoUrl(user, appUrl)` | URL `mailto:` encodée |
+| `buildInvitationEmailBody(user, appUrl)` | Corps du mail : salut, lien, identifiant, mot de passe temporaire, échéance et consigne de changement (ou version « déjà personnalisé », sans mot de passe) |
+| `buildMailtoUrl(user, appUrl)` | URL `mailto:` encodée (accepte `tempPasswordExpiresAt`) |
+
+### `lib/auth/tempPasswordCheck.ts` 🗄️ (serveur)
+`isTempPasswordActive(tempPassword, passwordHash)` — vérifie par bcrypt que le mot de passe affiché à l'administrateur est bien celui qui fonctionne. Utilisé par la page Paramètres : une ligne désynchronisée passe en « obsolète » et l'envoi par mail est bloqué.
 
 ### `lib/permissions.ts`
 `requireAdmin()` · `requireAuth()` · `isAdmin(role)`.
@@ -650,6 +655,7 @@ Schémas Zod : `createTaskSchema`, `updateTaskSchema`, `assignTaskSchema`, `crea
 | `restore-temp-passwords.ts` | `npx tsx prisma/restore-temp-passwords.ts [--dry-run] [--days=30]` | Réactive le mot de passe temporaire affiché, uniquement pour les comptes jamais personnalisés |
 | `regenerate-temp-passwords.ts` | `npx tsx prisma/regenerate-temp-passwords.ts --users=liam,peter [--dry-run]` | Génère un temporaire **neuf** (avec échéance) quand l'ancien est inconnu |
 | `verify-db.ts` | `npm run db:verify` | Vérifie hash bcrypt, cohérence `tempPassword`, tables, volumes |
+| `check-temp-passwords.ts` | `npm run db:check-passwords` | Confronte chaque mot de passe temporaire affiché au hash actif ; code retour 1 au moindre écart |
 
 **Après toute modification de `schema.prisma` :**
 

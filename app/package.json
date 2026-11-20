@@ -11,7 +11,8 @@
     "prisma:generate": "prisma generate",
     "postinstall": "prisma generate",
     "db:seed": "prisma db seed",
-    "db:verify": "tsx prisma/verify-db.ts"
+    "db:verify": "tsx prisma/verify-db.ts",
+    "db:check-passwords": "tsx prisma/check-temp-passwords.ts"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.1.0",

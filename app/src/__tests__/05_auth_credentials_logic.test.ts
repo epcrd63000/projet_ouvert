@@ -9,6 +9,9 @@ import {
   matchUserIdentifier,
   extractUserPseudo,
   buildMailtoUrl,
+  buildInvitationEmailSubject,
+  buildInvitationEmailBody,
+  formatTempPasswordExpiry,
 } from "../lib/auth/credentialsLogic";
 
 function assertTrue(condition: boolean, message: string) {
@@ -58,13 +61,15 @@ function runAuthCredentialsTests() {
   assertTrue(matchUserIdentifier(mockUser, "inconnu") === false, "Ne doit pas matcher un inconnu");
   assertTrue(matchUserIdentifier(mockUser, "") === false, "Ne doit pas matcher une chaîne vide");
 
-  // 4. Tests de génération de lien mailto et contenu sobre
-  console.log("  4. Test buildMailtoUrl et contenu sobre de l'email...");
+  // 4. Tests de génération de lien mailto et contenu du mail d'accès
+  console.log("  4. Test buildMailtoUrl et contenu du mail d'accès...");
+  const expiry = new Date("2026-12-19T12:00:00.000Z");
   const mailUserData = {
     name: "Hugo RAMPAZZO",
     email: "hugo.rampazzo@etu.imt-nord-europe.fr",
     pseudo: "hugo",
     tempPassword: "SafePassword42!",
+    tempPasswordExpiresAt: expiry,
   };
   const appTargetUrl = "https://mon-projet-imt.vercel.app";
 
@@ -75,11 +80,49 @@ function runAuthCredentialsTests() {
   assertTrue(mailtoLink.includes("body="), "Le mailto doit avoir un corps encodé");
 
   const decodedBody = decodeURIComponent(mailtoLink);
-  assertTrue(decodedBody.includes("hugo"), "Le corps doit contenir le pseudo");
-  assertTrue(decodedBody.includes("SafePassword42!"), "Le corps doit contenir le mot de passe");
-  assertTrue(decodedBody.toLowerCase().includes("test") || decodedBody.toLowerCase().includes("exemple"), "Le corps doit préciser qu'il s'agit d'une tâche de test");
-  assertTrue(decodedBody.toLowerCase().includes("spam") || decodedBody.toLowerCase().includes("indésirables"), "Le corps doit mentionner le précédent mail envoyé en spam");
-  assertTrue(decodedBody.toLowerCase().includes("retour") || decodedBody.toLowerCase().includes("améliorer"), "Le corps doit inviter aux retours");
+
+  // Salut personnalisé
+  assertTrue(decodedBody.includes("Salut Hugo,"), "Le mail doit commencer par un salut personnalisé");
+
+  // Identifiants (login + mot de passe)
+  assertTrue(decodedBody.includes("Identifiant : hugo"), "Le mail doit contenir l'identifiant de connexion");
+  assertTrue(decodedBody.includes("Mot de passe temporaire : SafePassword42!"), "Le mail doit contenir le mot de passe temporaire");
+  assertTrue(decodedBody.includes(appTargetUrl), "Le mail doit contenir le lien de l'application");
+
+  // Échéance + consigne de changement
+  assertTrue(
+    decodedBody.includes(formatTempPasswordExpiry(expiry)!),
+    "Le mail doit rappeler la date d'expiration du mot de passe temporaire"
+  );
+  assertTrue(
+    decodedBody.includes("Change-le dès ta première connexion"),
+    "Le mail doit demander explicitement de changer le mot de passe"
+  );
+  assertTrue(
+    decodedBody.includes("Paramètres → Changer le mot de passe"),
+    "Le mail doit indiquer où changer le mot de passe"
+  );
+
+  // Sujet
+  assertTrue(
+    buildInvitationEmailSubject().includes("Projet Ouvert IMT"),
+    "Le sujet doit identifier le projet"
+  );
+
+  // Compte déjà personnalisé : aucun mot de passe ne doit apparaître
+  const personalizedBody = buildInvitationEmailBody(
+    { name: "Liam BEAN", pseudo: "liam", tempPassword: undefined },
+    appTargetUrl
+  );
+  assertTrue(personalizedBody.startsWith("Salut Liam,"), "Le mail reste personnalisé sans mot de passe temporaire");
+  assertTrue(
+    personalizedBody.includes("déjà été personnalisé"),
+    "Le mail doit préciser que le mot de passe est déjà personnalisé"
+  );
+  assertTrue(
+    !personalizedBody.includes("Mot de passe temporaire :"),
+    "Aucun mot de passe ne doit être affiché pour un compte personnalisé"
+  );
 
   // Vérification de la sobriété : pas d'avalanche d'émojis dans le texte
   const emojiRegex = /[\uD83C-\uDBFF\uDC00-\uDFFF]/g;

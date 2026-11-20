@@ -135,15 +135,19 @@ export function matchUserIdentifier(
  * @returns La chaîne de caractères du sujet
  */
 export function buildInvitationEmailSubject(): string {
-  return "[Projet Ouvert IMT] Accès à notre plateforme d'équipe & prise en main";
+  return "[Projet Ouvert IMT] Tes accès à la plateforme MIN'IMOCA";
 }
 
 /**
- * Génère le corps de texte sobre et structuré pour l'invitation d'un membre.
- * Présente les identifiants, la tâche d'exemple, le tour d'horizon des onglets et l'appel aux retours.
+ * Génère le corps du mail envoyé à un membre : salut, identifiant, mot de passe
+ * temporaire, échéance, puis la consigne de le personnaliser.
  *
- * @param user Informations de l'utilisateur (nom, pseudo, mot de passe temporaire)
- * @param appUrl URL de l'application Web
+ * Le mot de passe affiché ici est exactement celui stocké dans `tempPassword`,
+ * donc celui qui fonctionne — l'appelant doit vérifier au préalable qu'il
+ * correspond bien au hash actif (voir `isTempPasswordActive`).
+ *
+ * @param user Nom, pseudo, mot de passe temporaire et échéance éventuelle
+ * @param appUrl URL de l'application
  * @returns Le texte brut complet de l'email
  */
 export function buildInvitationEmailBody(
@@ -151,38 +155,42 @@ export function buildInvitationEmailBody(
     name: string;
     pseudo: string;
     tempPassword?: string;
+    tempPasswordExpiresAt?: Date | string | null;
   },
   appUrl: string
 ): string {
   const firstName = user.name.split(" ")[0] || user.name;
-  const passwordText = user.tempPassword
-    ? user.tempPassword
-    : "(Identifiant existant ou déjà configuré)";
+  const expiry = formatTempPasswordExpiry(user.tempPasswordExpiresAt);
+  const signature = `À très vite,
+Étienne`;
+
+  // Compte déjà personnalisé : on ne prétend pas connaître le mot de passe.
+  if (!user.tempPassword) {
+    return `Salut ${firstName},
+
+Voici tes accès à la plateforme du Projet Ouvert IMT (voilier MIN'IMOCA) :
+
+- Lien : ${appUrl}
+- Identifiant : ${user.pseudo}
+
+Ton mot de passe a déjà été personnalisé : je ne le connais pas et je ne peux pas te le renvoyer. Si tu l'as oublié, réponds-moi et je t'en génère un nouveau.
+
+${signature}`;
+  }
 
   return `Salut ${firstName},
 
-(Je t'avais déjà envoyé un premier mail tout à l'heure, mais je pense qu'il a dû atterrir direct dans tes spams / courriers indésirables !)
+Voici tes accès à la plateforme du Projet Ouvert IMT (voilier MIN'IMOCA) :
 
-Pour qu'on puisse s'organiser facilement à 6 sur notre Projet Ouvert IMT, j'ai mis en place une petite plateforme collaborative. L'idée c'est de tout centraliser au même endroit.
-
-Voici tes accès :
 - Lien : ${appUrl}
 - Identifiant : ${user.pseudo}
-- Mot de passe temporaire : ${passwordText}
+- Mot de passe temporaire : ${user.tempPassword}
 
-Je te laisse te connecter et faire un petit tour pour découvrir l'outil. J'ai préparé pas mal de choses :
-- Un tableau pour nos tâches (je t'ai d'ailleurs assigné une petite tâche de test pour que tu puisses essayer !)
-- Un espace pour nos comptes-rendus de réunion
-- Un agenda avec les gros jalons IMT et nos créneaux
-- Un suivi pour le budget et nos dépenses
-- Et un coin doc avec le cahier des charges et les consignes
+Ce mot de passe est temporaire${expiry ? ` (valable jusqu'au ${expiry})` : ""}. Change-le dès ta première connexion : Paramètres → Changer le mot de passe. Une fois changé, je ne peux plus le voir — seul toi le connais.
 
-Tu pourras changer ton mot de passe dans les paramètres si tu le souhaites.
+Ensuite, fais un tour : tes tâches (Kanban), les réunions et comptes-rendus, l'agenda et les jalons, le budget, et la doc du projet.
 
-N'hésite pas à me dire ce que tu en penses, ce qui est pratique ou ce qu'on pourrait améliorer. Le but, c'est de peaufiner ça ensemble avant de se lancer dans nos premières vraies réunions de travail !
-
-À très vite,
-Étienne`;
+${signature}`;
 }
 
 /**
@@ -198,6 +206,7 @@ export function buildMailtoUrl(
     email: string;
     pseudo: string;
     tempPassword?: string;
+    tempPasswordExpiresAt?: Date | string | null;
   },
   appUrl: string
 ): string {

@@ -15,6 +15,8 @@ export interface UserCredentialItem {
   role: "ADMIN" | "MEMBER";
   tempPassword: string | null;
   tempPasswordExpiresAt?: string | null;
+  /** Le mot de passe affiché correspond-il au hash actif ? */
+  tempPasswordIsValid?: boolean | null;
 }
 
 /**
@@ -75,6 +77,8 @@ export function EtienneCredentialsPanel({
                 ...u,
                 tempPassword: data.newPassword,
                 tempPasswordExpiresAt: data.tempPasswordExpiresAt ?? null,
+                // Le serveur vient de hacher ce mot de passe : il est valide par construction.
+                tempPasswordIsValid: true,
               }
             : u
         )
@@ -91,7 +95,10 @@ export function EtienneCredentialsPanel({
   const copyFullSummary = () => {
     const lines = users.map((u) => {
       const pseudo = extractUserPseudo(u.name);
-      const pwd = u.tempPassword || "(Personnalisé)";
+      const pwd =
+        u.tempPasswordIsValid === false
+          ? "(obsolète — à régénérer)"
+          : u.tempPassword || "(Personnalisé)";
       return `${u.name} | Login: ${pseudo} | MDP: ${pwd} | Email: ${u.email}`;
     });
     handleCopy(lines.join("\n"), "summary");

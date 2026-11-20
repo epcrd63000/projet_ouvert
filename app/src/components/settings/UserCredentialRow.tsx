@@ -3,7 +3,7 @@
 import React from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Copy, Eye, EyeOff, Mail, RefreshCw, Check } from "lucide-react";
+import { Copy, Eye, EyeOff, Mail, RefreshCw, Check, AlertTriangle } from "lucide-react";
 import {
   extractUserPseudo,
   buildMailtoUrl,
@@ -25,7 +25,8 @@ interface UserCredentialRowProps {
 
 /**
  * Ligne individuelle affichant les identifiants d'un étudiant et les actions d'envoi.
- * Permet l'ouverture du mail dans un nouvel onglet, la copie directe du message, et la régénération de mot de passe.
+ * Si le mot de passe affiché ne correspond plus au hash du compte, il est signalé
+ * comme obsolète et ne peut être ni copié ni envoyé par mail.
  */
 export function UserCredentialRow({
   user,
@@ -42,29 +43,21 @@ export function UserCredentialRow({
   const isExpired = user.tempPasswordExpiresAt
     ? new Date(user.tempPasswordExpiresAt).getTime() < Date.now()
     : false;
+  const isStale = user.tempPasswordIsValid === false;
 
-  // Construction de l'URL mailto pour l'envoi direct par le client de messagerie
-  const mailto = buildMailtoUrl(
-    {
-      name: user.name,
-      email: user.email,
-      pseudo,
-      tempPassword: user.tempPassword || undefined,
-    },
-    appUrl
-  );
+  // Ce qu'on envoie par mail doit être exactement le mot de passe actif.
+  const emailUser = {
+    name: user.name,
+    email: user.email,
+    pseudo,
+    tempPassword: user.tempPassword || undefined,
+    tempPasswordExpiresAt: user.tempPasswordExpiresAt,
+  };
 
-  // Construction du corps de texte pour la copie directe dans le presse-papier
+  const mailto = buildMailtoUrl(emailUser, appUrl);
+
   const handleCopyEmailText = () => {
-    const emailBody = buildInvitationEmailBody(
-      {
-        name: user.name,
-        pseudo,
-        tempPassword: user.tempPassword || undefined,
-      },
-      appUrl
-    );
-    onCopy(emailBody, `mailtext-${user.id}`);
+    onCopy(buildInvitationEmailBody(emailUser, appUrl), `mailtext-${user.id}`);
   };
 
   return (
@@ -101,7 +94,12 @@ export function UserCredentialRow({
 
         <div className="flex items-center gap-1 bg-muted px-2.5 py-1 rounded-md text-xs">
           <span className="text-muted-foreground">MDP :</span>
-          {user.tempPassword ? (
+          {isStale ? (
+            <>
+              <span className="font-mono font-semibold text-destructive">obsolète</span>
+              <AlertTriangle className="h-3 w-3 text-destructive" />
+            </>
+          ) : user.tempPassword ? (
             <>
               <span className="font-mono font-semibold text-foreground">
                 {isRevealed ? user.tempPassword : "••••••••••"}
@@ -141,7 +139,13 @@ export function UserCredentialRow({
           </button>
         </div>
 
-        {user.tempPassword && expiryLabel && (
+        {isStale && (
+          <div className="w-full text-[10px] font-medium text-destructive">
+            Ce mot de passe ne correspond plus au compte — régénère-le avant de l&apos;envoyer.
+          </div>
+        )}
+
+        {!isStale && user.tempPassword && expiryLabel && (
           <div
             className={`w-full text-[10px] ${
               isExpired ? "text-destructive font-medium" : "text-muted-foreground"
@@ -154,14 +158,19 @@ export function UserCredentialRow({
         )}
       </div>
 
-      {/* Actions de partage : Envoi par mail (nouvel onglet) et Copie du texte */}
+      {/* Actions de partage : envoi par mail (nouvel onglet) et copie du texte */}
       <div className="flex items-center gap-2 self-end lg:self-center">
         <Button
           size="sm"
           variant="outline"
           className="h-8 gap-1.5 text-xs text-muted-foreground hover:text-foreground"
           onClick={handleCopyEmailText}
-          title="Copier l'intégralité du mail d'invitation pour le coller dans WhatsApp ou Teams"
+          disabled={isStale}
+          title={
+            isStale
+              ? "Mot de passe obsolète : régénère-le d'abord"
+              : "Copier l'intégralité du mail d'invitation pour le coller dans WhatsApp ou Teams"
+          }
           type="button"
         >
           {copiedKey === `mailtext-${user.id}` ? (
@@ -172,19 +181,26 @@ export function UserCredentialRow({
           {copiedKey === `mailtext-${user.id}` ? "Copié !" : "Copier le texte"}
         </Button>
 
-        <a
-          href={mailto}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="inline-block"
-          title="Ouvrir le client mail et copier automatiquement le message dans le presse-papier"
-          onClick={handleCopyEmailText}
-        >
-          <Button size="sm" variant="outline" className="h-8 gap-1.5 text-xs">
-            <Mail className="h-3.5 w-3.5 text-primary" />
-            Envoyer par mail
+        {isStale ? (
+          <Button size="sm" variant="outline" className="h-8 gap-1.5 text-xs" disabled>
+            <AlertTriangle className="h-3.5 w-3.5 text-destructive" />
+            Envoi bloqué
           </Button>
-        </a>
+        ) : (
+          <a
+            href={mailto}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-block"
+            title="Ouvrir le client mail et copier automatiquement le message dans le presse-papier"
+            onClick={handleCopyEmailText}
+          >
+            <Button size="sm" variant="outline" className="h-8 gap-1.5 text-xs">
+              <Mail className="h-3.5 w-3.5 text-primary" />
+              Envoyer par mail
+            </Button>
+          </a>
+        )}
       </div>
     </div>
   );

@@ -1,5 +1,13 @@
 # Journal des Modifications (CHANGELOG)
 
+## [2.16.7] - 2026-11-20
+
+### Mail d'accès réécrit et garantie que le mot de passe envoyé est le bon
+- **Nouveau mail (`buildInvitationEmailBody`)** : salut personnalisé (« Salut Hugo, »), lien, **identifiant**, **mot de passe temporaire**, **échéance**, puis la consigne explicite « Change-le dès ta première connexion : Paramètres → Changer le mot de passe » et le rappel que l'administrateur ne voit plus le mot de passe une fois personnalisé. Version dédiée aux comptes déjà personnalisés (aucun mot de passe affiché). Ancienne mention « premier mail parti en spams » retirée.
+- **Garde-fou anti-désynchronisation** : nouveau module `lib/auth/tempPasswordCheck.ts` (`isTempPasswordActive`). La page Paramètres confronte chaque mot de passe affiché au hash actif ; s'ils divergent, la ligne passe en **« MDP : obsolète »**, la copie du texte et l'envoi par mail sont **désactivés** et le récapitulatif indique « (obsolète — à régénérer) ».
+- **Commande de contrôle** : `npm run db:check-passwords` (`prisma/check-temp-passwords.ts`) vérifie tous les comptes et sort en erreur au moindre écart. Résultat actuel : 3 valides, 0 obsolète, 3 personnalisés.
+- **Tests** : `05_auth_credentials_logic.test.ts` couvre le salut, l'identifiant, le mot de passe, l'échéance, la consigne de changement et l'absence de mot de passe pour un compte personnalisé.
+
 ## [2.16.6] - 2026-11-19
 
 ### Agenda retravaillé : pleine hauteur, palette du logo et lisibilité

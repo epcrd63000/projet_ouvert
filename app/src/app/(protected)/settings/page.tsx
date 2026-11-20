@@ -7,6 +7,7 @@ import { UserManagement } from "@/components/settings/UserManagement";
 import { AlertBannerManager } from "@/components/settings/AlertBannerManager";
 import { UserSettings } from "@/components/settings/UserSettings";
 import { EtienneCredentialsPanel } from "@/components/settings/EtienneCredentialsPanel";
+import { isTempPasswordActive } from "@/lib/auth/tempPasswordCheck";
 
 export const dynamic = "force-dynamic";
 
@@ -50,17 +51,28 @@ export default async function SettingsPage() {
         role: true,
         tempPassword: true,
         tempPasswordExpiresAt: true,
+        passwordHash: true,
       },
       orderBy: { name: "asc" },
     });
 
-    // Sérialisation de l'échéance pour le composant client
-    credentialUsers = rawCredentialUsers.map((u) => ({
-      ...u,
-      tempPasswordExpiresAt: u.tempPasswordExpiresAt
-        ? u.tempPasswordExpiresAt.toISOString()
-        : null,
-    }));
+    // Chaque mot de passe affiché est confronté au hash actif : un mot de passe
+    // désynchronisé ne doit jamais être copié ni envoyé par mail.
+    credentialUsers = await Promise.all(
+      rawCredentialUsers.map(async (u) => ({
+        id: u.id,
+        name: u.name,
+        email: u.email,
+        role: u.role,
+        tempPassword: u.tempPassword,
+        tempPasswordExpiresAt: u.tempPasswordExpiresAt
+          ? u.tempPasswordExpiresAt.toISOString()
+          : null,
+        tempPasswordIsValid: u.tempPassword
+          ? await isTempPasswordActive(u.tempPassword, u.passwordHash)
+          : null,
+      }))
+    );
   }
 
   return (
